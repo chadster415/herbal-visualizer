@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import type { PrimaryAction, Herb, BodySystem, StrengthLevel } from '@/types/database';
 
@@ -19,15 +19,39 @@ interface ActionData extends PrimaryAction {
   action_descriptions: ActionDescription[];
 }
 
-export function ActionView() {
+interface ActionViewProps {
+  onHerbClick?: (herbId: number) => void;
+  selectedActionId?: number | null;
+  onActionIdChange?: (actionId: number | null) => void;
+}
+
+export function ActionView({ onHerbClick, selectedActionId, onActionIdChange }: ActionViewProps) {
   const [actions, setActions] = useState<ActionData[]>([]);
   const [selectedAction, setSelectedAction] = useState<ActionData | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
+  const actionRefs = useRef<Map<number, HTMLButtonElement>>(new Map());
 
   useEffect(() => {
     fetchActions();
   }, []);
+
+  // Sync with external selectedActionId prop
+  useEffect(() => {
+    if (selectedActionId !== undefined && selectedActionId !== null && actions.length > 0) {
+      const action = actions.find((a) => a.id === selectedActionId);
+      if (action) {
+        setSelectedAction(action);
+        // Scroll the selected action into view
+        setTimeout(() => {
+          const actionElement = actionRefs.current.get(selectedActionId);
+          if (actionElement) {
+            actionElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          }
+        }, 100);
+      }
+    }
+  }, [selectedActionId, actions]);
 
   async function fetchActions() {
     try {
@@ -111,7 +135,17 @@ export function ActionView() {
           {filteredActions.map((action) => (
             <button
               key={action.id}
-              onClick={() => setSelectedAction(action)}
+              ref={(el) => {
+                if (el) {
+                  actionRefs.current.set(action.id, el);
+                } else {
+                  actionRefs.current.delete(action.id);
+                }
+              }}
+              onClick={() => {
+                setSelectedAction(action);
+                onActionIdChange?.(action.id);
+              }}
               className={`w-full text-left p-3 rounded-lg transition-all ${
                 selectedAction?.id === action.id
                   ? 'bg-green-100 border-2 border-green-500'
@@ -169,11 +203,12 @@ export function ActionView() {
                         {herbs
                           .sort((a, b) => a.herb.common_name.localeCompare(b.herb.common_name))
                           .map((item, idx) => (
-                          <div
+                          <button
                             key={idx}
+                            onClick={() => onHerbClick?.(item.herb.id)}
                             className={`border rounded-lg p-3 ${getStrengthColor(
                               item.strength
-                            )}`}
+                            )} hover:shadow-md hover:scale-105 transition-all cursor-pointer text-left`}
                           >
                             <div className="font-medium">{item.herb.common_name}</div>
                             <div className="text-sm italic">{item.herb.latin_name}</div>
@@ -182,7 +217,7 @@ export function ActionView() {
                                 {item.strength.replace('_', ' ')}
                               </div>
                             )}
-                          </div>
+                          </button>
                         ))}
                       </div>
                     </div>

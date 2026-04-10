@@ -61,3 +61,119 @@ export interface PrimaryActionWithHerbs extends PrimaryAction {
     relative_strength?: StrengthLevel;
   }>;
 }
+
+// Disorder types
+export interface Disorder {
+  id: number;
+  name: string;
+  body_system_id: number;
+  sort_order: number;
+  created_at: string;
+}
+
+export interface DisorderNote {
+  id: number;
+  disorder_id: number;
+  note_text: string;
+  sort_order: number;
+  created_at: string;
+}
+
+export interface DisorderActionIndicated {
+  id: number;
+  disorder_id: number;
+  primary_action_id: number;
+  description: string;
+  sort_order: number;
+  created_at: string;
+}
+
+export interface DisorderActionHerb {
+  id: number;
+  disorder_id: number;
+  herb_id: number;
+  primary_action_id: number;
+  note?: string;
+  sort_order: number;
+  created_at: string;
+}
+
+export interface DisorderSpecificRemedy {
+  id: number;
+  disorder_id: number;
+  herb_id: number;
+  description: string;
+  sort_order: number;
+  created_at: string;
+}
+
+export interface DisorderPrescription {
+  id: number;
+  disorder_id: number;
+  title?: string;
+  instructions: string;
+  sort_order: number;
+  created_at: string;
+}
+
+export interface PrescriptionHerb {
+  id: number;
+  prescription_id: number;
+  herb_id: number;
+  parts: string;
+  note?: string;
+  sort_order: number;
+  created_at: string;
+}
+
+export interface PrescriptionHerbAction {
+  id: number;
+  prescription_herb_id: number;
+  primary_action_id: number;
+  created_at: string;
+}
+
+// View types for disorder queries
+export interface DisorderWithDetails extends Disorder {
+  body_system?: BodySystem;
+  notes?: DisorderNote[];
+  actions_indicated?: Array<{
+    action: PrimaryAction;
+    description: string;
+    sort_order: number;
+  }>;
+  action_herbs?: Array<{
+    action: PrimaryAction;
+    herbs: Array<{
+      herb: Herb;
+      note?: string;
+      sort_order: number;
+    }>;
+  }>;
+  specific_remedies?: Array<{
+    herb: Herb;
+    description: string;
+    sort_order: number;
+  }>;
+  prescriptions?: Array<{
+    id: number;
+    title?: string;
+    instructions: string;
+    sort_order: number;
+    herbs: Array<{
+      herb: Herb;
+      parts: string;
+      note?: string;
+      actions?: PrimaryAction[];
+      sort_order: number;
+    }>;
+  }>;
+}
+
+export interface HerbWithDisorders extends Herb {
+  disorders?: Array<{
+    disorder: Disorder;
+    body_system: BodySystem;
+    actions: PrimaryAction[];
+  }>;
+}

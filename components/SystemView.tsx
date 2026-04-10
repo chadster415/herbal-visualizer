@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import type { BodySystem, Herb, PrimaryAction, StrengthLevel } from '@/types/database';
+import { DisorderView } from './DisorderView';
 
 interface SystemData extends BodySystem {
   herb_primary_actions: Array<{
@@ -10,12 +11,19 @@ interface SystemData extends BodySystem {
     primary_actions: PrimaryAction;
     relative_strength: StrengthLevel | null;
   }>;
+  disorder_count?: number;
 }
 
-export function SystemView() {
+interface SystemViewProps {
+  onHerbClick?: (herbId: number) => void;
+  onActionClick?: (actionId: number) => void;
+}
+
+export function SystemView({ onHerbClick, onActionClick }: SystemViewProps) {
   const [systems, setSystems] = useState<SystemData[]>([]);
   const [selectedSystem, setSelectedSystem] = useState<SystemData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [viewMode, setViewMode] = useState<'actions' | 'disorders'>('disorders');
 
   useEffect(() => {
     fetchSystems();
@@ -36,7 +44,23 @@ export function SystemView() {
         .order('name');
 
       if (error) throw error;
-      setSystems(data || []);
+
+      // Get disorder counts for each system
+      const { data: disorderCounts } = await supabase
+        .from('disorders')
+        .select('body_system_id');
+
+      const countMap = new Map<number, number>();
+      disorderCounts?.forEach((d) => {
+        countMap.set(d.body_system_id, (countMap.get(d.body_system_id) || 0) + 1);
+      });
+
+      const systemsWithCounts = (data || []).map((system) => ({
+        ...system,
+        disorder_count: countMap.get(system.id) || 0,
+      }));
+
+      setSystems(systemsWithCounts);
     } catch (error) {
       console.error('Error fetching systems:', error);
     } finally {
@@ -100,7 +124,10 @@ export function SystemView() {
             >
               <div className="font-semibold text-gray-900">{system.name}</div>
               <div className="text-xs text-gray-500 mt-1">
-                {system.herb_primary_actions.length} herbs
+                {(system.disorder_count ?? 0) > 0 && (
+                  <div>{system.disorder_count} disorder{system.disorder_count !== 1 ? 's' : ''}</div>
+                )}
+                <div>{system.herb_primary_actions.length} herb{system.herb_primary_actions.length !== 1 ? 's' : ''}</div>
               </div>
             </button>
           ))}
@@ -111,11 +138,46 @@ export function SystemView() {
       <div className="lg:col-span-2 bg-white rounded-lg shadow-lg p-6 max-h-[80vh] overflow-y-auto">
         {selectedSystem ? (
           <div>
-            <h2 className="text-3xl font-bold text-green-800 mb-6">
-              {selectedSystem.name} System
-            </h2>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-3xl font-bold text-green-800">
+                {selectedSystem.name} System
+              </h2>
 
-            {selectedSystem.herb_primary_actions.length > 0 ? (
+              {(selectedSystem.disorder_count ?? 0) > 0 && (
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setViewMode('disorders')}
+                    className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                      viewMode === 'disorders'
+                        ? 'bg-green-600 text-white'
+                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    }`}
+                  >
+                    Disorders ({selectedSystem.disorder_count})
+                  </button>
+                  <button
+                    onClick={() => setViewMode('actions')}
+                    className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                      viewMode === 'actions'
+                        ? 'bg-green-600 text-white'
+                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    }`}
+                  >
+                    Actions & Herbs
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {viewMode === 'disorders' && (selectedSystem.disorder_count ?? 0) > 0 ? (
+              <div className="mt-4">
+                <DisorderView
+                  bodySystemId={selectedSystem.id}
+                  onHerbClick={onHerbClick}
+                  onActionClick={onActionClick}
+                />
+              </div>
+            ) : selectedSystem.herb_primary_actions.length > 0 ? (
               <div className="space-y-6">
                 {Array.from(groupByAction(selectedSystem)).map(
                   ([actionName, herbs]) => (
@@ -128,9 +190,10 @@ export function SystemView() {
                       </h3>
                       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                         {herbs.map((item, idx) => (
-                          <div
+                          <button
                             key={idx}
-                            className={`border rounded-lg p-3 transition-shadow hover:shadow-md ${getStrengthColor(
+                            onClick={() => onHerbClick?.(item.herb.id)}
+                            className={`border rounded-lg p-3 hover:shadow-md hover:scale-105 transition-all cursor-pointer text-left ${getStrengthColor(
                               item.strength
                             )}`}
                           >
@@ -145,13 +208,17 @@ export function SystemView() {
                                 {item.strength.replace('_', ' ')}
                               </div>
                             )}
-                          </div>
+                          </button>
                         ))}
                       </div>
                     </div>
                   )
                 )}
               </div>
+            ) : viewMode === 'disorders' ? (
+              <p className="text-gray-500 italic">
+                No disorders recorded for this body system.
+              </p>
             ) : (
               <p className="text-gray-500 italic">
                 No herbs recorded for this body system.

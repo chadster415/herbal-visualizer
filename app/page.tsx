@@ -4,11 +4,24 @@ import { useState } from 'react';
 import { HerbView } from '@/components/HerbView';
 import { ActionView } from '@/components/ActionView';
 import { SystemView } from '@/components/SystemView';
+import type { Herb } from '@/types/database';
 
 type ViewMode = 'herb' | 'action' | 'system';
 
 export default function Home() {
   const [viewMode, setViewMode] = useState<ViewMode>('herb');
+  const [selectedHerbId, setSelectedHerbId] = useState<number | null>(null);
+  const [selectedActionId, setSelectedActionId] = useState<number | null>(null);
+
+  const handleHerbClick = (herbId: number) => {
+    setSelectedHerbId(herbId);
+    setViewMode('herb');
+  };
+
+  const handleActionClick = (actionId: number) => {
+    setSelectedActionId(actionId);
+    setViewMode('action');
+  };
 
   return (
     <div className="min-h-screen p-8 bg-gradient-to-br from-green-50 to-emerald-100 dark:from-gray-900 dark:to-gray-800">
@@ -52,9 +65,9 @@ export default function Home() {
       </header>
 
       <main>
-        {viewMode === 'herb' && <HerbView />}
-        {viewMode === 'action' && <ActionView />}
-        {viewMode === 'system' && <SystemView />}
+        {viewMode === 'herb' && <HerbView selectedHerbId={selectedHerbId} onHerbIdChange={setSelectedHerbId} onActionClick={handleActionClick} />}
+        {viewMode === 'action' && <ActionView selectedActionId={selectedActionId} onActionIdChange={setSelectedActionId} onHerbClick={handleHerbClick} />}
+        {viewMode === 'system' && <SystemView onHerbClick={handleHerbClick} onActionClick={handleActionClick} />}
       </main>
     </div>
   );
