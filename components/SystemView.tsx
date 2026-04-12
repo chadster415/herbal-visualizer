@@ -179,8 +179,9 @@ export function SystemView({ onHerbClick, onActionClick }: SystemViewProps) {
               </div>
             ) : selectedSystem.herb_primary_actions.length > 0 ? (
               <div className="space-y-6">
-                {Array.from(groupByAction(selectedSystem)).map(
-                  ([actionName, herbs]) => (
+                {Array.from(groupByAction(selectedSystem))
+                  .sort(([a], [b]) => a.localeCompare(b))
+                  .map(([actionName, herbs]) => (
                     <div
                       key={actionName}
                       className="border-l-4 border-blue-500 pl-4 pb-4"

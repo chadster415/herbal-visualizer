@@ -193,11 +193,19 @@ export function DisorderView({ bodySystemId, onHerbClick, onActionClick }: Disor
           className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
         >
           <option value="">Choose a disorder...</option>
-          {disorders.map((disorder) => (
-            <option key={disorder.id} value={disorder.id}>
-              {disorder.name}
-            </option>
-          ))}
+          {disorders
+            .slice()
+            .sort((a, b) => {
+              // Keep "Overall" at the top
+              if (a.name === 'Overall') return -1;
+              if (b.name === 'Overall') return 1;
+              return a.name.localeCompare(b.name);
+            })
+            .map((disorder) => (
+              <option key={disorder.id} value={disorder.id}>
+                {disorder.name}
+              </option>
+            ))}
         </select>
       </div>
 
@@ -211,15 +219,14 @@ export function DisorderView({ bodySystemId, onHerbClick, onActionClick }: Disor
 
             {/* Notes */}
             {selectedDisorder.disorder_notes.length > 0 && (
-              <div className="border-l-4 border-gray-400 pl-4">
-                <h3 className="text-xl font-semibold text-gray-800 mb-3">Notes</h3>
-                <div className="space-y-2">
+              <div className="bg-green-50 border border-green-200 border-l-4 border-l-green-600 rounded-lg p-4">
+                <ul className="list-disc list-inside space-y-2">
                   {selectedDisorder.disorder_notes.map((note) => (
-                    <p key={note.id} className="text-gray-700">
+                    <li key={note.id} className="text-gray-700">
                       {note.note_text}
-                    </p>
+                    </li>
                   ))}
-                </div>
+                </ul>
               </div>
             )}
 
