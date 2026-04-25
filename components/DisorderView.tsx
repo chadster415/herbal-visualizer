@@ -59,6 +59,7 @@ export function DisorderView({ bodySystemId, onHerbClick, onActionClick }: Disor
 
   useEffect(() => {
     if (bodySystemId) {
+      setSelectedDisorder(null); // Reset selected disorder when body system changes
       fetchDisorders();
     }
   }, [bodySystemId]);
