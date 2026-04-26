@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
+import { TextPageLinks } from './TextPageLinks';
 import type {
   Disorder,
   DisorderNote,
@@ -56,6 +57,14 @@ export function DisorderView({ bodySystemId, onHerbClick, onActionClick }: Disor
   const [disorders, setDisorders] = useState<DisorderData[]>([]);
   const [selectedDisorder, setSelectedDisorder] = useState<DisorderData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [imageManifest, setImageManifest] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    fetch('/api/disorder-images')
+      .then((r) => r.json())
+      .then(setImageManifest)
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (bodySystemId) {
@@ -214,9 +223,13 @@ export function DisorderView({ bodySystemId, onHerbClick, onActionClick }: Disor
       <div>
         {selectedDisorder ? (
           <div className="space-y-8">
-            <h2 className="text-3xl font-bold text-green-800 mb-4">
+            <h2 className="text-3xl font-bold text-green-800 mb-2">
               {selectedDisorder.name}
             </h2>
+            <TextPageLinks
+              disorderName={selectedDisorder.name}
+              pageCount={imageManifest[selectedDisorder.name] ?? 0}
+            />
 
             {/* Notes */}
             {selectedDisorder.disorder_notes.length > 0 && (

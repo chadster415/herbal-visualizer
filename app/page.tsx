@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { HerbView } from '@/components/HerbView';
 import { ActionView } from '@/components/ActionView';
 import { SystemView } from '@/components/SystemView';
-import type { Herb } from '@/types/database';
+import { FlashcardModal } from '@/components/FlashcardModal';
 
 type ViewMode = 'herb' | 'action' | 'system';
 
@@ -12,6 +12,7 @@ export default function Home() {
   const [viewMode, setViewMode] = useState<ViewMode>('herb');
   const [selectedHerbId, setSelectedHerbId] = useState<number | null>(null);
   const [selectedActionId, setSelectedActionId] = useState<number | null>(null);
+  const [flashcardsOpen, setFlashcardsOpen] = useState(false);
 
   const handleHerbClick = (herbId: number) => {
     setSelectedHerbId(herbId);
@@ -30,7 +31,7 @@ export default function Home() {
           Herbal Medicine Visualizer
         </h1>
 
-        <div className="flex gap-4 mb-6">
+        <div className="flex gap-4 mb-6 flex-wrap">
           <button
             onClick={() => setViewMode('herb')}
             className={`px-6 py-3 rounded-lg font-medium transition-all ${
@@ -61,6 +62,12 @@ export default function Home() {
           >
             By Body System
           </button>
+          <button
+            onClick={() => setFlashcardsOpen(true)}
+            className="px-6 py-3 rounded-lg font-medium transition-all bg-white text-green-800 hover:bg-green-50 border border-green-300"
+          >
+            🌿 Flashcards
+          </button>
         </div>
       </header>
 
@@ -69,6 +76,8 @@ export default function Home() {
         {viewMode === 'action' && <ActionView selectedActionId={selectedActionId} onActionIdChange={setSelectedActionId} onHerbClick={handleHerbClick} />}
         {viewMode === 'system' && <SystemView onHerbClick={handleHerbClick} onActionClick={handleActionClick} />}
       </main>
+
+      <FlashcardModal isOpen={flashcardsOpen} onClose={() => setFlashcardsOpen(false)} />
     </div>
   );
 }
