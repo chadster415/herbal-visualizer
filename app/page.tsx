@@ -24,6 +24,16 @@ export default function Home() {
     setViewMode('action');
   };
 
+  const handleActionNameClick = async (name: string) => {
+    const { data } = await import('@/lib/supabase').then(({ supabase }) =>
+      supabase.from('primary_actions').select('id').eq('name', name).single()
+    );
+    if (data) {
+      setSelectedActionId(data.id);
+      setViewMode('action');
+    }
+  };
+
   return (
     <div className="min-h-screen p-8 bg-gradient-to-br from-green-50 to-emerald-100 dark:from-gray-900 dark:to-gray-800">
       <header className="mb-8">
@@ -72,7 +82,7 @@ export default function Home() {
       </header>
 
       <main>
-        {viewMode === 'herb' && <HerbView selectedHerbId={selectedHerbId} onHerbIdChange={setSelectedHerbId} onActionClick={handleActionClick} />}
+        {viewMode === 'herb' && <HerbView selectedHerbId={selectedHerbId} onHerbIdChange={setSelectedHerbId} onActionClick={handleActionClick} onActionNameClick={handleActionNameClick} />}
         {viewMode === 'action' && <ActionView selectedActionId={selectedActionId} onActionIdChange={setSelectedActionId} onHerbClick={handleHerbClick} />}
         {viewMode === 'system' && <SystemView onHerbClick={handleHerbClick} onActionClick={handleActionClick} />}
       </main>

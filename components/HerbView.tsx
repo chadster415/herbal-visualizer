@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
-import type { Herb, PrimaryAction, BodySystem, StrengthLevel, Disorder } from '@/types/database';
+import type { Herb, PrimaryAction, SecondaryAction, BodySystem, StrengthLevel, Disorder } from '@/types/database';
 
 interface HerbData extends Herb {
   herb_primary_actions: Array<{
@@ -23,15 +23,19 @@ interface HerbData extends Herb {
     };
     description: string;
   }>;
+  herb_secondary_actions: Array<{
+    secondary_actions: SecondaryAction;
+  }>;
 }
 
 interface HerbViewProps {
   selectedHerbId?: number | null;
   onHerbIdChange?: (herbId: number | null) => void;
   onActionClick?: (actionId: number) => void;
+  onActionNameClick?: (name: string) => void;
 }
 
-export function HerbView({ selectedHerbId, onHerbIdChange, onActionClick }: HerbViewProps) {
+export function HerbView({ selectedHerbId, onHerbIdChange, onActionClick, onActionNameClick }: HerbViewProps) {
   const [herbs, setHerbs] = useState<HerbData[]>([]);
   const [selectedHerb, setSelectedHerb] = useState<HerbData | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -84,6 +88,9 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onActionClick }: Herb
               body_systems (*)
             ),
             description
+          ),
+          herb_secondary_actions (
+            secondary_actions (*)
           )
         `)
         .order('common_name');
@@ -220,6 +227,26 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onActionClick }: Herb
                 </p>
               )}
             </div>
+
+            {/* Secondary Actions */}
+            {selectedHerb.herb_secondary_actions.length > 0 && (
+              <div className="mb-6">
+                <h3 className="text-xl font-semibold text-gray-800 mb-3">
+                  Secondary Actions
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                  {selectedHerb.herb_secondary_actions.map((item, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => onActionNameClick?.(item.secondary_actions.name)}
+                      className="px-3 py-1.5 bg-teal-50 text-teal-800 border border-teal-200 rounded-full text-sm hover:bg-teal-100 hover:border-teal-400 transition-colors cursor-pointer"
+                    >
+                      {item.secondary_actions.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Disorders Section */}
             {((selectedHerb.disorder_action_herbs?.length ?? 0) > 0 ||
