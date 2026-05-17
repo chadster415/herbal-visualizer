@@ -1,0 +1,60 @@
+name: Deploy to Vercel
+
+on:
+  push:
+    paths:
+      - "**"
+  pull_request:
+    paths:
+      - "**"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Set environment variables in Vercel
+        run: |
+          echo -n "${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" | npx vercel env add NEXT_PUBLIC_SUPABASE_URL production --token=${{ secrets.VERCEL_TOKEN }} || echo "NEXT_PUBLIC_SUPABASE_URL already exists"
+          echo -n "${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" | npx vercel env add NEXT_PUBLIC_SUPABASE_ANON_KEY production --token=${{ secrets.VERCEL_TOKEN }} || echo "NEXT_PUBLIC_SUPABASE_ANON_KEY already exists"
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_HERBAL_PROJECT_ID }}
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+      - name: Deploy to Vercel
+        run: npx vercel --token=${{ secrets.VERCEL_TOKEN }} --prod --yes
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_HERBAL_PROJECT_ID }}
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+      - name: Health check
+        run: |
+          echo "Waiting for deployment to be ready..."
+          sleep 30
+          curl -f -s https://herbal-visualizer.vercel.app/api/health > /dev/null || {
+            echo "Health check failed"
+            exit 1
+          }
+          echo "App is live at https://herbal-visualizer.vercel.app"
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'

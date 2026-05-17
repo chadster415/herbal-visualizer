@@ -18,7 +18,7 @@ BEGIN
     dah.primary_action_id,
     v_nervous_id
   FROM herbal.disorder_action_herbs dah
-  JOIN herbal.disorders d ON d.id = dah.disorder_id"
+  JOIN herbal.disorders d ON d.id = dah.disorder_id
   WHERE d.body_system_id = v_nervous_id
   ON CONFLICT (herb_id, primary_action_id, body_system_id) DO NOTHING;
 
