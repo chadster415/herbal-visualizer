@@ -51,9 +51,11 @@ interface DisorderViewProps {
   bodySystemId?: number;
   onHerbClick?: (herbId: number) => void;
   onActionClick?: (actionId: number) => void;
+  selectedDisorderId?: number | null;
+  onDisorderChange?: (id: number | null) => void;
 }
 
-export function DisorderView({ bodySystemId, onHerbClick, onActionClick }: DisorderViewProps) {
+export function DisorderView({ bodySystemId, onHerbClick, onActionClick, selectedDisorderId, onDisorderChange }: DisorderViewProps) {
   const [disorders, setDisorders] = useState<DisorderData[]>([]);
   const [selectedDisorder, setSelectedDisorder] = useState<DisorderData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -123,7 +125,7 @@ export function DisorderView({ bodySystemId, onHerbClick, onActionClick }: Disor
         disorder_notes: disorder.disorder_notes.sort((a: DisorderNote, b: DisorderNote) => a.sort_order - b.sort_order),
         disorder_actions_indicated: disorder.disorder_actions_indicated.sort((a: any, b: any) => a.sort_order - b.sort_order),
         disorder_action_herbs: disorder.disorder_action_herbs.sort((a: any, b: any) => a.sort_order - b.sort_order),
-        disorder_specific_remedies: disorder.disorder_specific_remedies.sort((a: any, b: any) => a.sort_order - b.sort_order),
+        disorder_specific_remedies: disorder.disorder_specific_remedies.sort((a: any, b: any) => a.herbs.common_name.localeCompare(b.herbs.common_name)),
         disorder_prescriptions: disorder.disorder_prescriptions
           .sort((a: DisorderPrescription, b: DisorderPrescription) => a.sort_order - b.sort_order)
           .map((prescription: any) => ({
@@ -133,8 +135,9 @@ export function DisorderView({ bodySystemId, onHerbClick, onActionClick }: Disor
       }));
 
       setDisorders(sortedData);
-      if (sortedData.length > 0 && !selectedDisorder) {
-        setSelectedDisorder(sortedData[0]);
+      if (selectedDisorderId != null) {
+        const match = sortedData.find((d) => d.id === selectedDisorderId) ?? null;
+        if (match) setSelectedDisorder(match);
       }
     } catch (error) {
       console.error('Error fetching disorders:', error);
@@ -197,8 +200,9 @@ export function DisorderView({ bodySystemId, onHerbClick, onActionClick }: Disor
         <select
           value={selectedDisorder?.id || ''}
           onChange={(e) => {
-            const disorder = disorders.find((d) => d.id === parseInt(e.target.value));
-            setSelectedDisorder(disorder || null);
+            const disorder = disorders.find((d) => d.id === parseInt(e.target.value)) ?? null;
+            setSelectedDisorder(disorder);
+            if (disorder) onDisorderChange?.(disorder.id);
           }}
           className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
         >

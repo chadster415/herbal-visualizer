@@ -9,21 +9,69 @@ import { EnergeticsQuizModal } from '@/components/EnergeticsQuizModal';
 
 type ViewMode = 'herb' | 'action' | 'system';
 
+interface NavEntry {
+  viewMode: ViewMode;
+  selectedHerbId: number | null;
+  selectedActionId: number | null;
+  selectedSystemId: number | null;
+  selectedDisorderId: number | null;
+}
+
 export default function Home() {
   const [viewMode, setViewMode] = useState<ViewMode>('herb');
   const [selectedHerbId, setSelectedHerbId] = useState<number | null>(null);
   const [selectedActionId, setSelectedActionId] = useState<number | null>(null);
+  const [selectedSystemId, setSelectedSystemId] = useState<number | null>(null);
+  const [selectedDisorderId, setSelectedDisorderId] = useState<number | null>(null);
+  const [history, setHistory] = useState<NavEntry[]>([]);
   const [flashcardsOpen, setFlashcardsOpen] = useState(false);
   const [energeticsQuizOpen, setEnergeticsQuizOpen] = useState(false);
 
+  const pushAndNavigate = (next: NavEntry) => {
+    setHistory((prev) => [...prev, { viewMode, selectedHerbId, selectedActionId, selectedSystemId, selectedDisorderId }]);
+    setViewMode(next.viewMode);
+    setSelectedHerbId(next.selectedHerbId);
+    setSelectedActionId(next.selectedActionId);
+    setSelectedSystemId(next.selectedSystemId);
+    setSelectedDisorderId(next.selectedDisorderId);
+  };
+
+  const goBack = () => {
+    setHistory((prev) => {
+      if (prev.length === 0) return prev;
+      const next = [...prev];
+      const entry = next.pop()!;
+      setViewMode(entry.viewMode);
+      setSelectedHerbId(entry.selectedHerbId);
+      setSelectedActionId(entry.selectedActionId);
+      setSelectedSystemId(entry.selectedSystemId);
+      setSelectedDisorderId(entry.selectedDisorderId);
+      return next;
+    });
+  };
+
+  const switchTab = (mode: ViewMode) => {
+    setHistory([]);
+    setViewMode(mode);
+    setSelectedSystemId(null);
+    setSelectedDisorderId(null);
+  };
+
   const handleHerbClick = (herbId: number) => {
-    setSelectedHerbId(herbId);
-    setViewMode('herb');
+    pushAndNavigate({ viewMode: 'herb', selectedHerbId: herbId, selectedActionId, selectedSystemId: null, selectedDisorderId: null });
   };
 
   const handleActionClick = (actionId: number) => {
-    setSelectedActionId(actionId);
-    setViewMode('action');
+    pushAndNavigate({ viewMode: 'action', selectedHerbId, selectedActionId: actionId, selectedSystemId: null, selectedDisorderId: null });
+  };
+
+  const handleActionNameClick = async (name: string) => {
+    const { data } = await import('@/lib/supabase').then(({ supabase }) =>
+      supabase.from('primary_actions').select('id').eq('name', name).single()
+    );
+    if (data) {
+      pushAndNavigate({ viewMode: 'action', selectedHerbId, selectedActionId: data.id, selectedSystemId: null, selectedDisorderId: null });
+    }
   };
 
   const handleQuizHerbSelect = async (herbName: string) => {
@@ -35,18 +83,7 @@ export default function Home() {
       .limit(1);
     const herb = data?.[0];
     if (herb) {
-      setSelectedHerbId(herb.id);
-      setViewMode('herb');
-    }
-  };
-
-  const handleActionNameClick = async (name: string) => {
-    const { data } = await import('@/lib/supabase').then(({ supabase }) =>
-      supabase.from('primary_actions').select('id').eq('name', name).single()
-    );
-    if (data) {
-      setSelectedActionId(data.id);
-      setViewMode('action');
+      pushAndNavigate({ viewMode: 'herb', selectedHerbId: herb.id, selectedActionId, selectedSystemId: null, selectedDisorderId: null });
     }
   };
 
@@ -57,9 +94,17 @@ export default function Home() {
           Herbal Medicine Visualizer
         </h1>
 
-        <div className="flex gap-4 mb-6 flex-wrap">
+        <div className="flex gap-4 mb-6 flex-wrap items-center">
+          {history.length > 0 && (
+            <button
+              onClick={goBack}
+              className="px-4 py-3 rounded-lg font-medium transition-all bg-blue-500 hover:bg-blue-600 text-white shadow-md flex items-center gap-1"
+            >
+              ← Back
+            </button>
+          )}
           <button
-            onClick={() => setViewMode('herb')}
+            onClick={() => switchTab('herb')}
             className={`px-6 py-3 rounded-lg font-medium transition-all ${
               viewMode === 'herb'
                 ? 'bg-green-600 text-white shadow-lg scale-105'
@@ -69,7 +114,7 @@ export default function Home() {
             By Herb
           </button>
           <button
-            onClick={() => setViewMode('action')}
+            onClick={() => switchTab('action')}
             className={`px-6 py-3 rounded-lg font-medium transition-all ${
               viewMode === 'action'
                 ? 'bg-green-600 text-white shadow-lg scale-105'
@@ -79,7 +124,7 @@ export default function Home() {
             By Action
           </button>
           <button
-            onClick={() => setViewMode('system')}
+            onClick={() => switchTab('system')}
             className={`px-6 py-3 rounded-lg font-medium transition-all ${
               viewMode === 'system'
                 ? 'bg-green-600 text-white shadow-lg scale-105'
@@ -106,7 +151,16 @@ export default function Home() {
       <main>
         {viewMode === 'herb' && <HerbView selectedHerbId={selectedHerbId} onHerbIdChange={setSelectedHerbId} onActionClick={handleActionClick} onActionNameClick={handleActionNameClick} />}
         {viewMode === 'action' && <ActionView selectedActionId={selectedActionId} onActionIdChange={setSelectedActionId} onHerbClick={handleHerbClick} />}
-        {viewMode === 'system' && <SystemView onHerbClick={handleHerbClick} onActionClick={handleActionClick} />}
+        {viewMode === 'system' && (
+          <SystemView
+            onHerbClick={handleHerbClick}
+            onActionClick={handleActionClick}
+            selectedSystemId={selectedSystemId}
+            onSystemChange={setSelectedSystemId}
+            selectedDisorderId={selectedDisorderId}
+            onDisorderChange={setSelectedDisorderId}
+          />
+        )}
       </main>
 
       <FlashcardModal isOpen={flashcardsOpen} onClose={() => setFlashcardsOpen(false)} />

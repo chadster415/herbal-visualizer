@@ -17,9 +17,13 @@ interface SystemData extends BodySystem {
 interface SystemViewProps {
   onHerbClick?: (herbId: number) => void;
   onActionClick?: (actionId: number) => void;
+  selectedSystemId?: number | null;
+  onSystemChange?: (id: number | null) => void;
+  selectedDisorderId?: number | null;
+  onDisorderChange?: (id: number | null) => void;
 }
 
-export function SystemView({ onHerbClick, onActionClick }: SystemViewProps) {
+export function SystemView({ onHerbClick, onActionClick, selectedSystemId, onSystemChange, selectedDisorderId, onDisorderChange }: SystemViewProps) {
   const [systems, setSystems] = useState<SystemData[]>([]);
   const [selectedSystem, setSelectedSystem] = useState<SystemData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -61,6 +65,12 @@ export function SystemView({ onHerbClick, onActionClick }: SystemViewProps) {
       }));
 
       setSystems(systemsWithCounts);
+
+      // Restore selection when navigating back
+      if (selectedSystemId != null) {
+        const system = systemsWithCounts.find((s) => s.id === selectedSystemId);
+        if (system) setSelectedSystem(system);
+      }
     } catch (error) {
       console.error('Error fetching systems:', error);
     } finally {
@@ -115,7 +125,11 @@ export function SystemView({ onHerbClick, onActionClick }: SystemViewProps) {
           {systems.map((system) => (
             <button
               key={system.id}
-              onClick={() => setSelectedSystem(system)}
+              onClick={() => {
+                setSelectedSystem(system);
+                onSystemChange?.(system.id);
+                onDisorderChange?.(null);
+              }}
               className={`w-full text-left p-3 rounded-lg transition-all ${
                 selectedSystem?.id === system.id
                   ? 'bg-green-100 border-2 border-green-500'
@@ -175,6 +189,8 @@ export function SystemView({ onHerbClick, onActionClick }: SystemViewProps) {
                   bodySystemId={selectedSystem.id}
                   onHerbClick={onHerbClick}
                   onActionClick={onActionClick}
+                  selectedDisorderId={selectedDisorderId}
+                  onDisorderChange={onDisorderChange}
                 />
               </div>
             ) : selectedSystem.herb_primary_actions.length > 0 ? (
