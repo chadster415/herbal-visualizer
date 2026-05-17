@@ -5,6 +5,7 @@ A Next.js app backed by a local Supabase instance that visualizes herbal medicin
 
 ## Tech Stack
 - **Frontend**: Next.js (app router), Tailwind CSS, TypeScript
+- **Package manager**: pnpm at `/opt/homebrew/bin/pnpm` — always use this, never `npm`
 - **Database**: Supabase (PostgreSQL), schema: `herbal`
 - **Local Supabase**: runs on `127.0.0.1:54322`, password: `postgres`
 
