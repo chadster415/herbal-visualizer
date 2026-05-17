@@ -5,6 +5,7 @@ import { HerbView } from '@/components/HerbView';
 import { ActionView } from '@/components/ActionView';
 import { SystemView } from '@/components/SystemView';
 import { FlashcardModal } from '@/components/FlashcardModal';
+import { EnergeticsQuizModal } from '@/components/EnergeticsQuizModal';
 
 type ViewMode = 'herb' | 'action' | 'system';
 
@@ -13,6 +14,7 @@ export default function Home() {
   const [selectedHerbId, setSelectedHerbId] = useState<number | null>(null);
   const [selectedActionId, setSelectedActionId] = useState<number | null>(null);
   const [flashcardsOpen, setFlashcardsOpen] = useState(false);
+  const [energeticsQuizOpen, setEnergeticsQuizOpen] = useState(false);
 
   const handleHerbClick = (herbId: number) => {
     setSelectedHerbId(herbId);
@@ -22,6 +24,20 @@ export default function Home() {
   const handleActionClick = (actionId: number) => {
     setSelectedActionId(actionId);
     setViewMode('action');
+  };
+
+  const handleQuizHerbSelect = async (herbName: string) => {
+    const { supabase } = await import('@/lib/supabase');
+    const { data } = await supabase
+      .from('herbs')
+      .select('id')
+      .ilike('common_name', herbName)
+      .limit(1);
+    const herb = data?.[0];
+    if (herb) {
+      setSelectedHerbId(herb.id);
+      setViewMode('herb');
+    }
   };
 
   const handleActionNameClick = async (name: string) => {
@@ -78,6 +94,12 @@ export default function Home() {
           >
             🌿 Flashcards
           </button>
+          <button
+            onClick={() => setEnergeticsQuizOpen(true)}
+            className="px-6 py-3 rounded-lg font-medium transition-all bg-white text-green-800 hover:bg-green-50 border border-green-300"
+          >
+            🌡️ Energetics Quiz
+          </button>
         </div>
       </header>
 
@@ -88,6 +110,7 @@ export default function Home() {
       </main>
 
       <FlashcardModal isOpen={flashcardsOpen} onClose={() => setFlashcardsOpen(false)} />
+      <EnergeticsQuizModal isOpen={energeticsQuizOpen} onClose={() => setEnergeticsQuizOpen(false)} onHerbSelect={handleQuizHerbSelect} />
     </div>
   );
 }
