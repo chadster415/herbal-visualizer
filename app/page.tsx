@@ -6,6 +6,7 @@ import { ActionView } from '@/components/ActionView';
 import { SystemView } from '@/components/SystemView';
 import { FlashcardModal } from '@/components/FlashcardModal';
 import { EnergeticsQuizModal } from '@/components/EnergeticsQuizModal';
+import { HerbFilterPanel } from '@/components/HerbFilterPanel';
 
 type ViewMode = 'herb' | 'action' | 'system';
 
@@ -26,6 +27,7 @@ export default function Home() {
   const [history, setHistory] = useState<NavEntry[]>([]);
   const [flashcardsOpen, setFlashcardsOpen] = useState(false);
   const [energeticsQuizOpen, setEnergeticsQuizOpen] = useState(false);
+  const [herbFilterOpen, setHerbFilterOpen] = useState(false);
 
   const pushAndNavigate = (next: NavEntry) => {
     setHistory((prev) => [...prev, { viewMode, selectedHerbId, selectedActionId, selectedSystemId, selectedDisorderId }]);
@@ -145,6 +147,12 @@ export default function Home() {
           >
             🌡️ Energetics Quiz
           </button>
+          <button
+            onClick={() => setHerbFilterOpen(true)}
+            className="px-6 py-3 rounded-lg font-medium transition-all bg-white text-green-800 hover:bg-green-50 border border-green-300"
+          >
+            🔍 Filter Herbs
+          </button>
         </div>
       </header>
 
@@ -165,6 +173,7 @@ export default function Home() {
 
       <FlashcardModal isOpen={flashcardsOpen} onClose={() => setFlashcardsOpen(false)} />
       <EnergeticsQuizModal isOpen={energeticsQuizOpen} onClose={() => setEnergeticsQuizOpen(false)} onHerbSelect={handleQuizHerbSelect} />
+      <HerbFilterPanel isOpen={herbFilterOpen} onClose={() => setHerbFilterOpen(false)} onHerbSelect={handleHerbClick} />
     </div>
   );
 }

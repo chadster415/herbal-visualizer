@@ -154,14 +154,29 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onActionClick, onActi
                 setSelectedHerb(herb);
                 onHerbIdChange?.(herb.id);
               }}
-              className={`w-full text-left p-3 rounded-lg transition-all ${
+              className={`w-full text-left p-3 rounded-lg border transition-all ${
                 selectedHerb?.id === herb.id
-                  ? 'bg-green-100 border-2 border-green-500'
-                  : 'bg-gray-50 hover:bg-gray-100'
+                  ? 'ring-2 ring-green-500 ring-offset-1'
+                  : ''
+              } ${
+                herb.temperature === 'warming' ? 'bg-amber-50 border-amber-200 hover:bg-amber-100' :
+                herb.temperature === 'cooling' ? 'bg-sky-50 border-sky-200 hover:bg-sky-100' :
+                'bg-gray-50 border-gray-200 hover:bg-gray-100'
               }`}
             >
-              <div className="font-semibold text-gray-900">{herb.common_name}</div>
-              <div className="text-sm italic text-gray-600">{herb.latin_name}</div>
+              <div className="flex items-start justify-between gap-1">
+                <div>
+                  <div className="font-semibold text-gray-900">{herb.common_name}</div>
+                  <div className="text-sm italic text-gray-600">{herb.latin_name}</div>
+                </div>
+                <span className="text-sm leading-none shrink-0 mt-0.5">
+                  {[
+                    herb.temperature === 'warming' ? '🔥' : herb.temperature === 'cooling' ? '❄️' : '',
+                    herb.moisture === 'moistening' ? '💧' : herb.moisture === 'drying' ? '🌵' : '',
+                    herb.tone === 'toning' ? '⚡' : herb.tone === 'relaxing' ? '🌊' : '',
+                  ].join('')}
+                </span>
+              </div>
             </button>
           ))}
         </div>

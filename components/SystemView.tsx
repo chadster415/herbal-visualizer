@@ -98,17 +98,32 @@ export function SystemView({ onHerbClick, onActionClick, selectedSystemId, onSys
     return grouped;
   };
 
-  const getStrengthColor = (strength: StrengthLevel | null) => {
-    switch (strength) {
-      case 'mild':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-300';
-      case 'strong':
-        return 'bg-orange-100 text-orange-800 border-orange-300';
-      case 'very_strong':
-        return 'bg-red-100 text-red-800 border-red-300';
-      default:
-        return 'bg-gray-100 text-gray-800 border-gray-300';
+  const getTemperatureCard = (herb: Herb) => {
+    switch (herb.temperature) {
+      case 'warming': return 'bg-amber-50 border-amber-200 hover:bg-amber-100';
+      case 'cooling': return 'bg-sky-50 border-sky-200 hover:bg-sky-100';
+      default:        return 'bg-gray-50 border-gray-200 hover:bg-gray-100';
     }
+  };
+
+  const getStrengthBadge = (strength: StrengthLevel | null) => {
+    switch (strength) {
+      case 'mild':        return 'bg-yellow-100 text-yellow-700';
+      case 'strong':      return 'bg-orange-100 text-orange-700';
+      case 'very_strong': return 'bg-red-100 text-red-700';
+      default:            return null;
+    }
+  };
+
+  const getEnergeticEmojis = (herb: Herb) => {
+    const emojis: string[] = [];
+    if (herb.temperature === 'warming') emojis.push('🔥');
+    if (herb.temperature === 'cooling') emojis.push('❄️');
+    if (herb.moisture === 'moistening') emojis.push('💧');
+    if (herb.moisture === 'drying')     emojis.push('🌵');
+    if (herb.tone === 'toning')         emojis.push('⚡');
+    if (herb.tone === 'relaxing')       emojis.push('🌊');
+    return emojis.join('');
   };
 
   if (loading) {
@@ -210,21 +225,18 @@ export function SystemView({ onHerbClick, onActionClick, selectedSystemId, onSys
                           <button
                             key={idx}
                             onClick={() => onHerbClick?.(item.herb.id)}
-                            className={`border rounded-lg p-3 hover:shadow-md hover:scale-105 transition-all cursor-pointer text-left ${getStrengthColor(
-                              item.strength
-                            )}`}
+                            className={`border rounded-lg p-3 hover:shadow-md hover:scale-105 transition-all cursor-pointer text-left ${getTemperatureCard(item.herb)}`}
                           >
-                            <div className="font-medium text-sm">
-                              {item.herb.common_name}
+                            <div className="font-medium text-sm">{item.herb.common_name}</div>
+                            <div className="text-xs italic text-gray-600">{item.herb.latin_name}</div>
+                            <div className="flex items-center justify-between mt-1.5">
+                              {item.strength && getStrengthBadge(item.strength) ? (
+                                <span className={`text-xs font-semibold px-1.5 py-0.5 rounded ${getStrengthBadge(item.strength)}`}>
+                                  {item.strength.replace('_', ' ')}
+                                </span>
+                              ) : <span />}
+                              <span className="text-sm leading-none">{getEnergeticEmojis(item.herb)}</span>
                             </div>
-                            <div className="text-xs italic text-gray-600">
-                              {item.herb.latin_name}
-                            </div>
-                            {item.strength && (
-                              <div className="text-xs mt-1 font-semibold">
-                                {item.strength.replace('_', ' ')}
-                              </div>
-                            )}
                           </button>
                         ))}
                       </div>

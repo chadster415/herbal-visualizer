@@ -146,6 +146,25 @@ export function DisorderView({ bodySystemId, onHerbClick, onActionClick, selecte
     }
   }
 
+  const getTemperatureCard = (herb: Herb) => {
+    switch (herb.temperature) {
+      case 'warming': return 'bg-amber-50 border-amber-200 hover:bg-amber-100';
+      case 'cooling': return 'bg-sky-50 border-sky-200 hover:bg-sky-100';
+      default:        return 'bg-gray-50 border-gray-200 hover:bg-gray-100';
+    }
+  };
+
+  const getEnergeticEmojis = (herb: Herb) => {
+    const emojis: string[] = [];
+    if (herb.temperature === 'warming') emojis.push('🔥');
+    if (herb.temperature === 'cooling') emojis.push('❄️');
+    if (herb.moisture === 'moistening') emojis.push('💧');
+    if (herb.moisture === 'drying')     emojis.push('🌵');
+    if (herb.tone === 'toning')         emojis.push('⚡');
+    if (herb.tone === 'relaxing')       emojis.push('🌊');
+    return emojis.join('');
+  };
+
   // Group action herbs by primary action
   const groupActionHerbs = (actionHerbs: DisorderData['disorder_action_herbs']) => {
     const grouped: Record<number, {
@@ -293,18 +312,15 @@ export function DisorderView({ bodySystemId, onHerbClick, onActionClick, selecte
                           <button
                             key={idx}
                             onClick={() => onHerbClick?.(item.herb.id)}
-                            className="inline-flex flex-col items-start bg-green-50 hover:bg-green-100 border border-green-200 rounded-lg px-3 py-2 transition-all hover:shadow-md"
+                            className={`inline-flex flex-col items-start border rounded-lg px-3 py-2 transition-all hover:shadow-md ${getTemperatureCard(item.herb)}`}
                           >
-                            <span className="font-medium text-gray-900">
-                              {item.herb.common_name}
-                            </span>
-                            <span className="text-xs italic text-gray-600">
-                              {item.herb.latin_name}
-                            </span>
+                            <div className="flex items-center justify-between w-full gap-2">
+                              <span className="font-medium text-gray-900">{item.herb.common_name}</span>
+                              <span className="text-sm leading-none shrink-0">{getEnergeticEmojis(item.herb)}</span>
+                            </div>
+                            <span className="text-xs italic text-gray-600">{item.herb.latin_name}</span>
                             {item.note && (
-                              <span className="text-xs text-gray-500 mt-1">
-                                {item.note}
-                              </span>
+                              <span className="text-xs text-gray-500 mt-1">{item.note}</span>
                             )}
                           </button>
                         ))}
@@ -326,14 +342,13 @@ export function DisorderView({ bodySystemId, onHerbClick, onActionClick, selecte
                     <button
                       key={item.id}
                       onClick={() => onHerbClick?.(item.herbs.id)}
-                      className="w-full text-left border border-green-300 bg-green-50 rounded-lg p-3 hover:shadow-md hover:scale-[1.01] transition-all"
+                      className={`w-full text-left border rounded-lg p-3 hover:shadow-md hover:scale-[1.01] transition-all ${getTemperatureCard(item.herbs)}`}
                     >
-                      <div className="font-semibold text-gray-900">
-                        {item.herbs.common_name}
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="font-semibold text-gray-900">{item.herbs.common_name}</div>
+                        <span className="text-sm leading-none shrink-0">{getEnergeticEmojis(item.herbs)}</span>
                       </div>
-                      <div className="text-sm italic text-gray-600 mb-1">
-                        {item.herbs.latin_name}
-                      </div>
+                      <div className="text-sm italic text-gray-600 mb-1">{item.herbs.latin_name}</div>
                       <p className="text-sm text-gray-700">{item.description}</p>
                     </button>
                   ))}

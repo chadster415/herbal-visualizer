@@ -1,10 +1,17 @@
 export type StrengthLevel = 'mild' | 'strong' | 'very_strong';
 
+export type TemperatureEnergetic = 'warming' | 'cooling' | 'neutral';
+export type MoistureEnergetic = 'moistening' | 'drying' | 'neutral';
+export type ToneEnergetic = 'toning' | 'relaxing' | 'neutral';
+
 export interface Herb {
   id: number;
   latin_name: string;
   common_name: string;
   created_at: string;
+  temperature?: TemperatureEnergetic;
+  moisture?: MoistureEnergetic;
+  tone?: ToneEnergetic;
 }
 
 export interface PrimaryAction {
