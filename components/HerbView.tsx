@@ -186,9 +186,21 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onActionClick, onActi
       <div className="lg:col-span-2 bg-white rounded-lg shadow-lg p-6">
         {selectedHerb ? (
           <div>
-            <h2 className="text-3xl font-bold text-green-800 mb-2">
-              {selectedHerb.common_name}
-            </h2>
+            <div className="flex items-start justify-between mb-2">
+              <h2 className="text-3xl font-bold text-green-800">
+                {selectedHerb.common_name}
+              </h2>
+              {selectedHerb.monograph_url && (
+                <a
+                  href={selectedHerb.monograph_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="ml-4 shrink-0 px-4 py-2 bg-green-700 text-white text-sm font-bold rounded hover:bg-green-800 transition-colors"
+                >
+                  MONOGRAPH
+                </a>
+              )}
+            </div>
             <p className="text-xl italic text-gray-600 mb-6">
               {selectedHerb.latin_name}
             </p>

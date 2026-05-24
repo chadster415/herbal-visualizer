@@ -12,6 +12,7 @@ export interface Herb {
   temperature?: TemperatureEnergetic;
   moisture?: MoistureEnergetic;
   tone?: ToneEnergetic;
+  monograph_url?: string | null;
 }
 
 export interface PrimaryAction {
