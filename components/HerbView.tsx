@@ -33,9 +33,10 @@ interface HerbViewProps {
   onHerbIdChange?: (herbId: number | null) => void;
   onActionClick?: (actionId: number) => void;
   onActionNameClick?: (name: string) => void;
+  onDisorderClick?: (disorderId: number, systemId: number) => void;
 }
 
-export function HerbView({ selectedHerbId, onHerbIdChange, onActionClick, onActionNameClick }: HerbViewProps) {
+export function HerbView({ selectedHerbId, onHerbIdChange, onActionClick, onActionNameClick, onDisorderClick }: HerbViewProps) {
   const [herbs, setHerbs] = useState<HerbData[]>([]);
   const [selectedHerb, setSelectedHerb] = useState<HerbData | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -320,12 +321,17 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onActionClick, onActi
                         key={item.disorder.id}
                         className="border border-gray-200 rounded-lg p-4 bg-gray-50"
                       >
-                        <div className="font-semibold text-lg text-gray-900 mb-1">
-                          {item.disorder.name}
-                        </div>
-                        <div className="text-sm text-gray-600 mb-3">
-                          {item.disorder.body_systems.name}
-                        </div>
+                        <button
+                          onClick={() => onDisorderClick?.(item.disorder.id, item.disorder.body_systems.id)}
+                          className="text-left w-full mb-3 group"
+                        >
+                          <div className="font-semibold text-lg text-blue-700 group-hover:text-blue-900 group-hover:underline transition-colors">
+                            {item.disorder.name}
+                          </div>
+                          <div className="text-sm text-gray-600">
+                            {item.disorder.body_systems.name}
+                          </div>
+                        </button>
 
                         {item.specificRemedy && (
                           <div className="mb-3 p-2 bg-green-50 border border-green-200 rounded">

@@ -67,6 +67,10 @@ export default function Home() {
     pushAndNavigate({ viewMode: 'action', selectedHerbId, selectedActionId: actionId, selectedSystemId: null, selectedDisorderId: null });
   };
 
+  const handleDisorderClick = (disorderId: number, systemId: number) => {
+    pushAndNavigate({ viewMode: 'system', selectedHerbId: null, selectedActionId: null, selectedSystemId: systemId, selectedDisorderId: disorderId });
+  };
+
   const handleActionNameClick = async (name: string) => {
     const { data } = await import('@/lib/supabase').then(({ supabase }) =>
       supabase.from('primary_actions').select('id').eq('name', name).single()
@@ -157,7 +161,7 @@ export default function Home() {
       </header>
 
       <main>
-        {viewMode === 'herb' && <HerbView selectedHerbId={selectedHerbId} onHerbIdChange={setSelectedHerbId} onActionClick={handleActionClick} onActionNameClick={handleActionNameClick} />}
+        {viewMode === 'herb' && <HerbView selectedHerbId={selectedHerbId} onHerbIdChange={setSelectedHerbId} onActionClick={handleActionClick} onActionNameClick={handleActionNameClick} onDisorderClick={handleDisorderClick} />}
         {viewMode === 'action' && <ActionView selectedActionId={selectedActionId} onActionIdChange={setSelectedActionId} onHerbClick={handleHerbClick} />}
         {viewMode === 'system' && (
           <SystemView

@@ -164,7 +164,7 @@ export function SystemView({ onHerbClick, onActionClick, selectedSystemId, onSys
       </div>
 
       {/* System Details */}
-      <div className="lg:col-span-2 bg-white rounded-lg shadow-lg p-6 max-h-[80vh] overflow-y-auto">
+      <div className="lg:col-span-2 bg-white rounded-lg shadow-lg p-6">
         {selectedSystem ? (
           <div>
             <div className="flex items-center justify-between mb-6">
