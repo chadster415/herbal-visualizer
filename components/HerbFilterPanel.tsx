@@ -24,6 +24,7 @@ export interface HerbFilterPanelProps {
   isOpen: boolean;
   onClose: () => void;
   onHerbSelect: (herbId: number) => void;
+  onSystemSelect?: (systemId: number) => void;
 }
 
 // ─── Static filter option definitions ────────────────────────────────────────
@@ -70,7 +71,7 @@ function herbEmojis(h: HerbRow) {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function HerbFilterPanel({ isOpen, onClose, onHerbSelect }: HerbFilterPanelProps) {
+export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect }: HerbFilterPanelProps) {
   const [herbs, setHerbs] = useState<HerbRow[]>([]);
   const [bodySystems, setBodySystems] = useState<BodySystem[]>([]);
   const [actions, setActions] = useState<Action[]>([]);
@@ -138,6 +139,11 @@ export function HerbFilterPanel({ isOpen, onClose, onHerbSelect }: HerbFilterPan
       return true;
     });
   }, [herbs, tempFilter, moistureFilter, toneFilter, systemFilter, actionFilter]);
+
+  const systemMap = useMemo(
+    () => new Map(bodySystems.map((s) => [s.id, s.name])),
+    [bodySystems]
+  );
 
   function clearAll() {
     setTempFilter(new Set());
@@ -314,19 +320,52 @@ export function HerbFilterPanel({ isOpen, onClose, onHerbSelect }: HerbFilterPan
               )}
 
               <div className="p-3 space-y-1.5">
-                {filteredHerbs.map((herb) => (
-                  <button
-                    key={herb.id}
-                    onClick={() => onHerbSelect(herb.id)}
-                    className={`w-full text-left border rounded-lg px-4 py-2.5 transition-all hover:shadow-md hover:scale-[1.005] ${cardBg(herb.temperature)}`}
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="font-medium text-gray-900 text-sm">{herb.common_name}</span>
-                      <span className="text-base leading-none shrink-0">{herbEmojis(herb)}</span>
-                    </div>
-                    <div className="text-xs italic text-gray-500 mt-0.5">{herb.latin_name}</div>
-                  </button>
-                ))}
+                {filteredHerbs.map((herb) => {
+                  const sortedSystemIds = [...herb.system_ids].sort((a, b) => {
+                    const aSelected = systemFilter.has(a) ? 0 : 1;
+                    const bSelected = systemFilter.has(b) ? 0 : 1;
+                    if (aSelected !== bSelected) return aSelected - bSelected;
+                    return (systemMap.get(a) ?? '').localeCompare(systemMap.get(b) ?? '');
+                  });
+                  return (
+                    <button
+                      key={herb.id}
+                      onClick={() => onHerbSelect(herb.id)}
+                      className={`w-full text-left border rounded-lg px-4 py-2.5 transition-all hover:shadow-md hover:scale-[1.005] ${cardBg(herb.temperature)}`}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-medium text-gray-900 text-sm">{herb.common_name}</span>
+                        <span className="text-base leading-none shrink-0">{herbEmojis(herb)}</span>
+                      </div>
+                      <div className="text-xs italic text-gray-500 mt-0.5">{herb.latin_name}</div>
+                      {sortedSystemIds.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-1.5">
+                          {sortedSystemIds.map((sysId) => {
+                            const name = systemMap.get(sysId);
+                            if (!name) return null;
+                            const isActive = systemFilter.has(sysId);
+                            return (
+                              <span
+                                key={sysId}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onSystemSelect?.(sysId);
+                                }}
+                                className={`text-xs px-2 py-0.5 rounded-full border transition-colors cursor-pointer ${
+                                  isActive
+                                    ? 'bg-green-200 border-green-400 text-green-900 hover:bg-green-300'
+                                    : 'bg-green-50 border-green-200 text-green-700 hover:bg-green-100'
+                                }`}
+                              >
+                                {name}
+                              </span>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
               </div>
             </>
           )}

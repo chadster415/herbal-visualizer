@@ -177,7 +177,15 @@ export default function Home() {
 
       <FlashcardModal isOpen={flashcardsOpen} onClose={() => setFlashcardsOpen(false)} />
       <EnergeticsQuizModal isOpen={energeticsQuizOpen} onClose={() => setEnergeticsQuizOpen(false)} onHerbSelect={handleQuizHerbSelect} />
-      <HerbFilterPanel isOpen={herbFilterOpen} onClose={() => setHerbFilterOpen(false)} onHerbSelect={handleHerbClick} />
+      <HerbFilterPanel
+        isOpen={herbFilterOpen}
+        onClose={() => setHerbFilterOpen(false)}
+        onHerbSelect={handleHerbClick}
+        onSystemSelect={(systemId) => {
+          setHerbFilterOpen(false);
+          pushAndNavigate({ viewMode: 'system', selectedHerbId: null, selectedActionId: null, selectedSystemId: systemId, selectedDisorderId: null });
+        }}
+      />
     </div>
   );
 }
