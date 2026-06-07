@@ -131,7 +131,7 @@ export function SystemView({ onHerbClick, onActionClick, selectedSystemId, onSys
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
       {/* System List */}
       <div className="lg:col-span-1 bg-white rounded-lg shadow-lg p-6">
         <h3 className="text-lg font-semibold text-gray-800 mb-4">Body Systems</h3>

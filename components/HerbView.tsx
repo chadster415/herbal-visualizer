@@ -42,6 +42,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onActionClick, onActi
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const herbRefs = useRef<Map<number, HTMLButtonElement>>(new Map());
+  const detailPanelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetchHerbs();
@@ -129,16 +130,27 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onActionClick, onActi
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
       {/* Herb List */}
       <div className="lg:col-span-1 bg-white rounded-lg shadow-lg p-6">
-        <input
-          type="text"
-          placeholder="Search herbs..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg mb-4 focus:ring-2 focus:ring-green-500 focus:border-transparent"
-        />
+        <div className="relative mb-4">
+          <input
+            type="text"
+            placeholder="Search herbs..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+          />
+          {searchTerm && (
+            <button
+              onClick={() => setSearchTerm('')}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 px-1"
+              aria-label="Clear search"
+            >
+              ×
+            </button>
+          )}
+        </div>
 
         <div className="space-y-2 max-h-[70vh] overflow-y-auto">
           {filteredHerbs.map((herb) => (
@@ -154,6 +166,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onActionClick, onActi
               onClick={() => {
                 setSelectedHerb(herb);
                 onHerbIdChange?.(herb.id);
+                detailPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
               }}
               className={`w-full text-left p-3 rounded-lg border transition-all ${
                 selectedHerb?.id === herb.id
@@ -184,7 +197,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onActionClick, onActi
       </div>
 
       {/* Herb Details */}
-      <div className="lg:col-span-2 bg-white rounded-lg shadow-lg p-6">
+      <div ref={detailPanelRef} className="lg:col-span-2 bg-white rounded-lg shadow-lg p-6">
         {selectedHerb ? (
           <div>
             <div className="flex items-start justify-between mb-2">

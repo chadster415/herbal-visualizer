@@ -111,49 +111,49 @@ export default function Home() {
           )}
           <button
             onClick={() => switchTab('herb')}
-            className={`px-6 py-3 rounded-lg font-medium transition-all ${
+            className={`px-6 py-3 rounded-lg font-medium transition-all border border-green-300 ${
               viewMode === 'herb'
                 ? 'bg-green-600 text-white shadow-lg scale-105'
-                : 'bg-white text-green-800 hover:bg-green-50'
+                : 'bg-white text-green-800 hover:bg-green-100'
             }`}
           >
             By Herb
           </button>
           <button
             onClick={() => switchTab('action')}
-            className={`px-6 py-3 rounded-lg font-medium transition-all ${
+            className={`px-6 py-3 rounded-lg font-medium transition-all border border-green-300 ${
               viewMode === 'action'
                 ? 'bg-green-600 text-white shadow-lg scale-105'
-                : 'bg-white text-green-800 hover:bg-green-50'
+                : 'bg-white text-green-800 hover:bg-green-100'
             }`}
           >
             By Action
           </button>
           <button
             onClick={() => switchTab('system')}
-            className={`px-6 py-3 rounded-lg font-medium transition-all ${
+            className={`px-6 py-3 rounded-lg font-medium transition-all border border-green-300 ${
               viewMode === 'system'
                 ? 'bg-green-600 text-white shadow-lg scale-105'
-                : 'bg-white text-green-800 hover:bg-green-50'
+                : 'bg-white text-green-800 hover:bg-green-100'
             }`}
           >
             By Body System
           </button>
           <button
             onClick={() => setFlashcardsOpen(true)}
-            className="px-6 py-3 rounded-lg font-medium transition-all bg-white text-green-800 hover:bg-green-50 border border-green-300"
+            className="px-6 py-3 rounded-lg font-medium transition-all bg-white text-green-800 hover:bg-green-100 border border-green-300"
           >
             🌿 Flashcards
           </button>
           <button
             onClick={() => setEnergeticsQuizOpen(true)}
-            className="px-6 py-3 rounded-lg font-medium transition-all bg-white text-green-800 hover:bg-green-50 border border-green-300"
+            className="px-6 py-3 rounded-lg font-medium transition-all bg-white text-green-800 hover:bg-green-100 border border-green-300"
           >
             🌡️ Energetics Quiz
           </button>
           <button
             onClick={() => setHerbFilterOpen(true)}
-            className="px-6 py-3 rounded-lg font-medium transition-all bg-white text-green-800 hover:bg-green-50 border border-green-300"
+            className="px-6 py-3 rounded-lg font-medium transition-all bg-white text-green-800 hover:bg-green-100 border border-green-300"
           >
             🔍 Filter Herbs
           </button>
