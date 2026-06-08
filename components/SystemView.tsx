@@ -5,6 +5,12 @@ import { supabase } from '@/lib/supabase';
 import type { BodySystem, Herb, PrimaryAction, StrengthLevel } from '@/types/database';
 import { DisorderView } from './DisorderView';
 
+interface SystemNote {
+  id: number;
+  note_text: string;
+  sort_order: number;
+}
+
 interface SystemData extends BodySystem {
   herb_primary_actions: Array<{
     herbs: Herb;
@@ -12,6 +18,7 @@ interface SystemData extends BodySystem {
     relative_strength: StrengthLevel | null;
   }>;
   disorder_count?: number;
+  system_notes?: SystemNote[];
 }
 
 interface SystemViewProps {
@@ -35,28 +42,26 @@ export function SystemView({ onHerbClick, onActionClick, selectedSystemId, onSys
 
   async function fetchSystems() {
     try {
-      const { data, error } = await supabase
-        .from('body_systems')
-        .select(`
-          *,
-          herb_primary_actions (
-            herbs (*),
-            primary_actions (*),
-            relative_strength
-          )
-        `)
-        .order('name');
+      const [{ data, error }, { data: disorderCounts }, { data: notesData }] = await Promise.all([
+        supabase
+          .from('body_systems')
+          .select(`*, herb_primary_actions (herbs (*), primary_actions (*), relative_strength)`)
+          .order('name'),
+        supabase.from('disorders').select('body_system_id'),
+        supabase.from('body_system_notes').select('body_system_id, id, note_text, sort_order').order('sort_order'),
+      ]);
 
       if (error) throw error;
-
-      // Get disorder counts for each system
-      const { data: disorderCounts } = await supabase
-        .from('disorders')
-        .select('body_system_id');
 
       const countMap = new Map<number, number>();
       disorderCounts?.forEach((d) => {
         countMap.set(d.body_system_id, (countMap.get(d.body_system_id) || 0) + 1);
+      });
+
+      const notesMap = new Map<number, SystemNote[]>();
+      notesData?.forEach((n) => {
+        if (!notesMap.has(n.body_system_id)) notesMap.set(n.body_system_id, []);
+        notesMap.get(n.body_system_id)!.push({ id: n.id, note_text: n.note_text, sort_order: n.sort_order });
       });
 
       const systemsWithCounts = (data || [])
@@ -64,6 +69,7 @@ export function SystemView({ onHerbClick, onActionClick, selectedSystemId, onSys
         .map((system) => ({
           ...system,
           disorder_count: countMap.get(system.id) || 0,
+          system_notes: notesMap.get(system.id) ?? [],
         }));
 
       setSystems(systemsWithCounts);
@@ -210,50 +216,49 @@ export function SystemView({ onHerbClick, onActionClick, selectedSystemId, onSys
                   onDisorderChange={onDisorderChange}
                 />
               </div>
-            ) : selectedSystem.herb_primary_actions.length > 0 ? (
+            ) : (
               <div className="space-y-6">
-                {Array.from(groupByAction(selectedSystem))
-                  .sort(([a], [b]) => a.localeCompare(b))
-                  .map(([actionName, herbs]) => (
-                    <div
-                      key={actionName}
-                      className="border-l-4 border-blue-500 pl-4 pb-4"
-                    >
-                      <h3 className="text-xl font-semibold text-gray-800 mb-3">
-                        {actionName}
-                      </h3>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                        {herbs.map((item, idx) => (
-                          <button
-                            key={idx}
-                            onClick={() => onHerbClick?.(item.herb.id)}
-                            className={`border rounded-lg p-3 hover:shadow-md hover:scale-105 transition-all cursor-pointer text-left ${getTemperatureCard(item.herb)}`}
-                          >
-                            <div className="font-medium text-sm">{item.herb.common_name}</div>
-                            <div className="text-xs italic text-gray-600">{item.herb.latin_name}</div>
-                            <div className="flex items-center justify-between mt-1.5">
-                              {item.strength && getStrengthBadge(item.strength) ? (
-                                <span className={`text-xs font-semibold px-1.5 py-0.5 rounded ${getStrengthBadge(item.strength)}`}>
-                                  {item.strength.replace('_', ' ')}
-                                </span>
-                              ) : <span />}
-                              <span className="text-sm leading-none">{getEnergeticEmojis(item.herb)}</span>
-                            </div>
-                          </button>
-                        ))}
+                {(selectedSystem.system_notes?.length ?? 0) > 0 && (
+                  <div className="bg-green-50 border border-green-200 border-l-4 border-l-green-600 rounded-lg p-4">
+                    <ul className="list-disc list-inside space-y-2">
+                      {selectedSystem.system_notes!.map((note) => (
+                        <li key={note.id} className="text-gray-700">{note.note_text}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {selectedSystem.herb_primary_actions.length > 0 ? (
+                  Array.from(groupByAction(selectedSystem))
+                    .sort(([a], [b]) => a.localeCompare(b))
+                    .map(([actionName, herbs]) => (
+                      <div key={actionName} className="border-l-4 border-blue-500 pl-4 pb-4">
+                        <h3 className="text-xl font-semibold text-gray-800 mb-3">{actionName}</h3>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                          {herbs.map((item, idx) => (
+                            <button
+                              key={idx}
+                              onClick={() => onHerbClick?.(item.herb.id)}
+                              className={`border rounded-lg p-3 hover:shadow-md hover:scale-105 transition-all cursor-pointer text-left ${getTemperatureCard(item.herb)}`}
+                            >
+                              <div className="font-medium text-sm">{item.herb.common_name}</div>
+                              <div className="text-xs italic text-gray-600">{item.herb.latin_name}</div>
+                              <div className="flex items-center justify-between mt-1.5">
+                                {item.strength && getStrengthBadge(item.strength) ? (
+                                  <span className={`text-xs font-semibold px-1.5 py-0.5 rounded ${getStrengthBadge(item.strength)}`}>
+                                    {item.strength.replace('_', ' ')}
+                                  </span>
+                                ) : <span />}
+                                <span className="text-sm leading-none">{getEnergeticEmojis(item.herb)}</span>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  )
+                    ))
+                ) : (
+                  <p className="text-gray-500 italic">No herbs recorded for this body system.</p>
                 )}
               </div>
-            ) : viewMode === 'disorders' ? (
-              <p className="text-gray-500 italic">
-                No disorders recorded for this body system.
-              </p>
-            ) : (
-              <p className="text-gray-500 italic">
-                No herbs recorded for this body system.
-              </p>
             )}
           </div>
         ) : (
