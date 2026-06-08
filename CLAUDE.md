@@ -15,12 +15,13 @@ A Next.js app backed by a local Supabase instance that visualizes herbal medicin
 
 | Table | Purpose |
 |---|---|
-| `herbs` | Medicinal herbs — `latin_name` (UNIQUE), `common_name` |
+| `herbs` | Medicinal herbs — `latin_name` (UNIQUE), `common_name`, energetics cols (`temperature`, `moisture`, `tone`), `monograph_url` |
 | `primary_actions` | Herbal actions — `name` (UNIQUE), `description` |
 | `secondary_actions` | Secondary action tags — `name` (UNIQUE) |
 | `body_systems` | Body systems — `name` (UNIQUE) |
 | `herb_primary_actions` | Herb ↔ action ↔ body system linkage — UNIQUE on `(herb_id, primary_action_id, body_system_id)` |
-| `herb_secondary_actions` | Herb ↔ secondary action — UNIQUE on `(herb_id, secondary_action_id)` |
+| `herb_secondary_actions` | Herb ↔ secondary action ↔ body system — UNIQUE on `(herb_id, secondary_action_id, body_system_id)`; use `body_system_id` = 'All' for global |
+| `aging_herbs` | Flat list of elder-recommended herb IDs — used to show elder badge in frontend |
 
 ### Disorder system tables
 
@@ -35,8 +36,15 @@ A Next.js app backed by a local Supabase instance that visualizes herbal medicin
 | `prescription_herbs` | Individual herbs in a prescription with `parts` (e.g., "1 part") and optional `note` |
 | `prescription_herb_actions` | Which actions each herb fills in a prescription — `(prescription_herb_id, primary_action_id)` UNIQUE |
 
-### Body systems currently in DB
-GI, Immune, Lower Respiratory, Upper Respiratory (and legacy: Cardiovascular, Digestive, Respiratory, Urinary, Reproductive, Musculoskeletal, Nervous, Skin)
+### Enum types
+- `herbal.strength_level` — `'mild' | 'moderate' | 'strong' | 'very_strong'`
+- `herbal.temperature_energetic` — `'warming' | 'cooling' | 'neutral'`
+- `herbal.moisture_energetic` — `'moistening' | 'drying' | 'neutral'`
+- `herbal.tone_energetic` — `'toning' | 'relaxing' | 'neutral'`
+
+### Body systems currently populated
+GI, Immune, Lower Respiratory, Upper Respiratory, Nervous, Cardiovascular, Reproductive - Female, Reproductive - Male, Aging
+(Also present but legacy/sparse: All (sentinel for global secondary actions), Digestive, Respiratory, Urinary, Musculoskeletal, Skin)
 
 ## Helper Functions (defined in migration 027, available throughout)
 
@@ -49,7 +57,7 @@ herbal.ensure_action(p_action_name TEXT) RETURNS INTEGER
 ```
 
 ## Migration Conventions
-- Files live in `supabase/migrations/` and are numbered sequentially (currently up to 036)
+- Files live in `supabase/migrations/` and are numbered sequentially (currently up to 057)
 - Always set `SET search_path TO herbal, public;` at the top
 - Use `ON CONFLICT ... DO NOTHING` everywhere — migrations must be re-runnable
 - Wrap each logical unit in its own `DO $$ ... END $$;` block

@@ -1,235 +1,285 @@
 # Project Summary: Herbal Medicine Visualizer
 
-## ✅ What's Been Created
+## What This Is
 
-A complete Next.js application that visualizes multi-dimensional herbal medicine data using a dedicated PostgreSQL schema in your existing Supabase instance.
+A Next.js app backed by a local Supabase instance that visualizes herbal medicine data from BHC Apprenticeship class materials. Data is organized by body system → disorders → herbs → actions. Protected by a Cloudflare Turnstile gateway.
 
-### Files Created
+**Live at:** `http://localhost:3000` (run `pnpm dev`)
 
-```
-herbal-visualizer/
-├── 📄 Documentation
-│   ├── README.md              - Full project documentation
-│   ├── QUICK_START.md         - Get running in 3 steps
-│   ├── MIGRATION_GUIDE.md     - Detailed migration instructions
-│   ├── OVERVIEW.md            - Architecture & design decisions
-│   └── PROJECT_SUMMARY.md     - This file
-│
-├── 🗄️ Database
-│   └── supabase/migrations/
-│       ├── 001_herbal_schema.sql     - Schema definition (tables, indexes)
-│       ├── 002_seed_data.sql         - 562 herbs + 21 actions
-│       └── complete_setup.sql        - ⭐ ALL-IN-ONE (run this!)
-│
-├── ⚛️ Application
-│   ├── app/
-│   │   ├── page.tsx           - Main page with 3 view modes
-│   │   ├── layout.tsx         - Root layout
-│   │   └── globals.css        - Tailwind styles
-│   │
-│   ├── components/
-│   │   ├── HerbView.tsx       - By herb visualization
-│   │   ├── ActionView.tsx     - By action visualization
-│   │   └── SystemView.tsx     - By body system visualization
-│   │
-│   ├── lib/
-│   │   └── supabase.ts        - Database client (uses herbal schema)
-│   │
-│   └── types/
-│       └── database.ts        - TypeScript types
-│
-├── 🔧 Utilities
-│   ├── scripts/
-│   │   └── parse-data.ts      - Regenerate seed data from txt file
-│   │
-│   └── Config Files
-│       ├── package.json
-│       ├── tsconfig.json
-│       ├── tailwind.config.ts
-│       └── .env.local (you create this)
-```
+---
 
-## 🎯 Key Features Delivered
-
-### 1. Isolated Schema
-- Uses `herbal` schema namespace
-- Won't conflict with other Supabase projects
-- Easy to drop/recreate: `DROP SCHEMA herbal CASCADE;`
-
-### 2. Three Visualization Modes
-- **By Herb**: Search 562 herbs, view their actions & systems
-- **By Action**: Browse 21 actions (Alteratives, Adaptogens, etc.)
-- **By Body System**: Explore 8 systems (Cardiovascular, Respiratory, etc.)
-
-### 3. Data Model
-```
-herbs (562 entries)
-  ├── primary_actions (21 categories)
-  │     └── body_systems (8 systems)
-  │           └── relative_strength (mild/strong/very_strong)
-  └── secondary_actions (extensible)
-```
-
-### 4. Complete Type Safety
-- Full TypeScript coverage
-- Type-safe database queries
-- Auto-complete in IDE
-
-## 📊 Database Statistics
-
-| Entity | Count | Status |
-|--------|-------|--------|
-| Herbs | 562 | ✅ Loaded |
-| Primary Actions | 21 | ✅ Loaded |
-| Body Systems | 8 | ✅ Loaded |
-| Tables | 6 | ✅ Created |
-| Indexes | 7 | ✅ Created |
-
-## 🚀 How to Use (for existing Supabase)
-
-### Option 1: Quick Setup (Recommended)
-1. Open Supabase SQL Editor
-2. Paste `supabase/migrations/complete_setup.sql`
-3. Click Run
-4. Update `.env.local` with your credentials
-5. Run `pnpm install && pnpm dev`
-
-### Option 2: Step-by-step
-1. Run `001_herbal_schema.sql` (creates tables)
-2. Run `002_seed_data.sql` (loads data)
-3. Update `.env.local`
-4. Run `pnpm install && pnpm dev`
-
-## 🎨 Visual Design
-
-- **Color Scheme**: Herbal green theme
-- **Strength Indicators**:
-  - 🟡 Mild = Yellow
-  - 🟠 Strong = Orange
-  - 🔴 Very Strong = Red
-- **Layout**: Responsive grid (works on mobile & desktop)
-- **Search**: Real-time filtering on all views
-
-## 🔄 Data Flow
-
-```
-Secondary Actions.txt
-        ↓
-    parse-data.ts
-        ↓
-  002_seed_data.sql
-        ↓
-   herbal schema
-        ↓
-    Supabase
-        ↓
-   React Components
-        ↓
-      Browser
-```
-
-## 🛠 Tech Stack
+## Tech Stack
 
 | Layer | Technology |
 |-------|-----------|
-| Frontend | Next.js 15 + React 19 |
+| Frontend | Next.js 15 + React 19, App Router |
 | Styling | Tailwind CSS |
 | Language | TypeScript |
-| Database | PostgreSQL (via Supabase) |
-| ORM | Supabase JS Client |
-| Package Manager | pnpm |
+| Database | PostgreSQL via Supabase (`herbal` schema) |
+| DB Client | Supabase JS |
+| Package Manager | pnpm (`/opt/homebrew/bin/pnpm`) |
+| Auth | Cloudflare Turnstile (gateway page) |
 
-## 📝 Configuration Required
+---
 
-Only one file needs your input:
+## File Structure
 
-**.env.local** (create this file)
+```
+herbal-visualizer/
+├── app/
+│   ├── page.tsx                    — Main app shell, tab switching, back-nav history
+│   ├── layout.tsx
+│   ├── globals.css
+│   ├── gateway/page.tsx            — Turnstile verification gate
+│   └── api/
+│       ├── verify-turnstile/       — Validates Turnstile token, sets _hv_verified cookie
+│       ├── disorder-images/        — Serves disorder-related images
+│       └── health/                 — Health check endpoint
+│
+├── components/
+│   ├── HerbView.tsx                — Browse/search herbs; detail card with energetics, monograph link, elder badge
+│   ├── ActionView.tsx              — Browse by primary action; shows herbs per action per system
+│   ├── SystemView.tsx              — Browse body systems → disorders → herbs
+│   ├── DisorderView.tsx            — Disorder detail: notes, actions indicated, specific remedies, prescriptions
+│   ├── FlashcardModal.tsx          — Herb flashcard study mode
+│   ├── EnergeticsQuizModal.tsx     — Quiz on herb energetics (temperature/moisture/tone)
+│   ├── HerbFilterPanel.tsx         — Multi-filter panel (system, action, energetics, elder)
+│   └── TextPageLinks.tsx           — Links to BHC class text pages
+│
+├── lib/supabase.ts                 — Supabase client (uses herbal schema)
+├── middleware.ts                   — Redirects to /gateway if _hv_verified cookie missing
+├── types/database.ts               — TypeScript types
+└── supabase/migrations/            — 057 migrations (numbered, run manually in SQL Editor)
+```
+
+---
+
+## View Modes (tabs in main app)
+
+| Tab | Component | What it shows |
+|-----|-----------|---------------|
+| Herb | `HerbView` | Search herbs by name; detail card with actions, systems, energetics, monograph URL, elder badge |
+| Action | `ActionView` | Browse primary actions; herbs grouped under each action by system |
+| System | `SystemView` + `DisorderView` | Body systems → disorders → herbs grouped by action; disorder detail with prescriptions |
+
+Additional modals: **Flashcards** (herb study), **Energetics Quiz**, **Filter Herbs** panel.
+
+---
+
+## Database Schema (`herbal` schema)
+
+### Enum Types
+
+```sql
+herbal.strength_level       — 'mild' | 'moderate' | 'strong' | 'very_strong'
+herbal.temperature_energetic — 'warming' | 'cooling' | 'neutral'
+herbal.moisture_energetic    — 'moistening' | 'drying' | 'neutral'
+herbal.tone_energetic        — 'toning' | 'relaxing' | 'neutral'
+```
+
+### Core Herb Tables
+
+```sql
+herbal.herbs
+  id              SERIAL PK
+  latin_name      TEXT UNIQUE NOT NULL
+  common_name     TEXT NOT NULL
+  temperature     temperature_energetic NOT NULL DEFAULT 'neutral'
+  moisture        moisture_energetic    NOT NULL DEFAULT 'neutral'
+  tone            tone_energetic        NOT NULL DEFAULT 'neutral'
+  monograph_url   TEXT                  -- link to BHC Google Doc monograph
+  created_at      TIMESTAMPTZ
+
+herbal.primary_actions
+  id          SERIAL PK
+  name        TEXT UNIQUE NOT NULL
+  description TEXT
+
+herbal.secondary_actions
+  id    SERIAL PK
+  name  TEXT UNIQUE NOT NULL
+
+herbal.body_systems
+  id    SERIAL PK
+  name  TEXT UNIQUE NOT NULL
+  -- Values: GI, Immune, Lower Respiratory, Upper Respiratory, Nervous,
+  --         Cardiovascular, Reproductive - Female, Reproductive - Male,
+  --         Aging, All (sentinel for global secondary actions),
+  --         and legacy: Digestive, Respiratory, Urinary, Musculoskeletal, Skin
+
+herbal.herb_primary_actions
+  id                SERIAL PK
+  herb_id           → herbs
+  primary_action_id → primary_actions
+  body_system_id    → body_systems (nullable)
+  body_system_note  TEXT
+  relative_strength strength_level
+  UNIQUE (herb_id, primary_action_id, body_system_id)
+
+herbal.herb_secondary_actions
+  id                  SERIAL PK
+  herb_id             → herbs
+  secondary_action_id → secondary_actions
+  body_system_id      → body_systems NOT NULL (use 'All' for global)
+  UNIQUE (herb_id, secondary_action_id, body_system_id)
+```
+
+### Disorder System Tables
+
+```sql
+herbal.disorders
+  id             SERIAL PK
+  name           TEXT NOT NULL
+  body_system_id → body_systems
+  sort_order     INTEGER
+  UNIQUE (name, body_system_id)
+
+herbal.disorder_notes
+  id          SERIAL PK
+  disorder_id → disorders
+  note_text   TEXT
+  sort_order  INTEGER
+
+herbal.disorder_actions_indicated
+  id                SERIAL PK
+  disorder_id       → disorders
+  primary_action_id → primary_actions
+  rationale         TEXT
+  UNIQUE (disorder_id, primary_action_id)
+
+herbal.disorder_action_herbs
+  id                SERIAL PK
+  disorder_id       → disorders
+  herb_id           → herbs
+  primary_action_id → primary_actions
+  UNIQUE (disorder_id, herb_id, primary_action_id)
+
+herbal.disorder_specific_remedies
+  id          SERIAL PK
+  disorder_id → disorders
+  herb_id     → herbs
+  UNIQUE (disorder_id, herb_id)
+
+herbal.disorder_prescriptions
+  id          SERIAL PK
+  disorder_id → disorders
+  title       TEXT
+  dosage      TEXT
+  sort_order  INTEGER
+
+herbal.prescription_herbs
+  id              SERIAL PK
+  prescription_id → disorder_prescriptions
+  herb_id         → herbs
+  parts           TEXT   -- e.g. "1 part", "2 parts"
+  note            TEXT
+
+herbal.prescription_herb_actions
+  id                   SERIAL PK
+  prescription_herb_id → prescription_herbs
+  primary_action_id    → primary_actions
+  UNIQUE (prescription_herb_id, primary_action_id)
+```
+
+### Special Tables
+
+```sql
+herbal.aging_herbs
+  herb_id  INTEGER PK → herbs
+  -- Flat list of elder-recommended herbs.
+  -- Frontend uses this to show the elder badge on Tonic herb cards.
+```
+
+### Helper Functions
+
+```sql
+-- Get or create an herb by latin name; returns herb_id
+herbal.ensure_herb(p_latin_name TEXT, p_common_name TEXT) RETURNS INTEGER
+
+-- Get or create a primary action by name; returns primary_action_id
+herbal.ensure_action(p_action_name TEXT) RETURNS INTEGER
+```
+
+---
+
+## Body Systems Currently Populated
+
+| System | Migrations |
+|--------|-----------|
+| GI (Digestive) | 009–015 |
+| Immune | 016–026 |
+| Upper Respiratory | 027–036 |
+| Lower Respiratory | 027–036 |
+| Nervous | 038–045 |
+| Cardiovascular | 048 |
+| Reproductive - Female | 055 |
+| Reproductive - Male | 055 |
+| Aging | 057 |
+
+---
+
+## Migration Conventions
+
+- Files in `supabase/migrations/`, numbered `001`–`057`
+- Always `SET search_path TO herbal, public;` at the top
+- Use `ON CONFLICT ... DO NOTHING` — all migrations are re-runnable
+- Wrap each logical unit in `DO $$ ... END $$;` blocks
+- Use `RAISE NOTICE` for progress feedback
+- **User runs migrations manually** in the Supabase SQL Editor — never automate
+
+### Common pattern: add herbs to a body system
+
+```sql
+DO $$
+DECLARE
+  v_system_id INTEGER;
+BEGIN
+  SELECT id INTO v_system_id FROM herbal.body_systems WHERE name = 'Cardiovascular';
+
+  INSERT INTO herbal.herb_primary_actions (herb_id, primary_action_id, body_system_id)
+  VALUES (
+    herbal.ensure_herb('Crataegus spp.', 'hawthorn'),
+    herbal.ensure_action('Cardiotonic'),
+    v_system_id
+  )
+  ON CONFLICT DO NOTHING;
+END $$;
+```
+
+### Sync pattern (after bulk disorder data)
+
+After adding disorder herb data, run a sync block (see migration 035 as reference) to push `disorder_action_herbs` → `herb_primary_actions` so the system herb count stays accurate.
+
+---
+
+## Auth / Access Control
+
+- `middleware.ts` checks for a `_hv_verified` cookie; if missing, redirects to `/gateway`
+- `/gateway` shows a Cloudflare Turnstile widget
+- `/api/verify-turnstile` validates the token and sets the cookie
+- Protects all routes except `/gateway`, `/api/*`, `/_next/*`, `/favicon.ico`
+
+---
+
+## Configuration
+
+**.env.local**
 ```env
 NEXT_PUBLIC_SUPABASE_URL=http://localhost:54321
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-actual-anon-key
+NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon key from Supabase Studio → Settings → API>
+NEXT_PUBLIC_TURNSTILE_SITE_KEY=<Cloudflare Turnstile site key>
+TURNSTILE_SECRET_KEY=<Cloudflare Turnstile secret key>
 ```
 
-Get your anon key from:
-- Supabase Studio → Settings → API → `anon` key
+Local Supabase runs on `127.0.0.1:54322`, password: `postgres`.
 
-## 🎓 Learning from This Project
+---
 
-### Database Design Patterns
-- ✅ Schema namespacing for isolation
-- ✅ Junction tables for many-to-many relationships
-- ✅ ENUM types for constrained values
-- ✅ Strategic indexing for performance
-- ✅ Foreign key constraints for data integrity
+## Database Backup
 
-### Next.js Patterns
-- ✅ App Router with client components
-- ✅ Server-side environment variables
-- ✅ Component composition
-- ✅ State management with hooks
-
-### TypeScript Patterns
-- ✅ Interface definitions for database models
-- ✅ Type-safe query results
-- ✅ Enum types matching database
-
-## 🚧 Future Enhancements (Optional)
-
-1. **Add Secondary Actions**
-   - Parser already extracts them
-   - Just need to populate junction table
-
-2. **Advanced Filtering**
-   - Multiple system selection
-   - Strength-based filtering
-   - Combination queries
-
-3. **Visual Enhancements**
-   - Network graph of relationships
-   - Interactive matrix view
-   - Print-friendly herb profiles
-
-4. **Data Management**
-   - Admin interface to add/edit herbs
-   - CSV import/export
-   - Batch updates
-
-## 📦 What You Can Do Now
-
-### View Data
 ```bash
-pnpm dev
-# Open http://localhost:3000
+PGPASSWORD=postgres /opt/homebrew/Cellar/libpq/18.1/bin/pg_dump \
+  -h 127.0.0.1 -p 54322 -U postgres -d postgres \
+  --schema=herbal --no-owner --no-acl --clean --if-exists \
+  --file="supabase/backups/$(date +%Y%m%d_%H%M%S)_description.sql"
 ```
-
-### Query Database
-```sql
--- In Supabase SQL Editor
-SELECT * FROM herbal.herbs WHERE common_name LIKE '%garlic%';
-```
-
-### Regenerate Seed Data
-```bash
-pnpm exec ts-node scripts/parse-data.ts
-```
-
-### Deploy to Production
-- Push to GitHub
-- Connect to Vercel
-- Add Supabase production credentials
-- Deploy!
-
-## ✨ Success Criteria - All Met!
-
-- ✅ Multi-dimensional data model (not flat like spreadsheet)
-- ✅ Visualize by herb (latin or common name)
-- ✅ Visualize by herbal action
-- ✅ Visualize by body system
-- ✅ Display relative strength
-- ✅ Local Supabase database
-- ✅ Isolated schema (won't conflict)
-- ✅ Complete documentation
-- ✅ Type-safe implementation
-
-## 🙏 Acknowledgments
-
-Data source: "Secondary Actions.txt" - comprehensive herbal medicine reference

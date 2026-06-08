@@ -339,7 +339,7 @@ export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect 
                       </div>
                       <div className="text-xs italic text-gray-500 mt-0.5">{herb.latin_name}</div>
                       {sortedSystemIds.length > 0 && (
-                        <div className="flex flex-wrap gap-1 mt-1.5">
+                        <div className="flex items-center flex-wrap gap-1 mt-1.5">
                           {sortedSystemIds.map((sysId) => {
                             const name = systemMap.get(sysId);
                             if (!name) return null;

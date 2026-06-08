@@ -30,6 +30,7 @@ export function ActionView({ onHerbClick, selectedActionId, onActionIdChange }: 
   const [selectedAction, setSelectedAction] = useState<ActionData | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
+  const [agingHerbIds, setAgingHerbIds] = useState<Set<number>>(new Set());
   const actionRefs = useRef<Map<number, HTMLButtonElement>>(new Map());
 
   useEffect(() => {
@@ -55,25 +56,33 @@ export function ActionView({ onHerbClick, selectedActionId, onActionIdChange }: 
 
   async function fetchActions() {
     try {
-      const { data, error } = await supabase
-        .from('primary_actions')
-        .select(`
-          *,
-          herb_primary_actions (
-            herbs (*),
-            body_systems (*),
-            relative_strength
-          ),
-          action_descriptions (
-            id,
-            description,
-            sort_order
-          )
-        `)
-        .order('name');
+      const [actionsResult, agingResult] = await Promise.all([
+        supabase
+          .from('primary_actions')
+          .select(`
+            *,
+            herb_primary_actions (
+              herbs (*),
+              body_systems (*),
+              relative_strength
+            ),
+            action_descriptions (
+              id,
+              description,
+              sort_order
+            )
+          `)
+          .order('name'),
+        supabase.from('aging_herbs').select('herb_id'),
+      ]);
 
-      if (error) throw error;
-      setActions(data || []);
+      if (actionsResult.error) throw actionsResult.error;
+      setActions(actionsResult.data || []);
+
+      if (agingResult.data) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        setAgingHerbIds(new Set(agingResult.data.map((r: any) => r.herb_id)));
+      }
     } catch (error) {
       console.error('Error fetching actions:', error);
     } finally {
@@ -223,7 +232,12 @@ export function ActionView({ onHerbClick, selectedActionId, onActionIdChange }: 
                             onClick={() => onHerbClick?.(item.herb.id)}
                             className={`border rounded-lg p-3 hover:shadow-md hover:scale-105 transition-all cursor-pointer text-left ${getTemperatureCard(item.herb)}`}
                           >
-                            <div className="font-medium">{item.herb.common_name}</div>
+                            <div className="flex items-start justify-between gap-1">
+                              <span className="font-medium">{item.herb.common_name}</span>
+                              {selectedAction.name === 'Tonic' && agingHerbIds.has(item.herb.id) && (
+                                <span className="text-base leading-none shrink-0" title="Recommended for elders">🧓</span>
+                              )}
+                            </div>
                             <div className="text-sm italic text-gray-600">{item.herb.latin_name}</div>
                             <div className="flex items-center justify-between mt-1.5">
                               {item.strength && getStrengthBadge(item.strength) ? (

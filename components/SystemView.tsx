@@ -59,10 +59,12 @@ export function SystemView({ onHerbClick, onActionClick, selectedSystemId, onSys
         countMap.set(d.body_system_id, (countMap.get(d.body_system_id) || 0) + 1);
       });
 
-      const systemsWithCounts = (data || []).map((system) => ({
-        ...system,
-        disorder_count: countMap.get(system.id) || 0,
-      }));
+      const systemsWithCounts = (data || [])
+        .filter((system) => system.name !== 'All')
+        .map((system) => ({
+          ...system,
+          disorder_count: countMap.get(system.id) || 0,
+        }));
 
       setSystems(systemsWithCounts);
 
