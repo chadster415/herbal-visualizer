@@ -185,3 +185,46 @@ export interface HerbWithDisorders extends Herb {
     actions: PrimaryAction[];
   }>;
 }
+
+export type ConcentrationLevel = 'trace' | 'minor' | 'moderate' | 'major' | 'primary';
+
+export interface Constituent {
+  id: number;
+  name: string;
+  category: string;
+  description?: string | null;
+  created_at: string;
+}
+
+export interface HerbConstituent {
+  id: number;
+  herb_id: number;
+  constituent_id: number;
+  concentration_level: ConcentrationLevel;
+  notes?: string | null;
+  needs_review: boolean;
+  sort_order: number;
+  created_at: string;
+  constituents: Constituent;
+}
+
+export interface HerbMenstruum {
+  herb_id: number;
+  alcohol_pct_min?: number | null;
+  alcohol_pct_max?: number | null;
+  glycerin_pct?: number | null;
+  vinegar_pct?: number | null;
+  water_effective: boolean;
+  primary_label: string;
+  notes?: string | null;
+  needs_review: boolean;
+  created_at: string;
+}
+
+export interface ConstituentWithHerbs extends Constituent {
+  herb_constituents: Array<{
+    herb_id: number;
+    concentration_level: ConcentrationLevel;
+    herbs: Pick<Herb, 'id' | 'common_name' | 'latin_name'>;
+  }>;
+}
