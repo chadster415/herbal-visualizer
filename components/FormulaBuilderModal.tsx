@@ -81,17 +81,30 @@ function scoreHerb(herb: Herb, c: Constitution): number {
   return n;
 }
 
+// Keywords that mark an action as appropriate for the Base (tonic/nourishing) role
+const BASE_ACTION_KEYWORDS = ['tonic', 'adaptogen', 'alterative', 'nutritive', 'restorative'];
+
+function isBaseAction(name: string): boolean {
+  const lower = name.toLowerCase();
+  return BASE_ACTION_KEYWORDS.some((kw) => lower.includes(kw));
+}
+
 function buildCandidates(
   rows: { herbs: Herb; primary_actions?: { name: string } }[],
   constitution: Constitution,
+  requireBaseAction = false,
 ): Candidate[] {
-  const map = new Map<number, { herb: Herb; actions: string[] }>();
+  const map = new Map<number, { herb: Herb; actions: string[]; hasBaseAction: boolean }>();
   for (const row of rows) {
     const h = row.herbs;
-    if (!map.has(h.id)) map.set(h.id, { herb: h, actions: [] });
-    if (row.primary_actions?.name) map.get(h.id)!.actions.push(row.primary_actions.name);
+    const actionName = row.primary_actions?.name ?? '';
+    if (!map.has(h.id)) map.set(h.id, { herb: h, actions: [], hasBaseAction: false });
+    const entry = map.get(h.id)!;
+    if (actionName) entry.actions.push(actionName);
+    if (isBaseAction(actionName)) entry.hasBaseAction = true;
   }
   return Array.from(map.values())
+    .filter(({ hasBaseAction }) => !requireBaseAction || hasBaseAction)
     .map(({ herb, actions }) => ({
       herb,
       context: actions.filter(Boolean).join(', '),
@@ -242,7 +255,7 @@ export function FormulaBuilderModal({ isOpen, onClose, onHerbClick }: Props) {
 
     setCandidates({
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      base: buildCandidates((baseRes.data ?? []) as any[], constitution),
+      base: buildCandidates((baseRes.data ?? []) as any[], constitution, true),
       synergist: synFallback,
       specific: specList,
     });

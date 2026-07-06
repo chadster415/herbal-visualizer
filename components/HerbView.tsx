@@ -16,6 +16,21 @@ import type {
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
+interface ConstituentProfile {
+  id: number;
+  herb_id: number | null;
+  common_name: string;
+  latin_name: string;
+  plant_part: string | null;
+  constituent: string;
+  class: string | null;
+  subclass: string | null;
+  importance: string | null;
+  status: string | null;
+  notes: string | null;
+  editorial_note: string | null;
+}
+
 interface HerbData extends Herb {
   herb_primary_actions: Array<{
     primary_actions: PrimaryAction;
@@ -71,6 +86,22 @@ const LEVEL_COLOR: Record<ConcentrationLevel, string> = {
   trace:    'bg-gray-50 text-gray-500 border-gray-200',
 };
 
+const STATUS_WEIGHT: Record<string, number> = {
+  'Marker': 8, 'Major': 5, 'Present': 2, 'Reported': 1,
+};
+
+const IMP_WEIGHT: Record<string, number> = {
+  'High': 5, 'Moderate': 3, 'Low-Moderate': 2, 'Low–Moderate': 2, 'Low': 1,
+};
+
+function importanceBadgeColor(importance: string | null) {
+  switch (importance) {
+    case 'High':         return 'bg-amber-100 text-amber-800 border-amber-300';
+    case 'Moderate':     return 'bg-yellow-100 text-yellow-700 border-yellow-300';
+    default:             return 'bg-gray-100 text-gray-600 border-gray-200';
+  }
+}
+
 function getStrengthColor(strength: StrengthLevel | null) {
   switch (strength) {
     case 'mild':       return 'bg-yellow-100 text-yellow-800';
@@ -80,7 +111,6 @@ function getStrengthColor(strength: StrengthLevel | null) {
   }
 }
 
-// Build menstruum detail badges
 function menstruumBadges(m: HerbMenstruum) {
   const badges: { label: string; color: string }[] = [];
   if (m.alcohol_pct_min != null || m.alcohol_pct_max != null) {
@@ -102,11 +132,12 @@ function menstruumBadges(m: HerbMenstruum) {
 
 export function HerbView({ selectedHerbId, onHerbIdChange, onActionClick, onActionNameClick, onDisorderClick }: HerbViewProps) {
   const [herbs, setHerbs] = useState<HerbData[]>([]);
+  const [allProfiles, setAllProfiles] = useState<ConstituentProfile[]>([]);
   const [selectedHerb, setSelectedHerb] = useState<HerbData | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
 
-  // constituent_id → array of herb refs (for tooltip & alternates)
+  // constituent_id → array of herb refs (for tooltip & existing Constituents section)
   const [constituentIndex, setConstituentIndex] = useState<Map<number, ConstituentHerbRef[]>>(new Map());
 
   // hover tooltip state
@@ -114,7 +145,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onActionClick, onActi
   const [tooltipPos, setTooltipPos] = useState<{ x: number; y: number } | null>(null);
   const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // alternates section open/closed
+  // section open/closed
   const [alternatesOpen, setAlternatesOpen] = useState(false);
 
   const herbRefs = useRef<Map<number, HTMLButtonElement>>(new Map());
@@ -137,47 +168,54 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onActionClick, onActi
 
   async function fetchHerbs() {
     try {
-      const { data, error } = await supabase
-        .from('herbs')
-        .select(`
-          *,
-          herb_primary_actions (
-            primary_actions (*),
-            body_systems (*),
-            body_system_note,
-            relative_strength
-          ),
-          disorder_action_herbs (
-            disorders ( *, body_systems (*) ),
-            primary_actions (*)
-          ),
-          disorder_specific_remedies (
-            disorders ( *, body_systems (*) ),
-            description
-          ),
-          herb_secondary_actions ( secondary_actions (*) ),
-          herb_constituents (
-            constituent_id,
-            concentration_level,
-            notes,
-            needs_review,
-            sort_order,
-            constituents (*)
-          ),
-          herb_menstruum (*)
-        `)
-        .order('common_name');
+      const [herbResult, profileResult] = await Promise.all([
+        supabase
+          .from('herbs')
+          .select(`
+            *,
+            herb_primary_actions (
+              primary_actions (*),
+              body_systems (*),
+              body_system_note,
+              relative_strength
+            ),
+            disorder_action_herbs (
+              disorders ( *, body_systems (*) ),
+              primary_actions (*)
+            ),
+            disorder_specific_remedies (
+              disorders ( *, body_systems (*) ),
+              description
+            ),
+            herb_secondary_actions ( secondary_actions (*) ),
+            herb_constituents (
+              constituent_id,
+              concentration_level,
+              notes,
+              needs_review,
+              sort_order,
+              constituents (*)
+            ),
+            herb_menstruum (*)
+          `)
+          .order('common_name'),
+        supabase
+          .from('constituent_profiles')
+          .select('*')
+          .not('herb_id', 'is', null)
+          .range(0, 4999),
+      ]);
 
-      if (error) throw error;
+      if (herbResult.error) throw herbResult.error;
 
-      const herbList: HerbData[] = (data || []).map((h: HerbData) => ({
+      const herbList: HerbData[] = (herbResult.data || []).map((h: HerbData) => ({
         ...h,
         herb_menstruum: Array.isArray(h.herb_menstruum)
           ? (h.herb_menstruum[0] ?? null)
           : h.herb_menstruum,
       }));
 
-      // Build constituent → herbs cross-reference index
+      // Build constituent → herbs cross-reference index (for existing Constituents section tooltips)
       const idx = new Map<number, ConstituentHerbRef[]>();
       for (const herb of herbList) {
         for (const hc of herb.herb_constituents ?? []) {
@@ -188,6 +226,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onActionClick, onActi
 
       setHerbs(herbList);
       setConstituentIndex(idx);
+      setAllProfiles(profileResult.data ?? []);
     } catch (err) {
       console.error('Error fetching herbs:', err);
     } finally {
@@ -195,7 +234,6 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onActionClick, onActi
     }
   }
 
-  // Navigate to a different herb (used from tooltip & alternates)
   const navigateToHerb = useCallback((herbId: number) => {
     const herb = herbs.find((h) => h.id === herbId);
     if (!herb) return;
@@ -208,44 +246,108 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onActionClick, onActi
     }, 100);
   }, [herbs, onHerbIdChange]);
 
-  // Compute alternate herbs for selected herb
-  const computedAlternates = (() => {
-    if (!selectedHerb) return [];
-    const currentConstituents = new Set(
-      (selectedHerb.herb_constituents ?? [])
-        .filter((c) => c.concentration_level !== 'trace')
-        .map((c) => c.constituent_id)
-    );
-    if (currentConstituents.size === 0) return [];
+  // All profiles for the selected herb (used for both marker display and alternates)
+  const selectedProfiles = selectedHerb
+    ? allProfiles.filter((p) => p.herb_id === selectedHerb.id)
+    : [];
 
-    const scores = new Map<number, number>();
-    for (const constituentId of currentConstituents) {
-      const refs = constituentIndex.get(constituentId) ?? [];
-      for (const ref of refs) {
-        if (ref.herb_id === selectedHerb.id) continue;
-        if (ref.concentration_level === 'trace') continue;
-        scores.set(ref.herb_id, (scores.get(ref.herb_id) ?? 0) + LEVEL_WEIGHT[ref.concentration_level]);
+  // Marker constituents (Status='Marker') for display section
+  const selectedMarkers = selectedProfiles.filter((p) => p.status === 'Marker');
+
+  // Alternates: multi-level chemical similarity scored against all profiles
+  // Levels: exact constituent (×100) → same subclass (×50) → same class (×15)
+  // Each weighted by Status × Importance; normalized against selected herb's self-score
+  const computedAlternates = (() => {
+    if (!selectedHerb || selectedProfiles.length === 0) return [];
+
+    // Self-score: maximum possible score if everything matched exactly
+    let selfScore = 0;
+    for (const p of selectedProfiles) {
+      selfScore += (STATUS_WEIGHT[p.status ?? ''] ?? 1) * (IMP_WEIGHT[p.importance ?? ''] ?? 1) * 100;
+    }
+    if (selfScore === 0) return [];
+
+    // Build lookup indices over all other herbs' profiles
+    const byName    = new Map<string, ConstituentProfile[]>();
+    const bySubclass = new Map<string, ConstituentProfile[]>();
+    const byClass   = new Map<string, ConstituentProfile[]>();
+
+    for (const p of allProfiles) {
+      if (p.herb_id == null || p.herb_id === selectedHerb.id) continue;
+      const nk = p.constituent.toLowerCase();
+      if (!byName.has(nk)) byName.set(nk, []);
+      byName.get(nk)!.push(p);
+      if (p.subclass) {
+        const sk = p.subclass.toLowerCase();
+        if (!bySubclass.has(sk)) bySubclass.set(sk, []);
+        bySubclass.get(sk)!.push(p);
+      }
+      if (p.class) {
+        const ck = p.class.toLowerCase();
+        if (!byClass.has(ck)) byClass.set(ck, []);
+        byClass.get(ck)!.push(p);
+      }
+    }
+
+    const scores      = new Map<number, number>();
+    const exactMap    = new Map<number, Set<string>>();
+    const subclassMap = new Map<number, Set<string>>();
+    const classMap    = new Map<number, Set<string>>();
+
+    for (const p of selectedProfiles) {
+      const W = (STATUS_WEIGHT[p.status ?? ''] ?? 1) * (IMP_WEIGHT[p.importance ?? ''] ?? 1);
+      const nk = p.constituent.toLowerCase();
+
+      const exactHerbs    = new Set<number>();
+      const subclassHerbs = new Set<number>();
+
+      // Level 1: exact constituent name
+      for (const q of byName.get(nk) ?? []) {
+        if (q.herb_id == null) continue;
+        exactHerbs.add(q.herb_id);
+        scores.set(q.herb_id, (scores.get(q.herb_id) ?? 0) + W * 100);
+        if (!exactMap.has(q.herb_id)) exactMap.set(q.herb_id, new Set());
+        exactMap.get(q.herb_id)!.add(p.constituent);
+      }
+
+      // Level 2: same subclass (skip herbs already matched at level 1 for this p)
+      if (p.subclass) {
+        for (const q of bySubclass.get(p.subclass.toLowerCase()) ?? []) {
+          if (q.herb_id == null || exactHerbs.has(q.herb_id) || subclassHerbs.has(q.herb_id)) continue;
+          subclassHerbs.add(q.herb_id);
+          scores.set(q.herb_id, (scores.get(q.herb_id) ?? 0) + W * 50);
+          if (!subclassMap.has(q.herb_id)) subclassMap.set(q.herb_id, new Set());
+          subclassMap.get(q.herb_id)!.add(p.subclass);
+        }
+      }
+
+      // Level 3: same class (skip herbs already matched at level 1 or 2 for this p)
+      if (p.class) {
+        const classHerbs = new Set<number>();
+        for (const q of byClass.get(p.class.toLowerCase()) ?? []) {
+          if (q.herb_id == null || exactHerbs.has(q.herb_id) || subclassHerbs.has(q.herb_id) || classHerbs.has(q.herb_id)) continue;
+          classHerbs.add(q.herb_id);
+          scores.set(q.herb_id, (scores.get(q.herb_id) ?? 0) + W * 15);
+          if (!classMap.has(q.herb_id)) classMap.set(q.herb_id, new Set());
+          classMap.get(q.herb_id)!.add(p.class);
+        }
       }
     }
 
     return [...scores.entries()]
       .sort((a, b) => b[1] - a[1])
       .slice(0, 8)
-      .map(([herbId, score]) => {
-        const herb = herbs.find((h) => h.id === herbId);
-        const sharedConstituents = (selectedHerb.herb_constituents ?? [])
-          .filter((c) => c.concentration_level !== 'trace')
-          .filter((c) => {
-            const refs = constituentIndex.get(c.constituent_id) ?? [];
-            return refs.some((r) => r.herb_id === herbId && r.concentration_level !== 'trace');
-          })
-          .map((c) => ({ name: c.constituents.name, level: c.concentration_level }));
-        return { herb, score, sharedConstituents };
-      })
+      .map(([herbId, score]) => ({
+        herb: herbs.find((h) => h.id === herbId),
+        similarity: Math.min(100, Math.round((score / selfScore) * 100)),
+        exactConstituents: [...(exactMap.get(herbId) ?? [])],
+        sharedSubclasses:  [...(subclassMap.get(herbId) ?? [])],
+        sharedClasses:     [...(classMap.get(herbId) ?? [])],
+      }))
       .filter((a) => a.herb != null);
   })();
 
-  // Tooltip herb list for hovered constituent
+  // Tooltip herb list for hovered constituent (existing Constituents section)
   const tooltipHerbs = (() => {
     if (hoveredConstituentId == null) return [];
     return (constituentIndex.get(hoveredConstituentId) ?? [])
@@ -424,12 +526,141 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onActionClick, onActi
               </div>
             )}
 
+            {/* ── Marker Constituents ───────────────────────────────────────── */}
+            {selectedMarkers.length > 0 && (
+              <div className="mb-6">
+                <h3 className="text-xl font-semibold text-gray-800 mb-3">Marker Constituents</h3>
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {selectedMarkers.map((p) => (
+                    <div
+                      key={p.id}
+                      title={p.notes ?? undefined}
+                      className="flex flex-col px-3 py-1.5 rounded-lg border bg-amber-50 border-amber-300 cursor-default select-none"
+                    >
+                      <span className="text-sm font-semibold text-amber-900">{p.constituent}</span>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        {p.class && (
+                          <span className="text-[10px] text-gray-500">{p.class}</span>
+                        )}
+                        {p.class && p.subclass && (
+                          <span className="text-[10px] text-gray-400">›</span>
+                        )}
+                        {p.subclass && (
+                          <span className="text-[10px] text-amber-700 font-medium">{p.subclass}</span>
+                        )}
+                        {p.importance && (
+                          <span className={`text-[10px] px-1.5 py-0.5 rounded-full border font-medium ml-1 ${importanceBadgeColor(p.importance)}`}>
+                            {p.importance}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Editorial note(s) — herb-level context from the CSV */}
+                {(() => {
+                  const notes = [...new Set(
+                    selectedMarkers
+                      .map((p) => p.editorial_note?.trim())
+                      .filter(Boolean) as string[]
+                  )];
+                  if (notes.length === 0) return null;
+                  return (
+                    <div className="mb-4 space-y-2">
+                      {notes.map((note, i) => (
+                        <p key={i} className="text-xs italic text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                          {note}
+                        </p>
+                      ))}
+                    </div>
+                  );
+                })()}
+
+                {/* Alternates (chemical similarity across all profiles) */}
+                {computedAlternates.length > 0 && (
+                  <div>
+                    <button
+                      onClick={() => setAlternatesOpen((o) => !o)}
+                      className="flex items-center gap-2 text-sm font-semibold text-gray-600 hover:text-amber-700 transition-colors"
+                    >
+                      <svg
+                        className={`w-4 h-4 transition-transform ${alternatesOpen ? 'rotate-180' : ''}`}
+                        fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                      Alternates ({computedAlternates.length})
+                    </button>
+
+                    {alternatesOpen && (
+                      <div className="mt-3 space-y-2">
+                        {computedAlternates.map(({ herb, similarity, exactConstituents, sharedSubclasses, sharedClasses }) => {
+                          if (!herb) return null;
+                          const m = herb.herb_menstruum;
+                          const simColor = similarity >= 50
+                            ? 'bg-emerald-100 text-emerald-700 border-emerald-300'
+                            : similarity >= 25
+                            ? 'bg-amber-100 text-amber-700 border-amber-300'
+                            : 'bg-gray-100 text-gray-500 border-gray-200';
+                          return (
+                            <button
+                              key={herb.id}
+                              onClick={() => navigateToHerb(herb.id)}
+                              className={`w-full text-left border rounded-lg px-4 py-2.5 transition-all hover:shadow-md hover:scale-[1.005] ${
+                                herb.temperature === 'warming' ? 'bg-amber-50 border-amber-200 hover:bg-amber-100' :
+                                herb.temperature === 'cooling' ? 'bg-sky-50 border-sky-200 hover:bg-sky-100' :
+                                'bg-gray-50 border-gray-200 hover:bg-gray-100'
+                              }`}
+                            >
+                              <div className="flex items-center justify-between gap-2 mb-1.5">
+                                <div>
+                                  <span className="font-medium text-gray-900 text-sm">{herb.common_name}</span>
+                                  <span className="text-xs italic text-gray-500 ml-2">{herb.latin_name}</span>
+                                </div>
+                                <div className="flex items-center gap-1.5 shrink-0">
+                                  <span className={`text-xs px-2 py-0.5 rounded-full border font-semibold ${simColor}`}>
+                                    {similarity}%
+                                  </span>
+                                  {m && (
+                                    <span className="text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 border border-purple-200">
+                                      {m.primary_label}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="flex flex-wrap gap-1">
+                                {exactConstituents.map((name) => (
+                                  <span key={name} className="text-xs px-1.5 py-0.5 rounded border bg-amber-50 text-amber-800 border-amber-300">
+                                    {name}
+                                  </span>
+                                ))}
+                                {sharedSubclasses.map((sub) => (
+                                  <span key={sub} className="text-xs px-1.5 py-0.5 rounded border bg-yellow-50 text-yellow-700 border-yellow-300 italic">
+                                    {sub}
+                                  </span>
+                                ))}
+                                {exactConstituents.length === 0 && sharedSubclasses.length === 0 && sharedClasses.map((cls) => (
+                                  <span key={cls} className="text-xs px-1.5 py-0.5 rounded border bg-gray-50 text-gray-500 border-gray-200 italic">
+                                    {cls}
+                                  </span>
+                                ))}
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* ── Constituents ─────────────────────────────────────────────── */}
             {(selectedHerb.herb_constituents?.length ?? 0) > 0 && (
               <div className="mb-6">
                 <h3 className="text-xl font-semibold text-gray-800 mb-3">Constituents</h3>
 
-                {/* Constituent pills */}
                 <div className="flex flex-wrap gap-2 mb-4">
                   {[...selectedHerb.herb_constituents]
                     .sort((a, b) => {
@@ -483,66 +714,6 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onActionClick, onActi
                     </div>
                     {selectedHerb.herb_menstruum.notes && (
                       <p className="text-xs text-gray-600 mt-1 italic">{selectedHerb.herb_menstruum.notes}</p>
-                    )}
-                  </div>
-                )}
-
-                {/* Alternates chevron */}
-                {computedAlternates.length > 0 && (
-                  <div className="mt-4">
-                    <button
-                      onClick={() => setAlternatesOpen((o) => !o)}
-                      className="flex items-center gap-2 text-sm font-semibold text-gray-600 hover:text-green-700 transition-colors"
-                    >
-                      <svg
-                        className={`w-4 h-4 transition-transform ${alternatesOpen ? 'rotate-180' : ''}`}
-                        fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                      >
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                      </svg>
-                      Alternates ({computedAlternates.length})
-                    </button>
-
-                    {alternatesOpen && (
-                      <div className="mt-3 space-y-2">
-                        {computedAlternates.map(({ herb, sharedConstituents }) => {
-                          if (!herb) return null;
-                          const m = herb.herb_menstruum;
-                          return (
-                            <button
-                              key={herb.id}
-                              onClick={() => navigateToHerb(herb.id)}
-                              className={`w-full text-left border rounded-lg px-4 py-2.5 transition-all hover:shadow-md hover:scale-[1.005] ${
-                                herb.temperature === 'warming' ? 'bg-amber-50 border-amber-200 hover:bg-amber-100' :
-                                herb.temperature === 'cooling' ? 'bg-sky-50 border-sky-200 hover:bg-sky-100' :
-                                'bg-gray-50 border-gray-200 hover:bg-gray-100'
-                              }`}
-                            >
-                              <div className="flex items-center justify-between gap-2 mb-1.5">
-                                <div>
-                                  <span className="font-medium text-gray-900 text-sm">{herb.common_name}</span>
-                                  <span className="text-xs italic text-gray-500 ml-2">{herb.latin_name}</span>
-                                </div>
-                                {m && (
-                                  <span className="text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 border border-purple-200 shrink-0">
-                                    {m.primary_label}
-                                  </span>
-                                )}
-                              </div>
-                              <div className="flex flex-wrap gap-1">
-                                {sharedConstituents.map((c) => (
-                                  <span
-                                    key={c.name}
-                                    className={`text-xs px-1.5 py-0.5 rounded border ${LEVEL_COLOR[c.level]}`}
-                                  >
-                                    {c.name}
-                                  </span>
-                                ))}
-                              </div>
-                            </button>
-                          );
-                        })}
-                      </div>
                     )}
                   </div>
                 )}
@@ -626,7 +797,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onActionClick, onActi
         )}
       </div>
 
-      {/* Constituent hover tooltip — rendered in document flow via fixed positioning */}
+      {/* Constituent hover tooltip — rendered via fixed positioning */}
       {hoveredConstituentId != null && tooltipPos != null && tooltipHerbs.length > 0 && (() => {
         const con = selectedHerb?.herb_constituents.find((c) => c.constituent_id === hoveredConstituentId);
         return (
