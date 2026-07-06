@@ -162,6 +162,15 @@ Before writing a migration, scan the source `.md` file for these common errors:
 ```bash
 PGPASSWORD=postgres /opt/homebrew/Cellar/libpq/18.1/bin/pg_dump \
   -h 127.0.0.1 -p 54322 -U postgres -d postgres \
-  --schema=herbal --no-owner --no-acl --clean --if-exists \
+  --schema=herbal --no-owner --clean --if-exists \
   --file="supabase/backups/YYYYMMDD_HHMMSS_description.sql"
 ```
+Note: omit `--no-acl` so that GRANT statements are included — required when restoring to prod.
+
+## Restore to prod
+```bash
+PGPASSWORD='<prod-password>' /opt/homebrew/Cellar/libpq/18.1/bin/psql \
+  -h db.<project-ref>.supabase.co -p 5432 -U postgres -d postgres \
+  -f "supabase/backups/YYYYMMDD_HHMMSS_description.sql"
+```
+Use the direct connection (db.*.supabase.co:5432), not the pooler URL, for DDL-heavy restores.

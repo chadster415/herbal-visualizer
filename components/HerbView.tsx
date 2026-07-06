@@ -94,6 +94,15 @@ const IMP_WEIGHT: Record<string, number> = {
   'High': 5, 'Moderate': 3, 'Low-Moderate': 2, 'Low–Moderate': 2, 'Low': 1,
 };
 
+function statusBadgeColor(status: string | null) {
+  switch (status) {
+    case 'Marker':   return 'bg-amber-100 text-amber-800 border-amber-300';
+    case 'Major':    return 'bg-orange-100 text-orange-700 border-orange-300';
+    case 'Present':  return 'bg-sky-100 text-sky-700 border-sky-300';
+    default:         return 'bg-gray-100 text-gray-500 border-gray-200';
+  }
+}
+
 function importanceBadgeColor(importance: string | null) {
   switch (importance) {
     case 'High':         return 'bg-amber-100 text-amber-800 border-amber-300';
@@ -128,6 +137,23 @@ function menstruumBadges(m: HerbMenstruum) {
   return badges;
 }
 
+function SectionHeader({ title, open, onToggle }: { title: string; open: boolean; onToggle: () => void }) {
+  return (
+    <div
+      onClick={onToggle}
+      className="flex items-center gap-2 cursor-pointer select-none group mb-4"
+    >
+      <svg
+        className={`w-5 h-5 text-gray-400 group-hover:text-gray-600 transition-transform ${open ? '' : '-rotate-90'}`}
+        fill="none" stroke="currentColor" viewBox="0 0 24 24"
+      >
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+      </svg>
+      <h3 className="text-xl font-semibold text-gray-800 group-hover:text-gray-600 transition-colors">{title}</h3>
+    </div>
+  );
+}
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function HerbView({ selectedHerbId, onHerbIdChange, onActionClick, onActionNameClick, onDisorderClick }: HerbViewProps) {
@@ -135,6 +161,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onActionClick, onActi
   const [allProfiles, setAllProfiles] = useState<ConstituentProfile[]>([]);
   const [selectedHerb, setSelectedHerb] = useState<HerbData | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const [loading, setLoading] = useState(true);
 
   // constituent_id → array of herb refs (for tooltip & existing Constituents section)
@@ -147,9 +174,26 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onActionClick, onActi
 
   // section open/closed
   const [alternatesOpen, setAlternatesOpen] = useState(false);
+  const [sectionsOpen, setSectionsOpen] = useState({
+    primaryActions: true, secondaryActions: true,
+    constituentProfile: true, constituents: true, disorders: true,
+  });
+  const toggleSection = (key: keyof typeof sectionsOpen) =>
+    setSectionsOpen((prev) => ({ ...prev, [key]: !prev[key] }));
 
   const herbRefs = useRef<Map<number, HTMLButtonElement>>(new Map());
   const detailPanelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (highlightedIndex < 0) return;
+    const filtered = herbs.filter(
+      (h) =>
+        h.common_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        h.latin_name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    const herb = filtered[highlightedIndex];
+    if (herb) herbRefs.current.get(herb.id)?.scrollIntoView({ block: 'nearest' });
+  }, [highlightedIndex, herbs, searchTerm]);
 
   useEffect(() => { fetchHerbs(); }, []);
 
@@ -159,6 +203,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onActionClick, onActi
       if (herb) {
         setSelectedHerb(herb);
         setAlternatesOpen(false);
+        setSectionsOpen({ primaryActions: true, secondaryActions: true, constituentProfile: true, constituents: true, disorders: true });
         setTimeout(() => {
           herbRefs.current.get(selectedHerbId)?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }, 100);
@@ -239,6 +284,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onActionClick, onActi
     if (!herb) return;
     setSelectedHerb(herb);
     setAlternatesOpen(false);
+    setSectionsOpen({ primaryActions: true, secondaryActions: true, constituentProfile: true, constituents: true, disorders: true });
     onHerbIdChange?.(herbId);
     detailPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     setTimeout(() => {
@@ -251,8 +297,14 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onActionClick, onActi
     ? allProfiles.filter((p) => p.herb_id === selectedHerb.id)
     : [];
 
-  // Marker constituents (Status='Marker') for display section
-  const selectedMarkers = selectedProfiles.filter((p) => p.status === 'Marker');
+  // True if the herb has alkaloids that benefit from acid extraction (excludes purines,
+  // pyrrolizidines, and capsaicinoids where vinegar is unhelpful or counterproductive)
+  const VINEGAR_SKIP_SUBCLASSES = new Set([
+    'Purine alkaloid', 'Pyrrolizidine alkaloid', 'Capsaicinoid',
+  ]);
+  const herbHasExtractableAlkaloids = selectedProfiles.some(
+    (p) => p.class === 'Alkaloid' && !VINEGAR_SKIP_SUBCLASSES.has(p.subclass ?? '')
+  );
 
   // Alternates: multi-level chemical similarity scored against all profiles
   // Levels: exact constituent (×100) → same subclass (×50) → same class (×15)
@@ -399,7 +451,27 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onActionClick, onActi
             type="text"
             placeholder="Search herbs..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e) => { setSearchTerm(e.target.value); setHighlightedIndex(-1); }}
+            onKeyDown={(e) => {
+              if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                setHighlightedIndex((i) => Math.min(i + 1, filteredHerbs.length - 1));
+              } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                setHighlightedIndex((i) => Math.max(i - 1, -1));
+              } else if (e.key === 'Enter' && highlightedIndex >= 0) {
+                const herb = filteredHerbs[highlightedIndex];
+                setSelectedHerb(herb);
+                setAlternatesOpen(false);
+                setSectionsOpen({ primaryActions: true, secondaryActions: true, constituentProfile: true, constituents: true, disorders: true });
+                onHerbIdChange?.(herb.id);
+                setSearchTerm('');
+                setHighlightedIndex(-1);
+                detailPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              } else if (e.key === 'Escape') {
+                setHighlightedIndex(-1);
+              }
+            }}
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
           />
           {searchTerm && (
@@ -413,8 +485,8 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onActionClick, onActi
           )}
         </div>
 
-        <div className="space-y-2 max-h-[70vh] overflow-y-auto">
-          {filteredHerbs.map((herb) => (
+        <div className="space-y-2 max-h-[70vh] overflow-y-auto px-1 py-1">
+          {filteredHerbs.map((herb, idx) => (
             <button
               key={herb.id}
               ref={(el) => {
@@ -424,11 +496,15 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onActionClick, onActi
               onClick={() => {
                 setSelectedHerb(herb);
                 setAlternatesOpen(false);
+                setSectionsOpen({ primaryActions: true, secondaryActions: true, constituentProfile: true, constituents: true, disorders: true });
                 onHerbIdChange?.(herb.id);
+                setSearchTerm('');
+                setHighlightedIndex(-1);
                 detailPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
               }}
               className={`w-full text-left p-3 rounded-lg border transition-all ${
-                selectedHerb?.id === herb.id ? 'ring-2 ring-green-500 ring-offset-1' : ''
+                selectedHerb?.id === herb.id ? 'ring-2 ring-green-500 ring-offset-1' :
+                highlightedIndex === idx ? 'ring-2 ring-green-300 ring-offset-1' : ''
               } ${
                 herb.temperature === 'warming' ? 'bg-amber-50 border-amber-200 hover:bg-amber-100' :
                 herb.temperature === 'cooling' ? 'bg-sky-50 border-sky-200 hover:bg-sky-100' :
@@ -475,180 +551,191 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onActionClick, onActi
 
             {/* Primary Actions & Body Systems */}
             <div className="mb-6">
-              <h3 className="text-xl font-semibold text-gray-800 mb-4">Primary Actions & Body Systems</h3>
-              {selectedHerb.herb_primary_actions.length > 0 ? (
-                <div className="space-y-4">
-                  {selectedHerb.herb_primary_actions.map((action, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => onActionClick?.(action.primary_actions.id)}
-                      className="w-full border border-gray-200 rounded-lg p-4 hover:shadow-md hover:scale-[1.02] transition-all cursor-pointer text-left"
-                    >
-                      <div className="flex items-start justify-between mb-2">
-                        <div>
-                          <h4 className="text-lg font-semibold text-green-700">{action.primary_actions.name}</h4>
-                          {action.body_systems && (
-                            <p className="text-sm text-gray-600">{action.body_systems.name}</p>
+              <SectionHeader title="Primary Actions & Body Systems" open={sectionsOpen.primaryActions} onToggle={() => toggleSection('primaryActions')} />
+              {sectionsOpen.primaryActions && (
+                selectedHerb.herb_primary_actions.length > 0
+                  ? <div className="space-y-4">
+                      {selectedHerb.herb_primary_actions.map((action, idx) => (
+                        <button
+                          key={idx}
+                          onClick={() => onActionClick?.(action.primary_actions.id)}
+                          className="w-full border border-gray-200 rounded-lg p-4 hover:shadow-md hover:scale-[1.02] transition-all cursor-pointer text-left"
+                        >
+                          <div className="flex items-start justify-between mb-2">
+                            <div>
+                              <h4 className="text-lg font-semibold text-green-700">{action.primary_actions.name}</h4>
+                              {action.body_systems && (
+                                <p className="text-sm text-gray-600">{action.body_systems.name}</p>
+                              )}
+                            </div>
+                            {action.relative_strength && (
+                              <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStrengthColor(action.relative_strength)}`}>
+                                {action.relative_strength.replace('_', ' ')}
+                              </span>
+                            )}
+                          </div>
+                          {action.body_system_note && (
+                            <p className="text-sm text-gray-700 mt-2">{action.body_system_note}</p>
                           )}
-                        </div>
-                        {action.relative_strength && (
-                          <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStrengthColor(action.relative_strength)}`}>
-                            {action.relative_strength.replace('_', ' ')}
-                          </span>
-                        )}
-                      </div>
-                      {action.body_system_note && (
-                        <p className="text-sm text-gray-700 mt-2">{action.body_system_note}</p>
-                      )}
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-gray-500 italic">No primary actions recorded for this herb.</p>
+                        </button>
+                      ))}
+                    </div>
+                  : <p className="text-gray-500 italic">No primary actions recorded for this herb.</p>
               )}
             </div>
 
             {/* Secondary Actions */}
             {selectedHerb.herb_secondary_actions.length > 0 && (
               <div className="mb-6">
-                <h3 className="text-xl font-semibold text-gray-800 mb-3">Secondary Actions</h3>
-                <div className="flex flex-wrap gap-2">
-                  {selectedHerb.herb_secondary_actions.map((item, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => onActionNameClick?.(item.secondary_actions.name)}
-                      className="px-3 py-1.5 bg-teal-50 text-teal-800 border border-teal-200 rounded-full text-sm hover:bg-teal-100 hover:border-teal-400 transition-colors cursor-pointer"
-                    >
-                      {item.secondary_actions.name}
-                    </button>
-                  ))}
-                </div>
+                <SectionHeader title="Secondary Actions" open={sectionsOpen.secondaryActions} onToggle={() => toggleSection('secondaryActions')} />
+                {sectionsOpen.secondaryActions && (
+                  <div className="flex flex-wrap gap-2">
+                    {selectedHerb.herb_secondary_actions.map((item, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => onActionNameClick?.(item.secondary_actions.name)}
+                        className="px-3 py-1.5 bg-teal-50 text-teal-800 border border-teal-200 rounded-full text-sm hover:bg-teal-100 hover:border-teal-400 transition-colors cursor-pointer"
+                      >
+                        {item.secondary_actions.name}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 
-            {/* ── Marker Constituents ───────────────────────────────────────── */}
-            {selectedMarkers.length > 0 && (
+            {/* ── Constituent Profile ───────────────────────────────────────── */}
+            {selectedProfiles.length > 0 && (
               <div className="mb-6">
-                <h3 className="text-xl font-semibold text-gray-800 mb-3">Marker Constituents</h3>
-                <div className="flex flex-wrap gap-2 mb-4">
-                  {selectedMarkers.map((p) => (
-                    <div
-                      key={p.id}
-                      title={p.notes ?? undefined}
-                      className="flex flex-col px-3 py-1.5 rounded-lg border bg-amber-50 border-amber-300 cursor-default select-none"
-                    >
-                      <span className="text-sm font-semibold text-amber-900">{p.constituent}</span>
-                      <div className="flex items-center gap-1.5 mt-0.5">
-                        {p.class && (
-                          <span className="text-[10px] text-gray-500">{p.class}</span>
-                        )}
-                        {p.class && p.subclass && (
-                          <span className="text-[10px] text-gray-400">›</span>
-                        )}
-                        {p.subclass && (
-                          <span className="text-[10px] text-amber-700 font-medium">{p.subclass}</span>
-                        )}
-                        {p.importance && (
-                          <span className={`text-[10px] px-1.5 py-0.5 rounded-full border font-medium ml-1 ${importanceBadgeColor(p.importance)}`}>
-                            {p.importance}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Editorial note(s) — herb-level context from the CSV */}
-                {(() => {
-                  const notes = [...new Set(
-                    selectedMarkers
-                      .map((p) => p.editorial_note?.trim())
-                      .filter(Boolean) as string[]
-                  )];
-                  if (notes.length === 0) return null;
-                  return (
-                    <div className="mb-4 space-y-2">
-                      {notes.map((note, i) => (
-                        <p key={i} className="text-xs italic text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
-                          {note}
-                        </p>
-                      ))}
-                    </div>
-                  );
-                })()}
-
-                {/* Alternates (chemical similarity across all profiles) */}
-                {computedAlternates.length > 0 && (
+                <SectionHeader title="Constituent Profile" open={sectionsOpen.constituentProfile} onToggle={() => toggleSection('constituentProfile')} />
+                {sectionsOpen.constituentProfile && (
                   <div>
-                    <button
-                      onClick={() => setAlternatesOpen((o) => !o)}
-                      className="flex items-center gap-2 text-sm font-semibold text-gray-600 hover:text-amber-700 transition-colors"
-                    >
-                      <svg
-                        className={`w-4 h-4 transition-transform ${alternatesOpen ? 'rotate-180' : ''}`}
-                        fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                      >
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                      </svg>
-                      Alternates ({computedAlternates.length})
-                    </button>
+                    <div className="flex flex-wrap gap-2 mb-4">
+                      {[...selectedProfiles]
+                        .sort((a, b) => {
+                          const SO: Record<string, number> = { Marker: 0, Major: 1, Present: 2, Reported: 3 };
+                          const IO: Record<string, number> = { High: 0, Moderate: 1, 'Low-Moderate': 2, 'Low–Moderate': 2, Low: 3 };
+                          const s = (SO[a.status ?? ''] ?? 4) - (SO[b.status ?? ''] ?? 4);
+                          return s !== 0 ? s : (IO[a.importance ?? ''] ?? 4) - (IO[b.importance ?? ''] ?? 4);
+                        })
+                        .map((p) => (
+                          <div
+                            key={p.id}
+                            className="flex flex-col px-3 py-1.5 rounded-lg border bg-amber-50 border-amber-300 cursor-default select-none"
+                          >
+                            <span className="text-sm font-semibold text-amber-900">{p.constituent}</span>
+                            <div className="flex items-center gap-1.5 mt-0.5">
+                              {p.class && <span className="text-[10px] text-gray-500">{p.class}</span>}
+                              {p.class && p.subclass && <span className="text-[10px] text-gray-400">›</span>}
+                              {p.subclass && <span className="text-[10px] text-amber-700 font-medium">{p.subclass}</span>}
+                              {p.status && (
+                                <span className={`text-[10px] px-1.5 py-0.5 rounded-full border font-medium ml-1 ${statusBadgeColor(p.status)}`}>
+                                  {p.status}
+                                </span>
+                              )}
+                              {p.importance && (
+                                <span className={`text-[10px] px-1.5 py-0.5 rounded-full border font-medium ${importanceBadgeColor(p.importance)}`}>
+                                  {p.importance}
+                                </span>
+                              )}
+                            </div>
+                            {p.notes && (
+                              <p className="text-[10px] text-gray-600 italic mt-1 leading-snug max-w-[18rem]">{p.notes}</p>
+                            )}
+                          </div>
+                        ))}
+                    </div>
 
-                    {alternatesOpen && (
-                      <div className="mt-3 space-y-2">
-                        {computedAlternates.map(({ herb, similarity, exactConstituents, sharedSubclasses, sharedClasses }) => {
-                          if (!herb) return null;
-                          const m = herb.herb_menstruum;
-                          const simColor = similarity >= 50
-                            ? 'bg-emerald-100 text-emerald-700 border-emerald-300'
-                            : similarity >= 25
-                            ? 'bg-amber-100 text-amber-700 border-amber-300'
-                            : 'bg-gray-100 text-gray-500 border-gray-200';
-                          return (
-                            <button
-                              key={herb.id}
-                              onClick={() => navigateToHerb(herb.id)}
-                              className={`w-full text-left border rounded-lg px-4 py-2.5 transition-all hover:shadow-md hover:scale-[1.005] ${
-                                herb.temperature === 'warming' ? 'bg-amber-50 border-amber-200 hover:bg-amber-100' :
-                                herb.temperature === 'cooling' ? 'bg-sky-50 border-sky-200 hover:bg-sky-100' :
-                                'bg-gray-50 border-gray-200 hover:bg-gray-100'
-                              }`}
-                            >
-                              <div className="flex items-center justify-between gap-2 mb-1.5">
-                                <div>
-                                  <span className="font-medium text-gray-900 text-sm">{herb.common_name}</span>
-                                  <span className="text-xs italic text-gray-500 ml-2">{herb.latin_name}</span>
-                                </div>
-                                <div className="flex items-center gap-1.5 shrink-0">
-                                  <span className={`text-xs px-2 py-0.5 rounded-full border font-semibold ${simColor}`}>
-                                    {similarity}%
-                                  </span>
-                                  {m && (
-                                    <span className="text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 border border-purple-200">
-                                      {m.primary_label}
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                              <div className="flex flex-wrap gap-1">
-                                {exactConstituents.map((name) => (
-                                  <span key={name} className="text-xs px-1.5 py-0.5 rounded border bg-amber-50 text-amber-800 border-amber-300">
-                                    {name}
-                                  </span>
-                                ))}
-                                {sharedSubclasses.map((sub) => (
-                                  <span key={sub} className="text-xs px-1.5 py-0.5 rounded border bg-yellow-50 text-yellow-700 border-yellow-300 italic">
-                                    {sub}
-                                  </span>
-                                ))}
-                                {exactConstituents.length === 0 && sharedSubclasses.length === 0 && sharedClasses.map((cls) => (
-                                  <span key={cls} className="text-xs px-1.5 py-0.5 rounded border bg-gray-50 text-gray-500 border-gray-200 italic">
-                                    {cls}
-                                  </span>
-                                ))}
-                              </div>
-                            </button>
-                          );
-                        })}
+                    {/* Editorial note(s) */}
+                    {(() => {
+                      const notes = [...new Set(
+                        selectedProfiles.map((p) => p.editorial_note?.trim()).filter(Boolean) as string[]
+                      )];
+                      if (notes.length === 0) return null;
+                      return (
+                        <div className="mb-4 space-y-2">
+                          {notes.map((note, i) => (
+                            <p key={i} className="text-xs italic text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                              {note}
+                            </p>
+                          ))}
+                        </div>
+                      );
+                    })()}
+
+                    {/* Alternates */}
+                    {computedAlternates.length > 0 && (
+                      <div>
+                        <button
+                          onClick={() => setAlternatesOpen((o) => !o)}
+                          className="flex items-center gap-2 text-sm font-semibold text-gray-600 hover:text-amber-700 transition-colors"
+                        >
+                          <svg
+                            className={`w-4 h-4 transition-transform ${alternatesOpen ? '' : '-rotate-90'}`}
+                            fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                          </svg>
+                          Alternates ({computedAlternates.length})
+                        </button>
+                        {alternatesOpen && (
+                          <div className="mt-3 space-y-2">
+                            {computedAlternates.map(({ herb, similarity, exactConstituents, sharedSubclasses, sharedClasses }) => {
+                              if (!herb) return null;
+                              const m = herb.herb_menstruum;
+                              const simColor = similarity >= 50
+                                ? 'bg-emerald-100 text-emerald-700 border-emerald-300'
+                                : similarity >= 25
+                                ? 'bg-amber-100 text-amber-700 border-amber-300'
+                                : 'bg-gray-100 text-gray-500 border-gray-200';
+                              return (
+                                <button
+                                  key={herb.id}
+                                  onClick={() => navigateToHerb(herb.id)}
+                                  className={`w-full text-left border rounded-lg px-4 py-2.5 transition-all hover:shadow-md hover:scale-[1.005] ${
+                                    herb.temperature === 'warming' ? 'bg-amber-50 border-amber-200 hover:bg-amber-100' :
+                                    herb.temperature === 'cooling' ? 'bg-sky-50 border-sky-200 hover:bg-sky-100' :
+                                    'bg-gray-50 border-gray-200 hover:bg-gray-100'
+                                  }`}
+                                >
+                                  <div className="flex items-center justify-between gap-2 mb-1.5">
+                                    <div>
+                                      <span className="font-medium text-gray-900 text-sm">{herb.common_name}</span>
+                                      <span className="text-xs italic text-gray-500 ml-2">{herb.latin_name}</span>
+                                    </div>
+                                    <div className="flex items-center gap-1.5 shrink-0">
+                                      <span className={`text-xs px-2 py-0.5 rounded-full border font-semibold ${simColor}`}>
+                                        {similarity}%
+                                      </span>
+                                      {m && (
+                                        <span className="text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 border border-purple-200">
+                                          {m.primary_label}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <div className="flex flex-wrap gap-1">
+                                    {exactConstituents.map((name) => (
+                                      <span key={name} className="text-xs px-1.5 py-0.5 rounded border bg-amber-50 text-amber-800 border-amber-300">
+                                        {name}
+                                      </span>
+                                    ))}
+                                    {sharedSubclasses.map((sub) => (
+                                      <span key={sub} className="text-xs px-1.5 py-0.5 rounded border bg-yellow-50 text-yellow-700 border-yellow-300 italic">
+                                        {sub}
+                                      </span>
+                                    ))}
+                                    {exactConstituents.length === 0 && sharedSubclasses.length === 0 && sharedClasses.map((cls) => (
+                                      <span key={cls} className="text-xs px-1.5 py-0.5 rounded border bg-gray-50 text-gray-500 border-gray-200 italic">
+                                        {cls}
+                                      </span>
+                                    ))}
+                                  </div>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
@@ -659,134 +746,130 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onActionClick, onActi
             {/* ── Constituents ─────────────────────────────────────────────── */}
             {(selectedHerb.herb_constituents?.length ?? 0) > 0 && (
               <div className="mb-6">
-                <h3 className="text-xl font-semibold text-gray-800 mb-3">Constituents</h3>
-
-                <div className="flex flex-wrap gap-2 mb-4">
-                  {[...selectedHerb.herb_constituents]
-                    .sort((a, b) => {
-                      const w = LEVEL_WEIGHT[b.concentration_level] - LEVEL_WEIGHT[a.concentration_level];
-                      return w !== 0 ? w : a.sort_order - b.sort_order;
-                    })
-                    .map((hc) => {
-                      const refs = constituentIndex.get(hc.constituent_id) ?? [];
-                      const otherHerbCount = refs.filter(
-                        (r) => r.herb_id !== selectedHerb.id && r.concentration_level !== 'trace'
-                      ).length;
-
-                      return (
-                        <div
-                          key={hc.constituent_id}
-                          className="relative"
-                          onMouseEnter={(e) => handlePillMouseEnter(hc.constituent_id, e)}
-                          onMouseLeave={handlePillMouseLeave}
-                        >
-                          <span
-                            className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium border cursor-default select-none ${LEVEL_COLOR[hc.concentration_level]}`}
-                          >
-                            {hc.constituents.name}
-                            {hc.needs_review && (
-                              <span title="Data needs review" className="opacity-60">*</span>
-                            )}
-                            {otherHerbCount > 0 && (
-                              <span className="opacity-50 text-[10px]">({otherHerbCount})</span>
-                            )}
-                          </span>
-                        </div>
-                      );
-                    })}
-                </div>
-
-                {/* Menstruum recommendations */}
-                {selectedHerb.herb_menstruum && (
-                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2">
-                      Best Menstruum
-                    </p>
-                    <div className="flex flex-wrap gap-2 mb-2">
-                      {menstruumBadges(selectedHerb.herb_menstruum).map((b) => (
-                        <span
-                          key={b.label}
-                          className={`px-3 py-1 rounded-full text-xs font-medium border ${b.color}`}
-                        >
-                          {b.label}
-                        </span>
-                      ))}
+                <SectionHeader title="Constituents" open={sectionsOpen.constituents} onToggle={() => toggleSection('constituents')} />
+                {sectionsOpen.constituents && (
+                  <div>
+                    <div className="flex flex-wrap gap-2 mb-4">
+                      {[...selectedHerb.herb_constituents]
+                        .sort((a, b) => {
+                          const w = LEVEL_WEIGHT[b.concentration_level] - LEVEL_WEIGHT[a.concentration_level];
+                          return w !== 0 ? w : a.sort_order - b.sort_order;
+                        })
+                        .map((hc) => {
+                          const refs = constituentIndex.get(hc.constituent_id) ?? [];
+                          const otherHerbCount = refs.filter(
+                            (r) => r.herb_id !== selectedHerb.id && r.concentration_level !== 'trace'
+                          ).length;
+                          return (
+                            <div
+                              key={hc.constituent_id}
+                              className="relative"
+                              onMouseEnter={(e) => handlePillMouseEnter(hc.constituent_id, e)}
+                              onMouseLeave={handlePillMouseLeave}
+                            >
+                              <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium border cursor-default select-none ${LEVEL_COLOR[hc.concentration_level]}`}>
+                                {hc.constituents.name}
+                                {hc.needs_review && <span title="Data needs review" className="opacity-60">*</span>}
+                                {otherHerbCount > 0 && <span className="opacity-50 text-[10px]">({otherHerbCount})</span>}
+                              </span>
+                            </div>
+                          );
+                        })}
                     </div>
-                    {selectedHerb.herb_menstruum.notes && (
-                      <p className="text-xs text-gray-600 mt-1 italic">{selectedHerb.herb_menstruum.notes}</p>
+                    {selectedHerb.herb_menstruum && (
+                      <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                        <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2">Best Menstruum</p>
+                        <div className="flex flex-wrap gap-2 mb-2">
+                          {menstruumBadges(selectedHerb.herb_menstruum).map((b) => (
+                            <span key={b.label} className={`px-3 py-1 rounded-full text-xs font-medium border ${b.color}`}>
+                              {b.label}
+                            </span>
+                          ))}
+                          {herbHasExtractableAlkaloids && (
+                            <span className="px-3 py-1 rounded-full text-xs font-medium border bg-amber-50 text-amber-800 border-amber-300">
+                              + 5–10% vinegar
+                            </span>
+                          )}
+                        </div>
+                        {selectedHerb.herb_menstruum.notes && (
+                          <p className="text-xs text-gray-600 mt-1 italic">{selectedHerb.herb_menstruum.notes}</p>
+                        )}
+                        {herbHasExtractableAlkaloids && (
+                          <p className="text-xs text-amber-700 mt-2 italic">
+                            Alkaloids present — adding 5–10% apple cider vinegar improves their extraction.
+                          </p>
+                        )}
+                      </div>
                     )}
                   </div>
                 )}
               </div>
             )}
 
-            {/* Disorders Section */}
+            {/* ── Disorders ────────────────────────────────────────────────── */}
             {((selectedHerb.disorder_action_herbs?.length ?? 0) > 0 ||
               (selectedHerb.disorder_specific_remedies?.length ?? 0) > 0) && (
               <div>
-                <h3 className="text-xl font-semibold text-gray-800 mb-4">Used for Disorders</h3>
-                <div className="space-y-4">
-                  {(() => {
-                    const disorderMap = new Map<number, {
-                      disorder: Disorder & { body_systems: BodySystem };
-                      actions: PrimaryAction[];
-                      specificRemedy?: string;
-                    }>();
-
-                    selectedHerb.disorder_action_herbs?.forEach((item) => {
-                      if (!disorderMap.has(item.disorders.id)) {
-                        disorderMap.set(item.disorders.id, { disorder: item.disorders, actions: [] });
-                      }
-                      disorderMap.get(item.disorders.id)!.actions.push(item.primary_actions);
-                    });
-
-                    selectedHerb.disorder_specific_remedies?.forEach((item) => {
-                      if (!disorderMap.has(item.disorders.id)) {
-                        disorderMap.set(item.disorders.id, { disorder: item.disorders, actions: [], specificRemedy: item.description });
-                      } else {
-                        disorderMap.get(item.disorders.id)!.specificRemedy = item.description;
-                      }
-                    });
-
-                    return Array.from(disorderMap.values()).map((item) => (
-                      <div key={item.disorder.id} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-                        <button
-                          onClick={() => onDisorderClick?.(item.disorder.id, item.disorder.body_systems.id)}
-                          className="text-left w-full mb-3 group"
-                        >
-                          <div className="font-semibold text-lg text-blue-700 group-hover:text-blue-900 group-hover:underline transition-colors">
-                            {item.disorder.name}
-                          </div>
-                          <div className="text-sm text-gray-600">{item.disorder.body_systems.name}</div>
-                        </button>
-
-                        {item.specificRemedy && (
-                          <div className="mb-3 p-2 bg-green-50 border border-green-200 rounded">
-                            <span className="text-xs font-semibold text-green-800">SPECIFIC REMEDY</span>
-                            <p className="text-sm text-gray-700 mt-1">{item.specificRemedy}</p>
-                          </div>
-                        )}
-
-                        {item.actions.length > 0 && (
-                          <div>
-                            <span className="text-sm font-medium text-gray-700">Actions:</span>
-                            <div className="flex flex-wrap gap-2 mt-2">
-                              {item.actions.map((action, idx) => (
-                                <button
-                                  key={idx}
-                                  onClick={() => onActionClick?.(action.id)}
-                                  className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded hover:bg-blue-200 transition-all"
-                                >
-                                  {action.name}
-                                </button>
-                              ))}
+                <SectionHeader title="Used for Disorders" open={sectionsOpen.disorders} onToggle={() => toggleSection('disorders')} />
+                {sectionsOpen.disorders && (
+                  <div className="space-y-4">
+                    {(() => {
+                      const disorderMap = new Map<number, {
+                        disorder: Disorder & { body_systems: BodySystem };
+                        actions: PrimaryAction[];
+                        specificRemedy?: string;
+                      }>();
+                      selectedHerb.disorder_action_herbs?.forEach((item) => {
+                        if (!disorderMap.has(item.disorders.id)) {
+                          disorderMap.set(item.disorders.id, { disorder: item.disorders, actions: [] });
+                        }
+                        disorderMap.get(item.disorders.id)!.actions.push(item.primary_actions);
+                      });
+                      selectedHerb.disorder_specific_remedies?.forEach((item) => {
+                        if (!disorderMap.has(item.disorders.id)) {
+                          disorderMap.set(item.disorders.id, { disorder: item.disorders, actions: [], specificRemedy: item.description });
+                        } else {
+                          disorderMap.get(item.disorders.id)!.specificRemedy = item.description;
+                        }
+                      });
+                      return Array.from(disorderMap.values()).map((item) => (
+                        <div key={item.disorder.id} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                          <button
+                            onClick={() => onDisorderClick?.(item.disorder.id, item.disorder.body_systems.id)}
+                            className="text-left w-full mb-3 group"
+                          >
+                            <div className="font-semibold text-lg text-blue-700 group-hover:text-blue-900 group-hover:underline transition-colors">
+                              {item.disorder.name}
                             </div>
-                          </div>
-                        )}
-                      </div>
-                    ));
-                  })()}
-                </div>
+                            <div className="text-sm text-gray-600">{item.disorder.body_systems.name}</div>
+                          </button>
+                          {item.specificRemedy && (
+                            <div className="mb-3 p-2 bg-green-50 border border-green-200 rounded">
+                              <span className="text-xs font-semibold text-green-800">SPECIFIC REMEDY</span>
+                              <p className="text-sm text-gray-700 mt-1">{item.specificRemedy}</p>
+                            </div>
+                          )}
+                          {item.actions.length > 0 && (
+                            <div>
+                              <span className="text-sm font-medium text-gray-700">Actions:</span>
+                              <div className="flex flex-wrap gap-2 mt-2">
+                                {item.actions.map((action, idx) => (
+                                  <button
+                                    key={idx}
+                                    onClick={() => onActionClick?.(action.id)}
+                                    className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded hover:bg-blue-200 transition-all"
+                                  >
+                                    {action.name}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ));
+                    })()}
+                  </div>
+                )}
               </div>
             )}
           </div>
