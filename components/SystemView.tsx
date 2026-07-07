@@ -238,17 +238,19 @@ export function SystemView({ onHerbClick, onActionClick, selectedSystemId, onSys
                             <button
                               key={idx}
                               onClick={() => onHerbClick?.(item.herb.id)}
-                              className={`border rounded-lg p-3 hover:shadow-md hover:scale-105 transition-all cursor-pointer text-left ${getTemperatureCard(item.herb)}`}
+                              className={`border rounded-lg py-2.5 px-3 hover:shadow-md hover:scale-105 transition-all cursor-pointer text-left ${getTemperatureCard(item.herb)}`}
                             >
-                              <div className="font-medium text-sm">{item.herb.common_name}</div>
-                              <div className="text-xs italic text-gray-600">{item.herb.latin_name}</div>
-                              <div className="flex items-center justify-between mt-1.5">
-                                {item.strength && getStrengthBadge(item.strength) ? (
-                                  <span className={`text-xs font-semibold px-1.5 py-0.5 rounded ${getStrengthBadge(item.strength)}`}>
+                              <div className="flex items-center justify-between gap-1 mb-1">
+                                <span className="font-medium text-sm">{item.herb.common_name}</span>
+                                <span className="text-sm leading-none shrink-0">{getEnergeticEmojis(item.herb)}</span>
+                              </div>
+                              <div className="flex items-center justify-between gap-1">
+                                <span className="text-xs italic text-gray-600">{item.herb.latin_name}</span>
+                                {item.strength && getStrengthBadge(item.strength) && (
+                                  <span className={`text-xs font-semibold px-1.5 py-0.5 rounded shrink-0 ${getStrengthBadge(item.strength)}`}>
                                     {item.strength.replace('_', ' ')}
                                   </span>
-                                ) : <span />}
-                                <span className="text-sm leading-none">{getEnergeticEmojis(item.herb)}</span>
+                                )}
                               </div>
                             </button>
                           ))}

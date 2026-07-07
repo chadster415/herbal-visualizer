@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { TextPageLinks } from './TextPageLinks';
 import type {
@@ -60,6 +60,10 @@ export function DisorderView({ bodySystemId, onHerbClick, onActionClick, selecte
   const [selectedDisorder, setSelectedDisorder] = useState<DisorderData | null>(null);
   const [loading, setLoading] = useState(true);
   const [imageManifest, setImageManifest] = useState<Record<string, number>>({});
+  const [strengthMap, setStrengthMap] = useState<Map<number, string>>(new Map());
+  const actionsRef = useRef<HTMLDivElement | null>(null);
+  const remediesRef = useRef<HTMLDivElement | null>(null);
+  const prescriptionsRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     fetch('/api/disorder-images')
@@ -79,45 +83,57 @@ export function DisorderView({ bodySystemId, onHerbClick, onActionClick, selecte
     if (!bodySystemId) return;
 
     try {
-      const { data, error } = await supabase
-        .from('disorders')
-        .select(`
-          *,
-          disorder_notes (*),
-          disorder_actions_indicated (
-            id,
-            description,
-            sort_order,
-            primary_actions (*)
-          ),
-          disorder_action_herbs (
-            id,
-            note,
-            sort_order,
-            herbs (*),
-            primary_actions (*)
-          ),
-          disorder_specific_remedies (
-            id,
-            description,
-            sort_order,
-            herbs (*)
-          ),
-          disorder_prescriptions (
+      const [{ data, error }, { data: strengthData }] = await Promise.all([
+        supabase
+          .from('disorders')
+          .select(`
             *,
-            prescription_herbs (
-              *,
+            disorder_notes (*),
+            disorder_actions_indicated (
+              id,
+              description,
+              sort_order,
+              primary_actions (*)
+            ),
+            disorder_action_herbs (
+              id,
+              note,
+              sort_order,
               herbs (*),
-              prescription_herb_actions (
-                primary_actions (*)
+              primary_actions (*)
+            ),
+            disorder_specific_remedies (
+              id,
+              description,
+              sort_order,
+              herbs (*)
+            ),
+            disorder_prescriptions (
+              *,
+              prescription_herbs (
+                *,
+                herbs (*),
+                prescription_herb_actions (
+                  primary_actions (*)
+                )
               )
             )
-          )
-        `)
-        .eq('body_system_id', bodySystemId)
-        .order('sort_order');
+          `)
+          .eq('body_system_id', bodySystemId)
+          .order('sort_order'),
+        supabase
+          .from('herb_primary_actions')
+          .select('herb_id, relative_strength')
+          .eq('body_system_id', bodySystemId),
+      ]);
 
       if (error) throw error;
+
+      const map = new Map<number, string>();
+      strengthData?.forEach((r: any) => {
+        if (r.relative_strength) map.set(r.herb_id, r.relative_strength);
+      });
+      setStrengthMap(map);
 
       // Sort nested arrays by sort_order
       const sortedData = (data || []).map((disorder) => ({
@@ -165,27 +181,22 @@ export function DisorderView({ bodySystemId, onHerbClick, onActionClick, selecte
     return emojis.join('');
   };
 
+  const getStrengthBadge = (strength: string | undefined) => {
+    switch (strength) {
+      case 'mild':        return 'bg-yellow-100 text-yellow-700';
+      case 'strong':      return 'bg-orange-100 text-orange-700';
+      case 'very_strong': return 'bg-red-100 text-red-700';
+      default:            return null;
+    }
+  };
+
   // Group action herbs by primary action
   const groupActionHerbs = (actionHerbs: DisorderData['disorder_action_herbs']) => {
-    const grouped: Record<number, {
-      action: PrimaryAction;
-      herbs: Array<{ herb: Herb; note: string | null; sort_order: number }>;
-    }> = {};
-
+    const grouped: Record<number, { action: PrimaryAction; herbs: Array<{ herb: Herb; note: string | null; sort_order: number }> }> = {};
     actionHerbs.forEach((item) => {
-      if (!grouped[item.primary_actions.id]) {
-        grouped[item.primary_actions.id] = {
-          action: item.primary_actions,
-          herbs: [],
-        };
-      }
-      grouped[item.primary_actions.id].herbs.push({
-        herb: item.herbs,
-        note: item.note,
-        sort_order: item.sort_order,
-      });
+      if (!grouped[item.primary_actions.id]) grouped[item.primary_actions.id] = { action: item.primary_actions, herbs: [] };
+      grouped[item.primary_actions.id].herbs.push({ herb: item.herbs, note: item.note, sort_order: item.sort_order });
     });
-
     return Object.values(grouped);
   };
 
@@ -212,34 +223,30 @@ export function DisorderView({ bodySystemId, onHerbClick, onActionClick, selecte
   return (
     <div className="space-y-4">
       {/* Disorder Selector */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Select Disorder
-        </label>
-        <select
-          value={selectedDisorder?.id || ''}
-          onChange={(e) => {
-            const disorder = disorders.find((d) => d.id === parseInt(e.target.value)) ?? null;
-            setSelectedDisorder(disorder);
-            if (disorder) onDisorderChange?.(disorder.id);
-          }}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-        >
-          <option value="">Choose a disorder...</option>
-          {disorders
-            .slice()
-            .sort((a, b) => {
-              // Keep "Overall" at the top
-              if (a.name === 'Overall') return -1;
-              if (b.name === 'Overall') return 1;
-              return a.name.localeCompare(b.name);
-            })
-            .map((disorder) => (
-              <option key={disorder.id} value={disorder.id}>
-                {disorder.name}
-              </option>
-            ))}
-        </select>
+      <div className="flex flex-wrap gap-2">
+        {disorders
+          .slice()
+          .sort((a, b) => {
+            if (a.name === 'Overall') return -1;
+            if (b.name === 'Overall') return 1;
+            return a.name.localeCompare(b.name);
+          })
+          .map((disorder) => (
+            <button
+              key={disorder.id}
+              onClick={() => {
+                setSelectedDisorder(disorder);
+                onDisorderChange?.(disorder.id);
+              }}
+              className={`px-3 py-1.5 rounded-lg border text-sm font-medium transition-all ${
+                selectedDisorder?.id === disorder.id
+                  ? 'bg-green-600 text-white border-green-600'
+                  : 'bg-white text-gray-700 border-gray-300 hover:bg-green-50 hover:border-green-400'
+              }`}
+            >
+              {disorder.name}
+            </button>
+          ))}
       </div>
 
       {/* Disorder Details */}
@@ -267,73 +274,103 @@ export function DisorderView({ bodySystemId, onHerbClick, onActionClick, selecte
               </div>
             )}
 
-            {/* Actions Indicated */}
-            {selectedDisorder.disorder_actions_indicated.length > 0 && (
-              <div className="border-l-4 border-blue-500 pl-4">
-                <h3 className="text-xl font-semibold text-gray-800 mb-3">
-                  Actions Indicated
-                </h3>
-                <div className="space-y-2">
-                  {selectedDisorder.disorder_actions_indicated
-                    .sort((a, b) => a.primary_actions.name.localeCompare(b.primary_actions.name))
-                    .map((item) => (
-                      <button
-                        key={item.id}
-                        onClick={() => onActionClick?.(item.primary_actions.id)}
-                        className="w-full text-left border border-gray-200 rounded-lg p-3 hover:shadow-md hover:scale-[1.01] transition-all"
-                      >
-                        <div className="font-semibold text-green-700 mb-1">
-                          {item.primary_actions.name}
-                        </div>
-                        <p className="text-sm text-gray-700">{item.description}</p>
-                      </button>
-                    ))}
-                </div>
-              </div>
-            )}
-
-            {/* Action Herbs */}
-            {selectedDisorder.disorder_action_herbs.length > 0 && (
-              <div className="border-l-4 border-green-500 pl-4">
-                <h3 className="text-xl font-semibold text-gray-800 mb-3">
-                  Action Herbs
-                </h3>
-                <div className="space-y-4">
-                  {groupActionHerbs(selectedDisorder.disorder_action_herbs).map((group) => (
-                    <div key={group.action.id}>
-                      <button
-                        onClick={() => onActionClick?.(group.action.id)}
-                        className="text-lg font-semibold text-green-700 mb-2 hover:underline"
-                      >
-                        {group.action.name}
-                      </button>
-                      <div className="flex flex-wrap gap-2">
-                        {group.herbs.map((item, idx) => (
-                          <button
-                            key={idx}
-                            onClick={() => onHerbClick?.(item.herb.id)}
-                            className={`inline-flex flex-col items-start border rounded-lg px-3 py-2 transition-all hover:shadow-md ${getTemperatureCard(item.herb)}`}
-                          >
-                            <div className="flex items-center justify-between w-full gap-2">
-                              <span className="font-medium text-gray-900">{item.herb.common_name}</span>
-                              <span className="text-sm leading-none shrink-0">{getEnergeticEmojis(item.herb)}</span>
-                            </div>
-                            <span className="text-xs italic text-gray-600">{item.herb.latin_name}</span>
-                            {item.note && (
-                              <span className="text-xs text-gray-500 mt-1">{item.note}</span>
-                            )}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
+            {/* Section nav */}
+            {(() => {
+              const pills = [
+                ...((selectedDisorder.disorder_actions_indicated.length > 0 || selectedDisorder.disorder_action_herbs.length > 0) ? [{ label: 'Actions Indicated', ref: actionsRef }] : []),
+                ...(selectedDisorder.disorder_specific_remedies.length > 0 ? [{ label: 'Specific Remedies', ref: remediesRef }] : []),
+                ...(selectedDisorder.disorder_prescriptions.length > 0 ? [{ label: 'Prescriptions', ref: prescriptionsRef }] : []),
+              ];
+              if (pills.length < 2) return null;
+              return (
+                <div className="flex flex-wrap gap-1.5 text-xs">
+                  {pills.map(({ label, ref }) => (
+                    <button
+                      key={label}
+                      onClick={() => ref.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                      className="px-2.5 py-1 rounded-full border border-gray-300 text-gray-500 hover:border-green-500 hover:text-green-700 transition-colors"
+                    >
+                      {label}
+                    </button>
                   ))}
                 </div>
-              </div>
-            )}
+              );
+            })()}
+
+            {/* Actions Indicated + Action Herbs (combined) */}
+            {(selectedDisorder.disorder_actions_indicated.length > 0 || selectedDisorder.disorder_action_herbs.length > 0) && (() => {
+              const herbsByAction = new Map<number, typeof selectedDisorder.disorder_action_herbs>();
+              selectedDisorder.disorder_action_herbs.forEach((h) => {
+                const id = h.primary_actions.id;
+                if (!herbsByAction.has(id)) herbsByAction.set(id, []);
+                herbsByAction.get(id)!.push(h);
+              });
+
+              const indicatedIds = new Set(selectedDisorder.disorder_actions_indicated.map((a) => a.primary_actions.id));
+
+              const herbOnlyGroups = groupActionHerbs(
+                selectedDisorder.disorder_action_herbs.filter((h) => !indicatedIds.has(h.primary_actions.id))
+              );
+
+              const HerbPills = ({ herbs }: { herbs: typeof selectedDisorder.disorder_action_herbs }) => (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {herbs.sort((a, b) => a.sort_order - b.sort_order).map((h, idx) => (
+                    <button
+                      key={idx}
+                      onClick={(e) => { e.stopPropagation(); onHerbClick?.(h.herbs.id); }}
+                      className={`inline-flex flex-col items-start border rounded-lg px-3 py-1.5 transition-all hover:shadow-md ${getTemperatureCard(h.herbs)}`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-gray-900 text-sm">{h.herbs.common_name}</span>
+                        <span className="text-sm leading-none shrink-0">{getEnergeticEmojis(h.herbs)}</span>
+                      </div>
+                      <span className="text-xs italic text-gray-600">{h.herbs.latin_name}</span>
+                      {h.note && <span className="text-xs text-gray-500 mt-0.5">{h.note}</span>}
+                    </button>
+                  ))}
+                </div>
+              );
+
+              return (
+                <div className="border-l-4 border-blue-500 pl-4" ref={actionsRef}>
+                  <h3 className="text-xl font-semibold text-gray-800 mb-3">Actions Indicated</h3>
+                  <div className="space-y-2">
+                    {selectedDisorder.disorder_actions_indicated
+                      .sort((a, b) => a.primary_actions.name.localeCompare(b.primary_actions.name))
+                      .map((item) => {
+                        const herbs = herbsByAction.get(item.primary_actions.id) ?? [];
+                        return (
+                          <div key={item.id} className="border border-gray-200 rounded-lg p-3">
+                            <button
+                              onClick={() => onActionClick?.(item.primary_actions.id)}
+                              className="w-full text-left"
+                            >
+                              <div className="font-semibold text-green-700 mb-1">{item.primary_actions.name}</div>
+                              <p className="text-sm text-gray-700">{item.description}</p>
+                            </button>
+                            {herbs.length > 0 && <HerbPills herbs={herbs} />}
+                          </div>
+                        );
+                      })}
+                    {herbOnlyGroups.map((group) => (
+                      <div key={group.action.id} className="border border-gray-200 rounded-lg p-3">
+                        <button
+                          onClick={() => onActionClick?.(group.action.id)}
+                          className="font-semibold text-green-700 hover:underline"
+                        >
+                          {group.action.name}
+                        </button>
+                        <HerbPills herbs={selectedDisorder.disorder_action_herbs.filter((h) => h.primary_actions.id === group.action.id)} />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* Specific Remedies */}
             {selectedDisorder.disorder_specific_remedies.length > 0 && (
-              <div className="border-l-4 border-amber-500 pl-4">
+              <div className="border-l-4 border-amber-500 pl-4" ref={remediesRef}>
                 <h3 className="text-xl font-semibold text-gray-800 mb-3">
                   Specific Remedies
                 </h3>
@@ -342,14 +379,25 @@ export function DisorderView({ bodySystemId, onHerbClick, onActionClick, selecte
                     <button
                       key={item.id}
                       onClick={() => onHerbClick?.(item.herbs.id)}
-                      className={`w-full text-left border rounded-lg p-3 hover:shadow-md hover:scale-[1.01] transition-all ${getTemperatureCard(item.herbs)}`}
+                      className={`w-full text-left border rounded-lg py-1.5 px-3 hover:shadow-md hover:scale-[1.01] transition-all ${getTemperatureCard(item.herbs)}`}
                     >
-                      <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center justify-between gap-2 mb-1">
                         <div className="font-semibold text-gray-900">{item.herbs.common_name}</div>
                         <span className="text-sm leading-none shrink-0">{getEnergeticEmojis(item.herbs)}</span>
                       </div>
-                      <div className="text-sm italic text-gray-600 mb-1">{item.herbs.latin_name}</div>
-                      <p className="text-sm text-gray-700">{item.description}</p>
+                      <div className="text-sm italic text-gray-600">{item.herbs.latin_name}</div>
+                      {(() => {
+                        const s = strengthMap.get(item.herbs.id);
+                        const cls = getStrengthBadge(s);
+                        return (
+                          <div className="flex items-end justify-between gap-2 mt-1">
+                            {item.description
+                              ? <p className="text-sm text-gray-700">{item.description}</p>
+                              : <span />}
+                            {cls && <span className={`text-xs font-semibold px-1.5 py-0.5 rounded shrink-0 ${cls}`}>{s!.replace('_', ' ')}</span>}
+                          </div>
+                        );
+                      })()}
                     </button>
                   ))}
                 </div>
@@ -358,7 +406,7 @@ export function DisorderView({ bodySystemId, onHerbClick, onActionClick, selecte
 
             {/* Prescriptions */}
             {selectedDisorder.disorder_prescriptions.length > 0 && (
-              <div className="border-l-4 border-purple-500 pl-4">
+              <div className="border-l-4 border-purple-500 pl-4" ref={prescriptionsRef}>
                 <h3 className="text-xl font-semibold text-gray-800 mb-3">
                   Prescriptions
                 </h3>
@@ -426,11 +474,7 @@ export function DisorderView({ bodySystemId, onHerbClick, onActionClick, selecte
               </div>
             )}
           </div>
-        ) : (
-          <div className="flex items-center justify-center py-12 text-gray-400">
-            <p className="text-lg">Select a disorder to view details</p>
-          </div>
-        )}
+        ) : null}
       </div>
     </div>
   );

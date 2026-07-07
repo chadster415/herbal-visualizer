@@ -183,6 +183,14 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onActionClick, onActi
 
   const herbRefs = useRef<Map<number, HTMLButtonElement>>(new Map());
   const detailPanelRef = useRef<HTMLDivElement>(null);
+  const sectionRefs = useRef<Partial<Record<keyof typeof sectionsOpen, HTMLDivElement | null>>>({});
+
+  const scrollToSection = (key: keyof typeof sectionsOpen) => {
+    setSectionsOpen((prev) => ({ ...prev, [key]: true }));
+    setTimeout(() => {
+      sectionRefs.current[key]?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 50);
+  };
 
   useEffect(() => {
     if (highlightedIndex < 0) return;
@@ -502,7 +510,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onActionClick, onActi
                 setHighlightedIndex(-1);
                 detailPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
               }}
-              className={`w-full text-left p-3 rounded-lg border transition-all ${
+              className={`w-full text-left p-3 rounded-lg border transition-all scroll-my-1 ${
                 selectedHerb?.id === herb.id ? 'ring-2 ring-green-500 ring-offset-1' :
                 highlightedIndex === idx ? 'ring-2 ring-green-300 ring-offset-1' : ''
               } ${
@@ -547,50 +555,88 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onActionClick, onActi
                 </a>
               )}
             </div>
-            <p className="text-xl italic text-gray-600 mb-6">{selectedHerb.latin_name}</p>
+            <p className="text-xl italic text-gray-600 mb-3">{selectedHerb.latin_name}</p>
+
+            {/* Section nav */}
+            <div className="flex flex-wrap gap-1.5 mb-6 text-xs">
+              {[
+                { key: 'primaryActions' as const, label: 'Primary Actions' },
+                ...(selectedHerb.herb_secondary_actions.length > 0 ? [{ key: 'secondaryActions' as const, label: 'Secondary Actions' }] : []),
+                ...(selectedProfiles.length > 0 ? [{ key: 'constituentProfile' as const, label: 'Constituents' }] : []),
+                ...((selectedHerb.herb_constituents?.length ?? 0) > 0 ? [{ key: 'constituents' as const, label: 'Constituent Detail' }] : []),
+                ...((((selectedHerb.disorder_action_herbs?.length ?? 0) > 0) || ((selectedHerb.disorder_specific_remedies?.length ?? 0) > 0)) ? [{ key: 'disorders' as const, label: 'Disorders' }] : []),
+              ].map(({ key, label }) => (
+                <button
+                  key={key}
+                  onClick={() => scrollToSection(key)}
+                  className="px-2.5 py-1 rounded-full border border-gray-300 text-gray-500 hover:border-green-500 hover:text-green-700 transition-colors"
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
 
             {/* Primary Actions & Body Systems */}
-            <div className="mb-6">
+            <div className="mb-6" ref={(el) => { sectionRefs.current.primaryActions = el; }}>
               <SectionHeader title="Primary Actions & Body Systems" open={sectionsOpen.primaryActions} onToggle={() => toggleSection('primaryActions')} />
               {sectionsOpen.primaryActions && (
                 selectedHerb.herb_primary_actions.length > 0
-                  ? <div className="space-y-4">
-                      {selectedHerb.herb_primary_actions.map((action, idx) => (
-                        <button
-                          key={idx}
-                          onClick={() => onActionClick?.(action.primary_actions.id)}
-                          className="w-full border border-gray-200 rounded-lg p-4 hover:shadow-md hover:scale-[1.02] transition-all cursor-pointer text-left"
-                        >
-                          <div className="flex items-start justify-between mb-2">
-                            <div>
-                              <h4 className="text-lg font-semibold text-green-700">{action.primary_actions.name}</h4>
-                              {action.body_systems && (
-                                <p className="text-sm text-gray-600">{action.body_systems.name}</p>
-                              )}
+                  ? (() => {
+                      const bySystem = new Map<string, typeof selectedHerb.herb_primary_actions>();
+                      selectedHerb.herb_primary_actions.forEach((action) => {
+                        const sysName = action.body_systems?.name ?? 'General';
+                        if (!bySystem.has(sysName)) bySystem.set(sysName, []);
+                        bySystem.get(sysName)!.push(action);
+                      });
+                      const sortedSystems = [...bySystem.entries()].sort(([a], [b]) => {
+                        if (a === 'General') return 1;
+                        if (b === 'General') return -1;
+                        return a.localeCompare(b);
+                      });
+                      return (
+                        <div className="space-y-6 pl-4 border-l-2 border-green-100">
+                          {sortedSystems.map(([sysName, actions]) => (
+                            <div key={sysName}>
+                              <h4 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-2 border-b border-gray-100 pb-1">
+                                {sysName}
+                              </h4>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                {[...actions].sort((a, b) => a.primary_actions.name.localeCompare(b.primary_actions.name)).map((action, idx) => (
+                                  <button
+                                    key={idx}
+                                    onClick={() => onActionClick?.(action.primary_actions.id)}
+                                    className="w-full bg-gray-50 border border-gray-200 rounded-lg py-1.5 px-4 hover:border-green-400 hover:shadow-sm hover:scale-[1.02] transition-all cursor-pointer text-left"
+                                  >
+                                    <div className="flex items-start justify-between">
+                                      <h5 className="text-base font-semibold text-green-700">{action.primary_actions.name}</h5>
+                                      {action.relative_strength && (
+                                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStrengthColor(action.relative_strength)}`}>
+                                          {action.relative_strength.replace('_', ' ')}
+                                        </span>
+                                      )}
+                                    </div>
+                                    {action.body_system_note && (
+                                      <p className="text-sm text-gray-700 mt-1">{action.body_system_note}</p>
+                                    )}
+                                  </button>
+                                ))}
+                              </div>
                             </div>
-                            {action.relative_strength && (
-                              <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStrengthColor(action.relative_strength)}`}>
-                                {action.relative_strength.replace('_', ' ')}
-                              </span>
-                            )}
-                          </div>
-                          {action.body_system_note && (
-                            <p className="text-sm text-gray-700 mt-2">{action.body_system_note}</p>
-                          )}
-                        </button>
-                      ))}
-                    </div>
+                          ))}
+                        </div>
+                      );
+                    })()
                   : <p className="text-gray-500 italic">No primary actions recorded for this herb.</p>
               )}
             </div>
 
             {/* Secondary Actions */}
             {selectedHerb.herb_secondary_actions.length > 0 && (
-              <div className="mb-6">
+              <div className="mb-6" ref={(el) => { sectionRefs.current.secondaryActions = el; }}>
                 <SectionHeader title="Secondary Actions" open={sectionsOpen.secondaryActions} onToggle={() => toggleSection('secondaryActions')} />
                 {sectionsOpen.secondaryActions && (
                   <div className="flex flex-wrap gap-2">
-                    {selectedHerb.herb_secondary_actions.map((item, idx) => (
+                    {[...selectedHerb.herb_secondary_actions].sort((a, b) => a.secondary_actions.name.localeCompare(b.secondary_actions.name)).map((item, idx) => (
                       <button
                         key={idx}
                         onClick={() => onActionNameClick?.(item.secondary_actions.name)}
@@ -606,8 +652,8 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onActionClick, onActi
 
             {/* ── Constituent Profile ───────────────────────────────────────── */}
             {selectedProfiles.length > 0 && (
-              <div className="mb-6">
-                <SectionHeader title="Constituent Profile" open={sectionsOpen.constituentProfile} onToggle={() => toggleSection('constituentProfile')} />
+              <div className="mb-6" ref={(el) => { sectionRefs.current.constituentProfile = el; }}>
+                <SectionHeader title="Constituent Profile Markers" open={sectionsOpen.constituentProfile} onToggle={() => toggleSection('constituentProfile')} />
                 {sectionsOpen.constituentProfile && (
                   <div>
                     <div className="flex flex-wrap gap-2 mb-4">
@@ -623,24 +669,24 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onActionClick, onActi
                             key={p.id}
                             className="flex flex-col px-3 py-1.5 rounded-lg border bg-amber-50 border-amber-300 cursor-default select-none"
                           >
-                            <span className="text-sm font-semibold text-amber-900">{p.constituent}</span>
+                            <span className="text-base font-semibold text-amber-900">{p.constituent}</span>
                             <div className="flex items-center gap-1.5 mt-0.5">
-                              {p.class && <span className="text-[10px] text-gray-500">{p.class}</span>}
-                              {p.class && p.subclass && <span className="text-[10px] text-gray-400">›</span>}
-                              {p.subclass && <span className="text-[10px] text-amber-700 font-medium">{p.subclass}</span>}
+                              {p.class && <span className="text-xs text-gray-500">{p.class}</span>}
+                              {p.class && p.subclass && <span className="text-xs text-gray-400">›</span>}
+                              {p.subclass && <span className="text-xs text-amber-700 font-medium">{p.subclass}</span>}
                               {p.status && (
-                                <span className={`text-[10px] px-1.5 py-0.5 rounded-full border font-medium ml-1 ${statusBadgeColor(p.status)}`}>
+                                <span className={`text-xs px-1.5 py-0.5 rounded-full border font-medium ml-1 ${statusBadgeColor(p.status)}`}>
                                   {p.status}
                                 </span>
                               )}
                               {p.importance && (
-                                <span className={`text-[10px] px-1.5 py-0.5 rounded-full border font-medium ${importanceBadgeColor(p.importance)}`}>
+                                <span className={`text-xs px-1.5 py-0.5 rounded-full border font-medium ${importanceBadgeColor(p.importance)}`}>
                                   {p.importance}
                                 </span>
                               )}
                             </div>
                             {p.notes && (
-                              <p className="text-[10px] text-gray-600 italic mt-1 leading-snug max-w-[18rem]">{p.notes}</p>
+                              <p className="text-xs text-gray-600 italic mt-1 leading-snug max-w-[18rem]">{p.notes}</p>
                             )}
                           </div>
                         ))}
@@ -655,7 +701,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onActionClick, onActi
                       return (
                         <div className="mb-4 space-y-2">
                           {notes.map((note, i) => (
-                            <p key={i} className="text-xs italic text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                            <p key={i} className="text-sm italic text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
                               {note}
                             </p>
                           ))}
@@ -676,7 +722,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onActionClick, onActi
                           >
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                           </svg>
-                          Alternates ({computedAlternates.length})
+                          Ranked Alternates Based on Markers ({computedAlternates.length})
                         </button>
                         {alternatesOpen && (
                           <div className="mt-3 space-y-2">
@@ -745,8 +791,8 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onActionClick, onActi
 
             {/* ── Constituents ─────────────────────────────────────────────── */}
             {(selectedHerb.herb_constituents?.length ?? 0) > 0 && (
-              <div className="mb-6">
-                <SectionHeader title="Constituents" open={sectionsOpen.constituents} onToggle={() => toggleSection('constituents')} />
+              <div className="mb-6" ref={(el) => { sectionRefs.current.constituents = el; }}>
+                <SectionHeader title="General Constituents" open={sectionsOpen.constituents} onToggle={() => toggleSection('constituents')} />
                 {sectionsOpen.constituents && (
                   <div>
                     <div className="flex flex-wrap gap-2 mb-4">
@@ -809,7 +855,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onActionClick, onActi
             {/* ── Disorders ────────────────────────────────────────────────── */}
             {((selectedHerb.disorder_action_herbs?.length ?? 0) > 0 ||
               (selectedHerb.disorder_specific_remedies?.length ?? 0) > 0) && (
-              <div>
+              <div ref={(el) => { sectionRefs.current.disorders = el; }}>
                 <SectionHeader title="Used for Disorders" open={sectionsOpen.disorders} onToggle={() => toggleSection('disorders')} />
                 {sectionsOpen.disorders && (
                   <div className="space-y-4">
@@ -832,27 +878,27 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onActionClick, onActi
                           disorderMap.get(item.disorders.id)!.specificRemedy = item.description;
                         }
                       });
-                      return Array.from(disorderMap.values()).map((item) => (
-                        <div key={item.disorder.id} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                      return Array.from(disorderMap.values()).sort((a, b) => a.disorder.name.localeCompare(b.disorder.name)).map((item) => (
+                        <div key={item.disorder.id} className="border border-gray-200 rounded-lg py-1.5 px-4 bg-gray-50">
                           <button
                             onClick={() => onDisorderClick?.(item.disorder.id, item.disorder.body_systems.id)}
-                            className="text-left w-full mb-3 group"
+                            className="text-left w-full group"
                           >
-                            <div className="font-semibold text-lg text-blue-700 group-hover:text-blue-900 group-hover:underline transition-colors">
+                            <div className="font-semibold text-base text-blue-700 group-hover:text-blue-900 group-hover:underline transition-colors">
                               {item.disorder.name}
                             </div>
                             <div className="text-sm text-gray-600">{item.disorder.body_systems.name}</div>
                           </button>
                           {item.specificRemedy && (
-                            <div className="mb-3 p-2 bg-green-50 border border-green-200 rounded">
+                            <div className="mt-1 mb-2 p-2 bg-green-50 border border-green-200 rounded">
                               <span className="text-xs font-semibold text-green-800">SPECIFIC REMEDY</span>
                               <p className="text-sm text-gray-700 mt-1">{item.specificRemedy}</p>
                             </div>
                           )}
                           {item.actions.length > 0 && (
-                            <div>
+                            <div className="mt-1">
                               <span className="text-sm font-medium text-gray-700">Actions:</span>
-                              <div className="flex flex-wrap gap-2 mt-2">
+                              <div className="flex flex-wrap gap-2 mt-1">
                                 {item.actions.map((action, idx) => (
                                   <button
                                     key={idx}

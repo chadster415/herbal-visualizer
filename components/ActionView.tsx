@@ -32,6 +32,7 @@ export function ActionView({ onHerbClick, selectedActionId, onActionIdChange }: 
   const [loading, setLoading] = useState(true);
   const [agingHerbIds, setAgingHerbIds] = useState<Set<number>>(new Set());
   const actionRefs = useRef<Map<number, HTMLButtonElement>>(new Map());
+  const systemRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
   useEffect(() => {
     fetchActions();
@@ -91,6 +92,7 @@ export function ActionView({ onHerbClick, selectedActionId, onActionIdChange }: 
   }
 
   const filteredActions = actions.filter((action) =>
+    action.herb_primary_actions.length > 0 &&
     action.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -208,18 +210,31 @@ export function ActionView({ onHerbClick, selectedActionId, onActionIdChange }: 
               </div>
             )}
 
-            {selectedAction.herb_primary_actions.length > 0 ? (
-              <div className="space-y-6">
-                {Array.from(groupByBodySystem(selectedAction))
-                  .sort(([a], [b]) => {
-                    // Keep "General (No specific system)" at the bottom
-                    if (a.startsWith('General')) return 1;
-                    if (b.startsWith('General')) return -1;
-                    // Otherwise sort alphabetically
-                    return a.localeCompare(b);
-                  })
-                  .map(([systemName, herbs]) => (
-                    <div key={systemName} className="border-l-4 border-green-500 pl-4">
+            {selectedAction.herb_primary_actions.length > 0 ? (() => {
+              const sortedSystems = Array.from(groupByBodySystem(selectedAction))
+                .sort(([a], [b]) => {
+                  if (a.startsWith('General')) return 1;
+                  if (b.startsWith('General')) return -1;
+                  return a.localeCompare(b);
+                });
+              return (
+              <>
+                {sortedSystems.length > 1 && (
+                  <div className="flex flex-wrap gap-1.5 mb-6 text-xs">
+                    {sortedSystems.map(([systemName]) => (
+                      <button
+                        key={systemName}
+                        onClick={() => systemRefs.current.get(systemName)?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                        className="px-2.5 py-1 rounded-full border border-gray-300 text-gray-500 hover:border-green-500 hover:text-green-700 transition-colors"
+                      >
+                        {systemName}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                <div className="space-y-6">
+                {sortedSystems.map(([systemName, herbs]) => (
+                    <div key={systemName} className="border-l-4 border-green-500 pl-4" ref={(el) => { if (el) systemRefs.current.set(systemName, el); else systemRefs.current.delete(systemName); }}>
                       <h3 className="text-xl font-semibold text-gray-800 mb-3">
                         {systemName}
                       </h3>
@@ -230,22 +245,24 @@ export function ActionView({ onHerbClick, selectedActionId, onActionIdChange }: 
                           <button
                             key={idx}
                             onClick={() => onHerbClick?.(item.herb.id)}
-                            className={`border rounded-lg p-3 hover:shadow-md hover:scale-105 transition-all cursor-pointer text-left ${getTemperatureCard(item.herb)}`}
+                            className={`border rounded-lg py-1.5 px-3 hover:shadow-md hover:scale-105 transition-all cursor-pointer text-left ${getTemperatureCard(item.herb)}`}
                           >
-                            <div className="flex items-start justify-between gap-1">
+                            <div className="flex items-center justify-between gap-1 mb-1">
                               <span className="font-medium">{item.herb.common_name}</span>
-                              {selectedAction.name === 'Tonic' && agingHerbIds.has(item.herb.id) && (
-                                <span className="text-base leading-none shrink-0" title="Recommended for elders">🧓</span>
-                              )}
+                              <div className="flex items-center gap-1 shrink-0">
+                                <span className="text-sm leading-none">{getEnergeticEmojis(item.herb)}</span>
+                                {selectedAction.name === 'Tonic' && agingHerbIds.has(item.herb.id) && (
+                                  <span className="text-base leading-none" title="Recommended for elders">🧓</span>
+                                )}
+                              </div>
                             </div>
-                            <div className="text-sm italic text-gray-600">{item.herb.latin_name}</div>
-                            <div className="flex items-center justify-between mt-1.5">
-                              {item.strength && getStrengthBadge(item.strength) ? (
-                                <span className={`text-xs font-semibold px-1.5 py-0.5 rounded ${getStrengthBadge(item.strength)}`}>
+                            <div className="flex items-center justify-between gap-1">
+                              <span className="text-sm italic text-gray-600">{item.herb.latin_name}</span>
+                              {item.strength && getStrengthBadge(item.strength) && (
+                                <span className={`text-xs font-semibold px-1.5 py-0.5 rounded shrink-0 ${getStrengthBadge(item.strength)}`}>
                                   {item.strength.replace('_', ' ')}
                                 </span>
-                              ) : <span />}
-                              <span className="text-sm leading-none">{getEnergeticEmojis(item.herb)}</span>
+                              )}
                             </div>
                           </button>
                         ))}
@@ -253,8 +270,10 @@ export function ActionView({ onHerbClick, selectedActionId, onActionIdChange }: 
                     </div>
                   )
                 )}
-              </div>
-            ) : (
+                </div>
+              </>
+              );
+            })() : (
               <p className="text-gray-500 italic">
                 No herbs recorded for this action.
               </p>
