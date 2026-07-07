@@ -1,0 +1,357 @@
+common_name,latin_name,plant_part,constituent,class,subclass,importance,status,notes
+Agrimony,Agrimonia eupatoria,Aerial parts,Caffeic acid,Polyphenol,Hydroxycinnamic acid,Low–Moderate,Reported,Contributes antioxidant and anti-inflammatory phenolic activity.
+Agrimony,Agrimonia eupatoria,Aerial parts,Chlorogenic acid,Polyphenol,Hydroxycinnamic acid,Low–Moderate,Reported,"Contributes antioxidant, hepatoprotective, and bitter digestive-support activity."
+Agrimony,Agrimonia eupatoria,Aerial parts,Limonene,Terpenoid,Monoterpenoid,Low,Reported,"Contributes carminative, aromatic digestive, and mild antimicrobial activity."
+Agrimony,Agrimonia eupatoria,Aerial parts,α-Pinene,Terpenoid,Monoterpenoid,Low,Reported,"Contributes aromatic antimicrobial, bronchodilating, and anti-inflammatory activity."
+Agrimony,Agrimonia eupatoria,Aerial parts,β-Pinene,Terpenoid,Monoterpenoid,Low,Reported,Contributes aromatic antimicrobial and anti-inflammatory activity.
+Agrimony,Agrimonia eupatoria,Aerial parts,Gallic acid,Polyphenol,Phenolic acid,Moderate,Present,"Supports astringent, antioxidant, and antimicrobial phenolic activity."
+Agrimony,Agrimonia eupatoria,Aerial parts,Quercetin,Flavonoid,Flavonol,Moderate,Present,"Contributes antioxidant, anti-inflammatory, and mast-cell-modulating activity."
+Agrimony,Agrimonia eupatoria,Aerial parts,Ursolic acid,Terpenoid,Pentacyclic triterpenoid,Moderate,Present,"Contributes anti-inflammatory, antimicrobial, and tissue-repair activity."
+Agrimony,Agrimonia eupatoria,Aerial parts,Apigenin,Flavonoid,Flavone,Low–Moderate,Present,"Contributes anti-inflammatory, antispasmodic, and mild calming activity."
+Agrimony,Agrimonia eupatoria,Aerial parts,Kaempferol,Flavonoid,Flavonol,Low–Moderate,Present,Contributes antioxidant and anti-inflammatory flavonol activity.
+Agrimony,Agrimonia eupatoria,Aerial parts,Luteolin,Flavonoid,Flavone,Low–Moderate,Present,"Contributes anti-inflammatory, antioxidant, and antispasmodic activity."
+Agrimony,Agrimonia eupatoria,Aerial parts,Oleanolic acid,Terpenoid,Pentacyclic triterpenoid,Low–Moderate,Present,Contributes anti-inflammatory and tissue-repair activity.
+Agrimony,Agrimonia eupatoria,Aerial parts,Agrimoniin,Tannin,Ellagitannin,High,Marker,"Supports astringent, anti-inflammatory, and tissue-toning actions."
+Agrimony,Agrimonia eupatoria,Aerial parts,Ellagic acid,Polyphenol,Phenolic acid,Moderate,Major,Contributes antioxidant and anti-inflammatory phenolic activity.
+Agrimony,Agrimonia eupatoria,Aerial parts,Hyperoside,Flavonoid,Flavonol glycoside,Moderate,Major,"Contributes antioxidant, anti-inflammatory, and capillary-supportive activity."
+Agrimony,Agrimonia eupatoria,Aerial parts,Pedunculagin,Tannin,Ellagitannin,Moderate,Major,Contributes astringent and anti-inflammatory tannin activity.
+Agrimony,Agrimonia eupatoria,Aerial parts,Proanthocyanidins,Tannin,Condensed tannin,Moderate,Major,"Contribute astringent, antioxidant, and capillary-supportive activity."
+Agrimony,Agrimonia eupatoria,Aerial parts,Quercitrin,Flavonoid,Flavonol glycoside,Moderate,Major,Contributes antioxidant and anti-inflammatory flavonol activity.
+Aloe,Aloe vera,Inner gel,Campesterol,Sterol,Phytosterol,Low,Reported,Contributes phytosterol-related anti-inflammatory and lipid-support activity.
+Aloe,Aloe vera,Inner gel,Salicylic acid,Polyphenol,Phenolic acid,Low,Reported,"Contributes analgesic, anti-inflammatory, and keratolytic activity."
+Aloe,Aloe vera,Latex,Aloinosides,Anthraquinone,Anthraquinone glycoside,Moderate,Present,Contribute stimulant laxative activity of aloe latex.
+Aloe,Aloe vera,Inner gel,Arabinogalactans,Polysaccharide,Arabinogalactan,Moderate,Present,Support demulcent and immune-modulating polysaccharide activity.
+Aloe,Aloe vera,Latex,Chrysophanol,Anthraquinone,Anthraquinone,Moderate,Present,Contributes stimulant laxative and antimicrobial anthraquinone activity.
+Aloe,Aloe vera,Latex,Emodin,Anthraquinone,Anthraquinone,Moderate,Present,Contributes stimulant laxative and antimicrobial anthraquinone activity.
+Aloe,Aloe vera,Inner gel,Lupeol,Terpenoid,Pentacyclic triterpenoid,Moderate,Present,Contributes anti-inflammatory and tissue-repair activity.
+Aloe,Aloe vera,Inner gel,Pectins,Polysaccharide,Pectin,Moderate,Present,"Contribute demulcent, bulk-forming, and bowel-regulating activity."
+Aloe,Aloe vera,Inner gel,β-Sitosterol,Sterol,Phytosterol,Moderate,Present,"Contributes anti-inflammatory, membrane-stabilizing, and endocrine-modulating activity."
+Aloe,Aloe vera,Inner gel,Aloinoside,Polyphenol,Chromone,Low,Present,Contributes stimulant laxative activity of aloe latex.
+Aloe,Aloe vera,Inner gel,Acemannan,Polysaccharide,Acetylated glucomannan,High,Marker,"Supports demulcent, wound-healing, and immune-modulating actions of aloe gel."
+Aloe,Aloe vera,Latex,Aloin A (Barbaloin),Anthraquinone,Anthraquinone glycoside,High,Marker,Contributes stimulant laxative activity of aloe latex.
+Aloe,Aloe vera,Inner gel,Aloenin,Polyphenol,Chromone,Moderate,Major,Contributes bitter digestive and characteristic aloe phenolic activity.
+Aloe,Aloe vera,Inner gel,Aloesin,Polyphenol,Chromone,Moderate,Major,Contributes antioxidant and skin-supportive phenolic activity.
+Aloe,Aloe vera,Latex,Aloe-emodin,Anthraquinone,Anthraquinone,High,Major,Contributes stimulant laxative anthraquinone activity.
+Aloe,Aloe vera,Latex,Aloin B (Isobarbaloin),Anthraquinone,Anthraquinone glycoside,High,Major,Contributes stimulant laxative activity of aloe latex.
+Aloe,Aloe vera,Inner gel,Glucomannan,Polysaccharide,Glucomannan,High,Major,"Supports demulcent, bulk-forming, and gut-soothing activity."
+Aloe,Aloe vera,Inner gel,Mannans,Polysaccharide,Mannan,High,Major,"Contribute demulcent, gut-soothing, and immune-modulating activity."
+Angelica,Angelica archangelica,Root,Osthole,Coumarin,Simple coumarin,Low,Reported,Contributes antispasmodic and warming aromatic coumarin activity.
+Angelica,Angelica archangelica,Root,Isoimperatorin,Coumarin,Furanocoumarin,Moderate,Present,Contributes antispasmodic activity and furanocoumarin-related safety considerations.
+Angelica,Angelica archangelica,Root,Sabinene,Terpenoid,Monoterpenoid,Moderate,Present,Contributes warming aromatic and carminative activity.
+Angelica,Angelica archangelica,Root,Umbelliferone,Coumarin,Simple coumarin,Moderate,Present,Contributes mild anti-inflammatory and aromatic coumarin activity.
+Angelica,Angelica archangelica,Root,β-Sitosterol,Sterol,Phytosterol,Low,Present,"Contributes anti-inflammatory, membrane-stabilizing, and endocrine-modulating activity."
+Angelica,Angelica archangelica,Root,Angelicin,Coumarin,Furanocoumarin,High,Marker,Photoreactive furanocoumarin; contributes photosensitizing safety profile.
+Angelica,Angelica archangelica,Root,β-Phellandrene,Terpenoid,Monoterpenoid,High,Marker,Contributes aromatic carminative and antimicrobial activity.
+Angelica,Angelica archangelica,Root,Bergapten,Coumarin,Furanocoumarin,Moderate,Major,Photoreactive furanocoumarin; contributes photosensitizing safety profile.
+Angelica,Angelica archangelica,Root,Limonene,Terpenoid,Monoterpenoid,Moderate,Major,"Contributes carminative, aromatic digestive, and mild antimicrobial activity."
+Angelica,Angelica archangelica,Root,Xanthotoxin,Coumarin,Furanocoumarin,Moderate,Major,Photoreactive furanocoumarin; contributes photosensitizing safety profile.
+Angelica,Angelica archangelica,Root,α-Phellandrene,Terpenoid,Monoterpenoid,Moderate,Major,Contributes aromatic carminative and antimicrobial activity.
+Angelica,Angelica archangelica,Root,Imperatorin,Coumarin,Furanocoumarin,High,Major,Contributes antispasmodic activity and furanocoumarin-related safety considerations.
+Angelica,Angelica archangelica,Root,α-Pinene,Terpenoid,Monoterpenoid,High,Major,"Contributes aromatic antimicrobial, bronchodilating, and anti-inflammatory activity."
+Aniseed,Pimpinella anisum,Seed,α-Pinene,Terpenoid,Monoterpenoid,Low,Reported,"Contributes aromatic antimicrobial, bronchodilating, and anti-inflammatory activity."
+Aniseed,Pimpinella anisum,Seed,γ-Himachalene,Terpenoid,Sesquiterpenoid,Low,Reported,Contributes aromatic sesquiterpene activity in the volatile fraction.
+Aniseed,Pimpinella anisum,Seed,Anisaldehyde,Phenylpropanoid,Aromatic aldehyde,Moderate,Present,Contributes aromatic carminative and mild antimicrobial activity.
+Aniseed,Pimpinella anisum,Seed,Limonene,Terpenoid,Monoterpenoid,Low–Moderate,Present,"Contributes carminative, aromatic digestive, and mild antimicrobial activity."
+Aniseed,Pimpinella anisum,Seed,Anisic acid,Phenylpropanoid,Aromatic acid,Low,Present,Contributes mild antimicrobial and aromatic digestive activity.
+Aniseed,Pimpinella anisum,Seed,trans-Anethole,Phenylpropanoid,Phenylpropene,High,Marker,Primary aromatic digestive carminative and antispasmodic constituent.
+Aniseed,Pimpinella anisum,Seed,Estragole (Methyl chavicol),Phenylpropanoid,Phenylpropene,Moderate,Major,Contributes aromatic carminative activity and safety considerations at high exposure.
+Arnica,Arnica montana,Flower,Caffeic acid,Polyphenol,Hydroxycinnamic acid,Low,Reported,Contributes antioxidant and anti-inflammatory phenolic activity.
+Arnica,Arnica montana,Flower,Astragalin,Flavonoid,Flavonol glycoside,Moderate,Present,Contributes antioxidant and anti-inflammatory flavonol glycoside activity.
+Arnica,Arnica montana,Flower,Luteolin,Flavonoid,Flavone,Moderate,Present,"Contributes anti-inflammatory, antioxidant, and antispasmodic activity."
+Arnica,Arnica montana,Flower,Quercetin,Flavonoid,Flavonol,Moderate,Present,"Contributes antioxidant, anti-inflammatory, and mast-cell-modulating activity."
+Arnica,Arnica montana,Flower,Thymol methyl ether,Phenylpropanoid,Monoterpene phenol,Moderate,Present,Contributes aromatic antimicrobial and carminative activity.
+Arnica,Arnica montana,Flower,Chlorogenic acid,Polyphenol,Hydroxycinnamic acid,Low–Moderate,Present,"Contributes antioxidant, hepatoprotective, and bitter digestive-support activity."
+Arnica,Arnica montana,Flower,β-Sitosterol,Sterol,Phytosterol,Low,Present,"Contributes anti-inflammatory, membrane-stabilizing, and endocrine-modulating activity."
+Arnica,Arnica montana,Flower,Helenalin,Terpenoid,Sesquiterpene lactone,High,Marker,Contributes arnica’s topical anti-inflammatory activity and irritant potential.
+Arnica,Arnica montana,Flower,Dihydrohelenalin acetate,Terpenoid,Sesquiterpene lactone,Moderate,Major,Contributes arnica’s topical anti-inflammatory sesquiterpene-lactone activity.
+Arnica,Arnica montana,Flower,Helenalin acetate,Terpenoid,Sesquiterpene lactone,Moderate,Major,Contributes arnica’s topical anti-inflammatory activity and irritant potential.
+Arnica,Arnica montana,Flower,Thymol,Phenylpropanoid,Monoterpene phenol,Moderate,Major,"Contributes antimicrobial, antispasmodic, and aromatic expectorant activity."
+Arnica,Arnica montana,Flower,"11α,13-Dihydrohelenalin",Terpenoid,Sesquiterpene lactone,High,Major,Contributes arnica’s topical anti-inflammatory sesquiterpene-lactone activity.
+Arogyappacha,Trichopus zeylanicus,Leaf,Kaempferol,Flavonoid,Flavonol,Moderate,Present,Contributes antioxidant and anti-inflammatory flavonol activity.
+Arogyappacha,Trichopus zeylanicus,Leaf,Quercetin,Flavonoid,Flavonol,Moderate,Present,"Contributes antioxidant, anti-inflammatory, and mast-cell-modulating activity."
+Arogyappacha,Trichopus zeylanicus,Leaf,Rutin,Flavonoid,Flavonol glycoside,Moderate,Present,Supports capillary integrity and antioxidant activity.
+Arogyappacha,Trichopus zeylanicus,Leaf,β-Sitosterol,Sterol,Phytosterol,Moderate,Present,"Contributes anti-inflammatory, membrane-stabilizing, and endocrine-modulating activity."
+Arogyappacha,Trichopus zeylanicus,Leaf,Daucosterol,Sterol,Sterol glycoside,Low–Moderate,Present,Contributes phytosterol-glycoside activity and anti-inflammatory support.
+Arogyappacha,Trichopus zeylanicus,Leaf,Trichopuside A,Glycoside,Steroidal glycoside,High,Marker,Supports adaptogenic and anti-fatigue activity attributed to arogyappacha.
+Arogyappacha,Trichopus zeylanicus,Leaf,Trichopuside C,Glycoside,Steroidal glycoside,Moderate,Major,Supports adaptogenic and anti-fatigue activity attributed to arogyappacha.
+Arogyappacha,Trichopus zeylanicus,Leaf,Trichopuside B,Glycoside,Steroidal glycoside,High,Major,Supports adaptogenic and anti-fatigue activity attributed to arogyappacha.
+Artichoke,Cynara scolymus,Leaf,Cryptochlorogenic acid,Polyphenol,Caffeoylquinic acid,Moderate,Present,Contributes antioxidant and digestive-support phenolic activity.
+Artichoke,Cynara scolymus,Leaf,Cynaroside,Flavonoid,Flavone glycoside,Moderate,Present,Contributes antioxidant and anti-inflammatory flavone-glycoside activity.
+Artichoke,Cynara scolymus,Leaf,Grosheimin,Terpenoid,Sesquiterpene lactone,Moderate,Present,Contributes bitter anti-inflammatory sesquiterpene-lactone activity.
+Artichoke,Cynara scolymus,Leaf,Inulin,Polysaccharide,Fructan,Moderate,Present,Prebiotic fructan supporting gut microbiota and mild demulcent activity.
+Artichoke,Cynara scolymus,Leaf,Cynarin,Polyphenol,Caffeoylquinic acid,High,Marker,"Supports choleretic, hepatoprotective, and bitter digestive activity."
+Artichoke,Cynara scolymus,Leaf,Cynaropicrin,Terpenoid,Sesquiterpene lactone,High,Marker,"Contributes strong bitter, choleretic, and digestive-stimulant activity."
+Artichoke,Cynara scolymus,Leaf,Luteolin-7-O-glucoside,Flavonoid,Flavone glycoside,Moderate,Major,Contributes anti-inflammatory and antispasmodic flavone activity.
+Artichoke,Cynara scolymus,Leaf,Neochlorogenic acid,Polyphenol,Caffeoylquinic acid,Moderate,Major,Contributes antioxidant and digestive-support phenolic activity.
+Artichoke,Cynara scolymus,Leaf,Chlorogenic acid,Polyphenol,Caffeoylquinic acid,High,Major,"Contributes antioxidant, hepatoprotective, and bitter digestive-support activity."
+Artichoke,Cynara scolymus,Leaf,Luteolin,Flavonoid,Flavone,High,Major,"Contributes anti-inflammatory, antioxidant, and antispasmodic activity."
+Ashwagandha,Withania somnifera,Root,Scopoletin,Coumarin,Simple coumarin,Low,Reported,"Contributes antispasmodic and anti-inflammatory activity, especially on smooth muscle."
+Ashwagandha,Withania somnifera,Root,Sitoindoside VII,Glycoside,Steroidal glycoside,Moderate,Present,Contributes adaptogenic and stress-modulating activity of ashwagandha.
+Ashwagandha,Withania somnifera,Root,Sitoindoside VIII,Glycoside,Steroidal glycoside,Moderate,Present,Contributes adaptogenic and stress-modulating activity of ashwagandha.
+Ashwagandha,Withania somnifera,Root,Withanoside IV,Glycoside,Steroidal glycoside,Moderate,Present,Supports adaptogenic and neuroprotective activity of ashwagandha.
+Ashwagandha,Withania somnifera,Root,Withanoside V,Glycoside,Steroidal glycoside,Moderate,Present,Supports adaptogenic and neuroprotective activity of ashwagandha.
+Ashwagandha,Withania somnifera,Root,β-Sitosterol,Sterol,Phytosterol,Low,Present,"Contributes anti-inflammatory, membrane-stabilizing, and endocrine-modulating activity."
+Ashwagandha,Withania somnifera,Root,Withaferin A,Steroid,Withanolide,High,Marker,Contributes anti-inflammatory and adaptogenic withanolide activity.
+Ashwagandha,Withania somnifera,Root,Withanolide D,Steroid,Withanolide,Moderate,Major,Contributes anti-inflammatory and adaptogenic withanolide activity.
+Ashwagandha,Withania somnifera,Root,Withanone,Steroid,Withanolide,Moderate,Major,Contributes adaptogenic and antioxidant withanolide activity.
+Ashwagandha,Withania somnifera,Root,Withanolide A,Steroid,Withanolide,High,Major,Contributes adaptogenic and neuroprotective withanolide activity.
+Asian Devil's Club,Echinopanax elatus,Bark,Kaempferol,Flavonoid,Flavonol,Low,Reported,Contributes antioxidant and anti-inflammatory flavonol activity.
+Asian Devil's Club,Echinopanax elatus,Bark,Quercetin,Flavonoid,Flavonol,Low,Reported,"Contributes antioxidant, anti-inflammatory, and mast-cell-modulating activity."
+Asian Devil's Club,Echinopanax elatus,Bark,Hederagenin,Terpenoid,Pentacyclic triterpenoid,Moderate,Present,Contributes expectorant and saponin-related membrane activity.
+Asian Devil's Club,Echinopanax elatus,Bark,Oleanolic acid,Terpenoid,Pentacyclic triterpenoid,Moderate,Present,Contributes anti-inflammatory and tissue-repair activity.
+Asian Devil's Club,Echinopanax elatus,Bark,Kalopanax saponin A,Glycoside,Triterpenoid saponin,High,Marker,Contributes adaptogenic and anti-inflammatory triterpenoid-saponin activity.
+Asian Devil's Club,Echinopanax elatus,Bark,Kalopanax saponin C,Glycoside,Triterpenoid saponin,Moderate,Major,Contributes adaptogenic and anti-inflammatory triterpenoid-saponin activity.
+Asian Devil's Club,Echinopanax elatus,Bark,Kalopanax saponin B,Glycoside,Triterpenoid saponin,High,Major,Contributes adaptogenic and anti-inflammatory triterpenoid-saponin activity.
+Aspen,Populus tremuloides,Bark,Catechin,Flavonoid,Flavan-3-ol,Moderate,Present,Contributes antioxidant and astringent flavan-3-ol activity.
+Aspen,Populus tremuloides,Bark,Proanthocyanidins,Tannin,Condensed tannin,Moderate,Present,"Contribute astringent, antioxidant, and capillary-supportive activity."
+Aspen,Populus tremuloides,Bark,Quercetin,Flavonoid,Flavonol,Moderate,Present,"Contributes antioxidant, anti-inflammatory, and mast-cell-modulating activity."
+Aspen,Populus tremuloides,Bark,Kaempferol,Flavonoid,Flavonol,Low–Moderate,Present,Contributes antioxidant and anti-inflammatory flavonol activity.
+Aspen,Populus tremuloides,Bark,Salicin,Glycoside,Phenolic glycoside,High,Marker,Metabolized to salicylates; contributes analgesic and anti-inflammatory activity.
+Aspen,Populus tremuloides,Bark,Populin,Glycoside,Phenolic glycoside,Moderate,Major,Contributes salicylate-like analgesic and anti-inflammatory activity.
+Aspen,Populus tremuloides,Bark,Salicortin,Glycoside,Phenolic glycoside,High,Major,Contributes salicylate-like analgesic and anti-inflammatory activity.
+Aspen,Populus tremuloides,Bark,Tremulacin,Glycoside,Phenolic glycoside,High,Major,Contributes salicylate-like analgesic and anti-inflammatory activity.
+Balm of Gilead,Populus candicans,Bud,Caffeic acid,Polyphenol,Hydroxycinnamic acid,Moderate,Present,Contributes antioxidant and anti-inflammatory phenolic activity.
+Balm of Gilead,Populus candicans,Bud,Chrysin,Flavonoid,Flavone,Moderate,Present,Contributes anti-inflammatory and mild calming flavone activity.
+Balm of Gilead,Populus candicans,Bud,Galangin,Flavonoid,Flavonol,Moderate,Present,Contributes antimicrobial and anti-inflammatory flavonol activity.
+Balm of Gilead,Populus candicans,Bud,Pinobanksin,Flavonoid,Flavanonol,Moderate,Present,Contributes antioxidant and antimicrobial resin-flavonoid activity.
+Balm of Gilead,Populus candicans,Bud,Ferulic acid,Polyphenol,Hydroxycinnamic acid,Low–Moderate,Present,Contributes antioxidant and anti-inflammatory phenolic activity.
+Balm of Gilead,Populus candicans,Bud,Salicin,Glycoside,Phenolic glycoside,High,Marker,Metabolized to salicylates; contributes analgesic and anti-inflammatory activity.
+Balm of Gilead,Populus candicans,Bud,Benzyl benzoate,Phenylpropanoid,Benzoate ester,Moderate,Major,Contributes antimicrobial and antiparasitic activity; important allergenic constituent.
+Balm of Gilead,Populus candicans,Bud,Salicortin,Glycoside,Phenolic glycoside,Moderate,Major,Contributes salicylate-like analgesic and anti-inflammatory activity.
+Balm of Gilead,Populus candicans,Bud,Pinocembrin,Flavonoid,Flavanone,High,Major,"Contributes antimicrobial, anti-inflammatory, and antioxidant resin-flavonoid activity."
+Balm of Gilead,Populus candicans,Bud,Populin,Glycoside,Phenolic glycoside,High,Major,Contributes salicylate-like analgesic and anti-inflammatory activity.
+Balmony,Chelone glabra,Aerial parts,Aucubin,Glycoside,Iridoid glycoside,High,Marker,"Contributes bitter, anti-inflammatory, hepatoprotective, and vulnerary iridoid activity."
+Balmony,Chelone glabra,Aerial parts,Catalpol,Glycoside,Iridoid glycoside,Moderate,Major,Contributes anti-inflammatory and hepatoprotective iridoid activity.
+Balsam of Peru,Myroxylon balsamum var. pereirae,Balsam (oleoresin),Vanillin,Phenylpropanoid,Aromatic aldehyde,Low–Moderate,Present,"Contributes aromatic, soothing, and mild antimicrobial activity."
+Balsam of Peru,Myroxylon balsamum var. pereirae,Balsam (oleoresin),Benzyl benzoate,Phenylpropanoid,Benzoate ester,High,Marker,Contributes antimicrobial and antiparasitic activity; important allergenic constituent.
+Balsam of Peru,Myroxylon balsamum var. pereirae,Balsam (oleoresin),Benzyl cinnamate,Phenylpropanoid,Benzoate ester,High,Marker,Contributes antimicrobial aromatic activity; important allergenic constituent.
+Balsam of Peru,Myroxylon balsamum var. pereirae,Balsam (oleoresin),Benzoic acid,Polyphenol,Phenolic acid,Moderate,Major,Contributes antimicrobial preservative-like activity.
+Balsam of Peru,Myroxylon balsamum var. pereirae,Balsam (oleoresin),Cinnamic acid,Polyphenol,Hydroxycinnamic acid,Moderate,Major,Contributes antimicrobial and aromatic phenolic activity.
+Barberry,Berberis vulgaris,Root bark,Jatrorrhizine,Alkaloid,Protoberberine alkaloid,Moderate,Present,Contributes antimicrobial and bitter protoberberine-alkaloid activity.
+Barberry,Berberis vulgaris,Root bark,Columbamine,Alkaloid,Protoberberine alkaloid,Low–Moderate,Present,Contributes antimicrobial and bitter protoberberine-alkaloid activity.
+Barberry,Berberis vulgaris,Root bark,Berberine,Alkaloid,Protoberberine alkaloid,High,Marker,"Major contributor to antimicrobial, bitter tonic, and cholagogue activity."
+Barberry,Berberis vulgaris,Root bark,Palmatine,Alkaloid,Protoberberine alkaloid,Moderate,Major,Contributes antimicrobial and bitter protoberberine-alkaloid activity.
+Bayberry,Myrica cerifera,Root bark,Catechin,Flavonoid,Flavan-3-ol,Moderate,Present,Contributes antioxidant and astringent flavan-3-ol activity.
+Bayberry,Myrica cerifera,Root bark,Gallic acid,Polyphenol,Phenolic acid,Moderate,Present,"Supports astringent, antioxidant, and antimicrobial phenolic activity."
+Bayberry,Myrica cerifera,Root bark,Myricitrin,Flavonoid,Flavonol glycoside,High,Marker,"Contributes astringent, antioxidant, and anti-inflammatory activity."
+Bayberry,Myrica cerifera,Root bark,Myricetin,Flavonoid,Flavonol,Moderate,Major,Contributes antioxidant and anti-inflammatory flavonol activity.
+Bayberry,Myrica cerifera,Root bark,Procyanidins,Tannin,Condensed tannin,Moderate,Major,"Contribute astringent, antioxidant, and capillary-supportive activity."
+Birch,Betula spp.,Bark,Catechin,Flavonoid,Flavan-3-ol,Low–Moderate,Present,Contributes antioxidant and astringent flavan-3-ol activity.
+Birch,Betula spp.,Bark,Procyanidins,Tannin,Condensed tannin,Low–Moderate,Present,"Contribute astringent, antioxidant, and capillary-supportive activity."
+Birch,Betula spp.,Bark,Betulin,Terpenoid,Pentacyclic triterpenoid,High,Marker,Contributes anti-inflammatory and skin-protective triterpenoid activity.
+Birch,Betula spp.,Bark,Betulinic acid,Terpenoid,Pentacyclic triterpenoid,Moderate,Major,"Contributes anti-inflammatory, antimicrobial, and tissue-protective activity."
+Birch,Betula spp.,Bark,Methyl salicylate,Phenylpropanoid,Aromatic acid,Moderate,Major,"Contributes analgesic, anti-inflammatory, and counterirritant activity."
+Bistort,Polygonum bistorta,Rhizome,Gallic acid,Polyphenol,Phenolic acid,Moderate,Present,"Supports astringent, antioxidant, and antimicrobial phenolic activity."
+Bistort,Polygonum bistorta,Rhizome,Procyanidins,Tannin,Condensed tannin,High,Marker,"Contribute astringent, antioxidant, and capillary-supportive activity."
+Bistort,Polygonum bistorta,Rhizome,Catechin,Flavonoid,Flavan-3-ol,Moderate,Major,Contributes antioxidant and astringent flavan-3-ol activity.
+Bistort,Polygonum bistorta,Rhizome,Ellagitannins,Tannin,Ellagitannin,Moderate,Major,"Contribute strong astringent, anti-inflammatory, and mucosal toning activity."
+Black Catechu,Acacia catechu,Heartwood extract,Quercetin,Flavonoid,Flavonol,Low–Moderate,Present,"Contributes antioxidant, anti-inflammatory, and mast-cell-modulating activity."
+Black Catechu,Acacia catechu,Heartwood extract,Catechin,Flavonoid,Flavan-3-ol,High,Marker,Contributes antioxidant and astringent flavan-3-ol activity.
+Black Catechu,Acacia catechu,Heartwood extract,Epicatechin,Flavonoid,Flavan-3-ol,Moderate,Major,Contributes antioxidant and astringent flavan-3-ol activity.
+Black Catechu,Acacia catechu,Heartwood extract,Catechutannic acid,Tannin,Condensed tannin,High,Major,Contributes strong astringent and mucosal toning activity.
+Black Cohosh,Cimicifuga racemosa,Rhizome & root,Cimigenol,Glycoside,Triterpenoid saponin,Moderate,Present,Contributes cycloartane-triterpene activity associated with black cohosh.
+Black Cohosh,Cimicifuga racemosa,Rhizome & root,27-Deoxyactein,Glycoside,Triterpenoid saponin,High,Marker,Contributes endocrine and anti-inflammatory activity associated with black cohosh.
+Black Cohosh,Cimicifuga racemosa,Rhizome & root,Actein,Glycoside,Triterpenoid saponin,High,Marker,Contributes endocrine and anti-inflammatory activity associated with black cohosh.
+Black Cohosh,Cimicifuga racemosa,Rhizome & root,Cimiracemoside A,Glycoside,Triterpenoid saponin,Moderate,Major,Contributes cycloartane-glycoside activity associated with black cohosh.
+Black Cohosh,Cimicifuga racemosa,Rhizome & root,Isoferulic acid,Polyphenol,Hydroxycinnamic acid,Moderate,Major,Contributes anti-inflammatory phenolic activity in black cohosh.
+Black Haw,Viburnum prunifolium,Bark,Chlorogenic acid,Polyphenol,Caffeoylquinic acid,Moderate,Present,"Contributes antioxidant, hepatoprotective, and bitter digestive-support activity."
+Black Haw,Viburnum prunifolium,Bark,Scopoletin,Coumarin,Simple coumarin,High,Marker,"Contributes antispasmodic and anti-inflammatory activity, especially on smooth muscle."
+Black Haw,Viburnum prunifolium,Bark,Esculetin,Coumarin,Simple coumarin,Moderate,Major,Contributes smooth-muscle antispasmodic and anti-inflammatory activity.
+Black Haw,Viburnum prunifolium,Bark,β-Sitosterol,Sterol,Phytosterol,Moderate,Major,"Contributes anti-inflammatory, membrane-stabilizing, and endocrine-modulating activity."
+Black Root,Leptandra virginica,Root,Catalpol,Glycoside,Phenolic glycoside,Moderate,Present,Contributes anti-inflammatory and hepatoprotective iridoid activity.
+Black Root,Leptandra virginica,Root,Leptandrin,Glycoside,Iridoid glycoside,High,Marker,Contributes bitter hepatic and cathartic activity historically associated with black root.
+Black Root,Leptandra virginica,Root,Aucubin,Glycoside,Phenolic glycoside,Moderate,Major,"Contributes bitter, anti-inflammatory, hepatoprotective, and vulnerary iridoid activity."
+Blackberry,Rubus villosus,Root bark,Catechin,Flavonoid,Flavan-3-ol,Moderate,Present,Contributes antioxidant and astringent flavan-3-ol activity.
+Blackberry,Rubus villosus,Root bark,Ellagitannins,Tannin,Ellagitannin,High,Marker,"Contribute strong astringent, anti-inflammatory, and mucosal toning activity."
+Blackberry,Rubus villosus,Root bark,Gallic acid,Polyphenol,Phenolic acid,Moderate,Major,"Supports astringent, antioxidant, and antimicrobial phenolic activity."
+Blackberry,Rubus villosus,Root bark,Procyanidins,Tannin,Condensed tannin,Moderate,Major,"Contribute astringent, antioxidant, and capillary-supportive activity."
+Bloodroot,Sanguinaria canadensis,Rhizome,Sanguidimerine,Alkaloid,Benzophenanthridine alkaloid,Low–Moderate,Present,Contributes characteristic benzophenanthridine alkaloid activity.
+Bloodroot,Sanguinaria canadensis,Rhizome,Sanguinarine,Alkaloid,Benzophenanthridine alkaloid,High,Marker,Contributes antimicrobial and escharotic activity; also important for toxicity.
+Bloodroot,Sanguinaria canadensis,Rhizome,Chelilutine,Alkaloid,Benzophenanthridine alkaloid,Moderate,Major,Contributes characteristic benzophenanthridine alkaloid activity.
+Bloodroot,Sanguinaria canadensis,Rhizome,Chelerythrine,Alkaloid,Benzophenanthridine alkaloid,High,Major,Contributes antimicrobial and irritant alkaloid activity.
+Blue Cohosh,Caulophyllum thalictroides,Root & rhizome,N-Methylcytisine,Alkaloid,Quinolizidine alkaloid,Low–Moderate,Present,Contributes toxicologically important nicotinic/uterotonic alkaloid activity.
+Blue Cohosh,Caulophyllum thalictroides,Root & rhizome,Caulosaponin,Glycoside,Triterpenoid saponin,High,Marker,Contributes uterine-stimulating and smooth-muscle activity of blue cohosh.
+Blue Cohosh,Caulophyllum thalictroides,Root & rhizome,Magnoflorine,Alkaloid,Aporphine alkaloid,Moderate,Major,Contributes smooth-muscle and nervous-system activity in blue cohosh.
+Blue Cohosh,Caulophyllum thalictroides,Root & rhizome,Caulophyllosaponin,Glycoside,Triterpenoid saponin,High,Major,Contributes uterine-stimulating and smooth-muscle activity of blue cohosh.
+Blue Flag,Iris versicolor,Rhizome,Tectorigenin,Flavonoid,Isoflavone,Moderate,Present,Contributes anti-inflammatory and phytoestrogenic isoflavone activity.
+Blue Flag,Iris versicolor,Rhizome,Irilone,Flavonoid,Isoflavone,Low-Moderate,Present,Contributes anti-inflammatory and characteristic isoflavone activity.
+Blue Flag,Iris versicolor,Rhizome,Iridin,Glycoside,Iridoid glycoside,High,Marker,"Contributes bitter, cholagogue, and cathartic activity of blue flag."
+Blue Flag,Iris versicolor,Rhizome,Irigenin,Flavonoid,Isoflavone,Moderate,Major,Contributes anti-inflammatory and phytoestrogenic isoflavone activity.
+Bogbean,Menyanthes trifoliata,Leaf,Chlorogenic acid,Polyphenol,Caffeoylquinic acid,Low–Moderate,Present,"Contributes antioxidant, hepatoprotective, and bitter digestive-support activity."
+Bogbean,Menyanthes trifoliata,Leaf,Loganin,Glycoside,Iridoid glycoside,High,Marker,Contributes bitter tonic and digestive-stimulant iridoid activity.
+Bogbean,Menyanthes trifoliata,Leaf,Swertiamarin,Glycoside,Iridoid glycoside,Moderate,Major,Contributes strong bitter tonic and stomachic activity.
+Bogbean,Menyanthes trifoliata,Leaf,Sweroside,Glycoside,Iridoid glycoside,High,Major,Contributes bitter tonic and digestive-stimulant secoiridoid activity.
+Boldo,Peumus boldus,Leaf,"1,8-Cineole",Terpenoid,Monoterpenoid,Moderate,Present,"Contributes expectorant, antimicrobial, and aromatic decongestant activity."
+Boldo,Peumus boldus,Leaf,Catechin,Flavonoid,Flavan-3-ol,Low–Moderate,Present,Contributes antioxidant and astringent flavan-3-ol activity.
+Boldo,Peumus boldus,Leaf,p-Cymene,Terpenoid,Monoterpenoid,Low,Present,Contributes aromatic antimicrobial and anti-inflammatory activity.
+Boldo,Peumus boldus,Leaf,Boldine,Alkaloid,Aporphine alkaloid,High,Marker,"Contributes choleretic, hepatoprotective, antioxidant, and bitter activity."
+Boldo,Peumus boldus,Leaf,Ascaridole,Terpenoid,Monoterpenoid,Moderate,Major,Contributes antiparasitic and aromatic activity; important to boldo’s toxicity profile.
+Boneset,Eupatorium perfoliatum,Aerial parts,Rutin,Flavonoid,Flavonol glycoside,Moderate,Present,Supports capillary integrity and antioxidant activity.
+Boneset,Eupatorium perfoliatum,Aerial parts,Apigenin,Flavonoid,Flavone,Low-Moderate,Present,"Contributes anti-inflammatory, antispasmodic, and mild calming activity."
+Boneset,Eupatorium perfoliatum,Aerial parts,Eupafolin,Flavonoid,Flavone,High,Marker,Contributes anti-inflammatory and immune-modulating flavone activity.
+Boneset,Eupatorium perfoliatum,Aerial parts,Chlorogenic acid,Polyphenol,Caffeoylquinic acid,Moderate,Major,"Contributes antioxidant, hepatoprotective, and bitter digestive-support activity."
+Boneset,Eupatorium perfoliatum,Aerial parts,Euperfolin,Terpenoid,Sesquiterpene lactone,Moderate,Major,Contributes bitter and immune-modulating sesquiterpene-lactone activity.
+Borage,Borago officinalis,Aerial parts,Rutin,Flavonoid,Flavonol glycoside,Moderate,Present,Supports capillary integrity and antioxidant activity.
+Borage,Borago officinalis,Aerial parts,Supinine,Alkaloid,Pyrrolizidine alkaloid,Low–Moderate,Present,Toxicologically important pyrrolizidine alkaloid; limits internal-use safety.
+Borage,Borago officinalis,Aerial parts,Rosmarinic acid,Polyphenol,Hydroxycinnamic acid,High,Marker,"Contributes anti-inflammatory, antioxidant, and allergy-modulating activity."
+Borage,Borago officinalis,Aerial parts,Allantoin,Nitrogenous compound,Ureide,Moderate,Major,Supports tissue repair and epithelial regeneration.
+Buchu,Agathosma betulina,Leaf,Isomenthone,Terpenoid,Monoterpenoid,Low–Moderate,Present,Contributes aromatic carminative and antispasmodic activity.
+Buchu,Agathosma betulina,Leaf,Menthone,Terpenoid,Monoterpenoid,Low–Moderate,Present,Contributes aromatic carminative and antispasmodic activity.
+Buchu,Agathosma betulina,Leaf,Diosphenol,Phenylpropanoid,Phenolic ketone,High,Marker,Contributes buchu’s urinary antiseptic and characteristic aromatic activity.
+Buchu,Agathosma betulina,Leaf,Limonene,Terpenoid,Monoterpenoid,Moderate,Major,"Contributes carminative, aromatic digestive, and mild antimicrobial activity."
+Buchu,Agathosma betulina,Leaf,Pulegone,Terpenoid,Monoterpenoid,Moderate,Major,Contributes aromatic antispasmodic activity and important toxicity considerations.
+Buckthorn,Rhamnus cathartica,Bark,Frangulin B,Anthraquinone,Anthraquinone glycoside,Moderate,Present,Contributes stimulant laxative activity as an anthraquinone glycoside.
+Buckthorn,Rhamnus cathartica,Bark,Emodin,Anthraquinone,Anthraquinone,High,Marker,Contributes stimulant laxative and antimicrobial anthraquinone activity.
+Buckthorn,Rhamnus cathartica,Bark,Frangulin A,Anthraquinone,Anthraquinone glycoside,Moderate,Major,Contributes stimulant laxative activity as an anthraquinone glycoside.
+Buckthorn,Rhamnus cathartica,Bark,Chrysophanol,Anthraquinone,Anthraquinone,High,Major,Contributes stimulant laxative and antimicrobial anthraquinone activity.
+Buckwheat,Fagopyrum esculentum,Aerial parts,Hyperoside,Flavonoid,Flavonol glycoside,Moderate,Present,"Contributes antioxidant, anti-inflammatory, and capillary-supportive activity."
+Buckwheat,Fagopyrum esculentum,Aerial parts,Isoquercitrin,Flavonoid,Flavonol glycoside,Moderate,Present,Contributes antioxidant and capillary-supportive flavonol activity.
+Buckwheat,Fagopyrum esculentum,Aerial parts,Chlorogenic acid,Polyphenol,Caffeoylquinic acid,Low–Moderate,Present,"Contributes antioxidant, hepatoprotective, and bitter digestive-support activity."
+Buckwheat,Fagopyrum esculentum,Aerial parts,Rutin,Flavonoid,Flavonol glycoside,High,Marker,Supports capillary integrity and antioxidant activity.
+Buckwheat,Fagopyrum esculentum,Aerial parts,Quercetin,Flavonoid,Flavonol,Moderate,Major,"Contributes antioxidant, anti-inflammatory, and mast-cell-modulating activity."
+Bugleweed,Lycopus spp.,Aerial parts,Caffeic acid,Polyphenol,Hydroxycinnamic acid,Moderate,Present,Contributes antioxidant and anti-inflammatory phenolic activity.
+Bugleweed,Lycopus spp.,Aerial parts,Chlorogenic acid,Polyphenol,Caffeoylquinic acid,Moderate,Present,"Contributes antioxidant, hepatoprotective, and bitter digestive-support activity."
+Bugleweed,Lycopus spp.,Aerial parts,Luteolin,Flavonoid,Flavone,Moderate,Present,"Contributes anti-inflammatory, antioxidant, and antispasmodic activity."
+Bugleweed,Lycopus spp.,Aerial parts,Luteolin-7-O-glucoside,Flavonoid,Flavone glycoside,Low-Moderate,Present,Contributes anti-inflammatory and antispasmodic flavone activity.
+Bugleweed,Lycopus spp.,Aerial parts,Rosmarinic acid,Polyphenol,Hydroxycinnamic acid,High,Marker,"Contributes anti-inflammatory, antioxidant, and allergy-modulating activity."
+Bugleweed,Lycopus spp.,Aerial parts,Lithospermic acid,Polyphenol,Hydroxycinnamic acid,High,Major,Contributes antioxidant activity and helps explain bugleweed’s thyroid-modulating reputation.
+Burdock,Arctium lappa,Root,Caffeic acid,Polyphenol,Hydroxycinnamic acid,Moderate,Present,Contributes antioxidant and anti-inflammatory phenolic activity.
+Burdock,Arctium lappa,Root,Cynarin,Polyphenol,Caffeoylquinic acid,Low–Moderate,Present,"Supports choleretic, hepatoprotective, and bitter digestive activity."
+Burdock,Arctium lappa,Root,Inulin,Polysaccharide,Fructan,High,Marker,Prebiotic fructan supporting gut microbiota and mild demulcent activity.
+Burdock,Arctium lappa,Root,Arctigenin,Polyphenol,Lignan,Moderate,Major,"Contributes anti-inflammatory, antimicrobial, and metabolic-support activity."
+Burdock,Arctium lappa,Root,Chlorogenic acid,Polyphenol,Caffeoylquinic acid,Moderate,Major,"Contributes antioxidant, hepatoprotective, and bitter digestive-support activity."
+Burdock,Arctium lappa,Root,Arctiin,Glycoside,Lignan glycoside,High,Major,Contributes anti-inflammatory and metabolic-support activity as a lignan glycoside.
+Butternut,Juglans cinerea,Inner bark,Catechin,Flavonoid,Flavan-3-ol,Moderate,Present,Contributes antioxidant and astringent flavan-3-ol activity.
+Butternut,Juglans cinerea,Inner bark,Gallic acid,Polyphenol,Phenolic acid,Moderate,Present,"Supports astringent, antioxidant, and antimicrobial phenolic activity."
+Butternut,Juglans cinerea,Inner bark,Juglone,Polyphenol,Naphthoquinone,High,Marker,"Contributes antimicrobial, antifungal, and irritant naphthoquinone activity."
+Butternut,Juglans cinerea,Inner bark,Procyanidins,Tannin,Condensed tannin,Moderate,Major,"Contribute astringent, antioxidant, and capillary-supportive activity."
+Butternut,Juglans cinerea,Inner bark,Hydrojuglone glucoside,Glycoside,Naphthoquinone glycoside,High,Major,Storage form that yields juglone; supports antimicrobial and laxative-associated activity.
+Calendula,Calendula officinalis,Flower,Chlorogenic acid,Polyphenol,Caffeoylquinic acid,Moderate,Present,"Contributes antioxidant, hepatoprotective, and bitter digestive-support activity."
+Calendula,Calendula officinalis,Flower,Narcissin,Flavonoid,Flavonol glycoside,Moderate,Present,Contributes antioxidant and anti-inflammatory flavonol glycoside activity.
+Calendula,Calendula officinalis,Flower,Isorhamnetin,Flavonoid,Flavonol,Low–Moderate,Present,Contributes antioxidant and anti-inflammatory flavonol activity.
+Calendula,Calendula officinalis,Flower,Quercetin,Flavonoid,Flavonol,Low–Moderate,Present,"Contributes antioxidant, anti-inflammatory, and mast-cell-modulating activity."
+Calendula,Calendula officinalis,Flower,Faradiol monoester,Terpenoid,Pentacyclic triterpenoid,High,Marker,Principal contributor to calendula's topical anti-inflammatory and wound-healing activity.
+Calendula,Calendula officinalis,Flower,Oleanolic acid,Terpenoid,Pentacyclic triterpenoid,Moderate,Major,Contributes anti-inflammatory and tissue-repair activity.
+Calendula,Calendula officinalis,Flower,Rutin,Flavonoid,Flavonol glycoside,Moderate,Major,Supports capillary integrity and antioxidant activity.
+Calendula,Calendula officinalis,Flower,Calenduloside A,Glycoside,Triterpenoid saponin,High,Major,Contributes anti-inflammatory and wound-healing triterpenoid-saponin activity.
+California Poppy,Eschscholzia californica,Aerial parts,Chelerythrine,Alkaloid,Benzophenanthridine alkaloid,Moderate,Present,Contributes antimicrobial and irritant alkaloid activity.
+California Poppy,Eschscholzia californica,Aerial parts,Californidine,Alkaloid,Benzophenanthridine alkaloid,High,Marker,Contributes sedative and anxiolytic alkaloid activity in California poppy.
+California Poppy,Eschscholzia californica,Aerial parts,Allocryptopine,Alkaloid,Protopine alkaloid,Moderate,Major,Contributes sedative and antispasmodic activity alongside protopine.
+California Poppy,Eschscholzia californica,Aerial parts,Eschscholtzine,Alkaloid,Protoberberine alkaloid,High,Major,Contributes sedative and antispasmodic alkaloid activity in California poppy.
+California Poppy,Eschscholzia californica,Aerial parts,Protopine,Alkaloid,Protopine alkaloid,High,Major,"Contributes sedative, antispasmodic, and smooth-muscle activity."
+Caraway,Carum carvi,Fruit (seed),Carveol,Terpenoid,Monoterpenoid,Moderate,Present,Contributes carminative and aromatic antispasmodic activity.
+Caraway,Carum carvi,Fruit (seed),Dihydrocarvone,Terpenoid,Monoterpenoid,Low–Moderate,Present,Contributes caraway’s aromatic carminative profile.
+Caraway,Carum carvi,Fruit (seed),Luteolin,Flavonoid,Flavone,Low–Moderate,Present,"Contributes anti-inflammatory, antioxidant, and antispasmodic activity."
+Caraway,Carum carvi,Fruit (seed),Carvone,Terpenoid,Monoterpenoid,High,Marker,Principal carminative and antispasmodic monoterpene of caraway.
+Caraway,Carum carvi,Fruit (seed),Limonene,Terpenoid,Monoterpenoid,High,Major,"Contributes carminative, aromatic digestive, and mild antimicrobial activity."
+Cardamom,Elettaria cardamomum,Seed,Linalool,Terpenoid,Monoterpenoid,Moderate,Present,"Contributes calming, antispasmodic, and aromatic digestive activity."
+Cardamom,Elettaria cardamomum,Seed,Sabinene,Terpenoid,Monoterpenoid,Low–Moderate,Present,Contributes warming aromatic and carminative activity.
+Cardamom,Elettaria cardamomum,Seed,α-Terpineol,Terpenoid,Monoterpenoid,Low–Moderate,Present,Contributes aromatic antimicrobial and carminative activity.
+Cardamom,Elettaria cardamomum,Seed,"1,8-Cineole",Terpenoid,Monoterpenoid,High,Marker,"Contributes expectorant, antimicrobial, and aromatic decongestant activity."
+Cardamom,Elettaria cardamomum,Seed,α-Terpinyl acetate,Terpenoid,Monoterpenoid,High,Marker,"Contributes cardamom’s carminative, antispasmodic, and aromatic activity."
+Cardamom,Elettaria cardamomum,Seed,Limonene,Terpenoid,Monoterpenoid,Moderate,Major,"Contributes carminative, aromatic digestive, and mild antimicrobial activity."
+Cascara Sagrada,Rhamnus purshiana,Aged bark,Aloe-emodin,Anthraquinone,Anthraquinone,Moderate,Present,Contributes stimulant laxative anthraquinone activity.
+Cascara Sagrada,Rhamnus purshiana,Aged bark,Emodin,Anthraquinone,Anthraquinone,Moderate,Present,Contributes stimulant laxative and antimicrobial anthraquinone activity.
+Cascara Sagrada,Rhamnus purshiana,Aged bark,Cascaroside A,Anthraquinone,Anthraquinone glycoside,High,Marker,Principal contributor to cascara’s stimulant laxative activity.
+Cascara Sagrada,Rhamnus purshiana,Aged bark,Cascaroside C,Anthraquinone,Anthraquinone glycoside,Moderate,Major,Contributes cascara’s characteristic stimulant laxative activity.
+Cascara Sagrada,Rhamnus purshiana,Aged bark,Cascaroside D,Anthraquinone,Anthraquinone glycoside,Moderate,Major,Contributes cascara’s characteristic stimulant laxative activity.
+Cascara Sagrada,Rhamnus purshiana,Aged bark,Cascaroside B,Anthraquinone,Anthraquinone glycoside,High,Major,Major contributor to cascara’s stimulant laxative activity.
+Catnip,Nepeta cataria,Aerial parts,Citronellol,Terpenoid,Monoterpenoid,Low–Moderate,Present,Contributes aromatic insect-repellent and mild antimicrobial activity.
+Catnip,Nepeta cataria,Aerial parts,Geraniol,Terpenoid,Monoterpenoid,Low–Moderate,Present,"Contributes aromatic insect-repellent, antimicrobial, and calming activity."
+Catnip,Nepeta cataria,Aerial parts,Luteolin,Flavonoid,Flavone,Low–Moderate,Present,"Contributes anti-inflammatory, antioxidant, and antispasmodic activity."
+Catnip,Nepeta cataria,Aerial parts,Nepetalactone,Terpenoid,Monoterpenoid,High,Marker,"Primary contributor to calming, antispasmodic, and insect-repellent activity."
+Catnip,Nepeta cataria,Aerial parts,Epinepetalactone,Terpenoid,Monoterpenoid,Moderate,Major,"Contributes calming, antispasmodic, and insect-repellent activity alongside nepetalactone."
+Catnip,Nepeta cataria,Aerial parts,Rosmarinic acid,Polyphenol,Hydroxycinnamic acid,Moderate,Major,"Contributes anti-inflammatory, antioxidant, and allergy-modulating activity."
+Cayenne,Capsicum annuum,Fruit,Capsorubin,Terpenoid,Carotenoid,Low–Moderate,Present,Contributes antioxidant carotenoid activity and the ripe fruit’s red pigment.
+Cayenne,Capsicum annuum,Fruit,Capsaicin,Alkaloid,Capsaicinoid,High,Marker,"Principal contributor to pungency, topical analgesia, and circulatory stimulation."
+Cayenne,Capsicum annuum,Fruit,Capsanthin,Terpenoid,Carotenoid,Moderate,Major,Contributes antioxidant carotenoid activity and the ripe fruit’s red pigment.
+Cayenne,Capsicum annuum,Fruit,Nordihydrocapsaicin,Alkaloid,Capsaicinoid,Moderate,Major,Contributes pungency and topical analgesic capsaicinoid activity.
+Cayenne,Capsicum annuum,Fruit,Dihydrocapsaicin,Alkaloid,Capsaicinoid,High,Major,"Major contributor to pungency, topical analgesia, and circulatory stimulation."
+Celandine,Chelidonium majus,Aerial parts,Berberine,Alkaloid,Protoberberine alkaloid,Moderate,Present,"Major contributor to antimicrobial, bitter tonic, and cholagogue activity."
+Celandine,Chelidonium majus,Aerial parts,Coptisine,Alkaloid,Protoberberine alkaloid,Moderate,Present,Contributes antimicrobial and bitter protoberberine-alkaloid activity.
+Celandine,Chelidonium majus,Aerial parts,Protopine,Alkaloid,Protopine alkaloid,Moderate,Present,"Contributes sedative, antispasmodic, and smooth-muscle activity."
+Celandine,Chelidonium majus,Aerial parts,Chelidonine,Alkaloid,Benzophenanthridine alkaloid,High,Marker,Contributes antispasmodic and cholagogue alkaloid activity; also relevant to toxicity.
+Celandine,Chelidonium majus,Aerial parts,Sanguinarine,Alkaloid,Benzophenanthridine alkaloid,Moderate,Major,Contributes antimicrobial and escharotic activity; also important for toxicity.
+Celandine,Chelidonium majus,Aerial parts,Chelerythrine,Alkaloid,Benzophenanthridine alkaloid,High,Major,Contributes antimicrobial and irritant alkaloid activity.
+Celery Seed,Apium graveolens,Seed,Apigenin,Flavonoid,Flavone,Moderate,Present,"Contributes anti-inflammatory, antispasmodic, and mild calming activity."
+Celery Seed,Apium graveolens,Seed,Sedanenolide,Phthalide,Phthalide,Low–Moderate,Present,Contributes celery seed’s characteristic aroma and phthalide activity.
+Celery Seed,Apium graveolens,Seed,3-n-Butylphthalide,Phthalide,Phthalide,High,Marker,"Contributes celery seed’s circulatory, smooth-muscle, and characteristic aromatic activity."
+Celery Seed,Apium graveolens,Seed,Apiin,Flavonoid,Flavone glycoside,Moderate,Major,Contributes mild diuretic and antispasmodic flavone-glycoside activity.
+Celery Seed,Apium graveolens,Seed,Limonene,Terpenoid,Monoterpenoid,Moderate,Major,"Contributes carminative, aromatic digestive, and mild antimicrobial activity."
+Celery Seed,Apium graveolens,Seed,Sedanolide,Phthalide,Phthalide,High,Major,Contributes celery seed’s characteristic aroma and smooth-muscle activity.
+Centaury,Centaurium erythraea,Aerial parts,Erythrocentaurin,Xanthone,Xanthone,Moderate,Present,Contributes bitter digestive and characteristic xanthone activity.
+Centaury,Centaurium erythraea,Aerial parts,Erytaurin,Xanthone,Xanthone,Low–Moderate,Present,Contributes bitter digestive and characteristic xanthone activity.
+Centaury,Centaurium erythraea,Aerial parts,Swertiamarin,Glycoside,Secoiridoid glycoside,High,Marker,Contributes strong bitter tonic and stomachic activity.
+Centaury,Centaurium erythraea,Aerial parts,Sweroside,Glycoside,Secoiridoid glycoside,Moderate,Major,Contributes bitter tonic and digestive-stimulant secoiridoid activity.
+Centaury,Centaurium erythraea,Aerial parts,Gentiopicroside,Glycoside,Secoiridoid glycoside,High,Major,Contributes strong bitter tonic and digestive-stimulant activity.
+Chasteberry,Vitex agnus-castus,Fruit,Penduletin,Flavonoid,Flavone,Moderate,Present,Characteristic methylated flavone contributing to the distinctive flavonoid profile.
+Chasteberry,Vitex agnus-castus,Fruit,Vitexilactone,Terpenoid,Diterpenoid,Moderate,Present,Characteristic diterpenoid complementing the endocrine-active diterpene fraction.
+Chasteberry,Vitex agnus-castus,Fruit,Agnuside,Glycoside,Iridoid glycoside,High,Marker,Principal iridoid glycoside; contributes to endocrine-modulating activity and serves as the primary analytical marker.
+Chasteberry,Vitex agnus-castus,Fruit,Aucubin,Glycoside,Iridoid glycoside,Moderate,Major,Supports the characteristic iridoid profile and contributes anti-inflammatory activity.
+Chasteberry,Vitex agnus-castus,Fruit,Casticin,Flavonoid,Flavone,High,Major,Characteristic flavonoid associated with dopaminergic and endocrine-modulating activity.
+Chasteberry,Vitex agnus-castus,Fruit,Rotundifuran,Terpenoid,Diterpenoid,High,Major,Major diterpenoid linked to dopaminergic effects and regulation of prolactin secretion.
+Chickweed,Stellaria media,Aerial parts,Chlorogenic acid,Polyphenol,Caffeoylquinic acid,Moderate,Present,Contributes antioxidant activity and supports digestive and hepatic function.
+Chickweed,Stellaria media,Aerial parts,Luteolin,Flavonoid,Flavone,Moderate,Present,Supports anti-inflammatory and antioxidant activity.
+Chickweed,Stellaria media,Aerial parts,Gypsogenin glycosides,Glycoside,Triterpenoid saponin,High,Marker,"Characteristic saponins contributing to the herb's traditional alterative, expectorant, and topical actions."
+Chickweed,Stellaria media,Aerial parts,Apigenin,Flavonoid,Flavone,Moderate,Major,Contributes anti-inflammatory and mild antispasmodic activity.
+Chickweed,Stellaria media,Aerial parts,Oleanolic acid,Terpenoid,Pentacyclic triterpenoid,Moderate,Major,Contributes anti-inflammatory activity and supports tissue repair.
+Chickweed,Stellaria media,Aerial parts,Rutin,Flavonoid,Flavonol glycoside,Moderate,Major,Supports capillary integrity and contributes antioxidant activity.
+Coltsfoot,Tussilago farfara,Leaf,Senkirkine,Alkaloid,Pyrrolizidine alkaloid,Low,Reported,Hepatotoxic pyrrolizidine alkaloid; included because it is toxicologically significant despite efforts to use PA-free material medicinally.
+Coltsfoot,Tussilago farfara,Leaf,Hyperoside,Flavonoid,Flavonol glycoside,Moderate,Present,Contributes antioxidant and mild anti-inflammatory activity.
+Coltsfoot,Tussilago farfara,Leaf,Rutin,Flavonoid,Flavonol glycoside,Moderate,Present,Supports capillary integrity and antioxidant activity.
+Coltsfoot,Tussilago farfara,Leaf,Mucilage,Polysaccharide,Pectin,High,Marker,Principal demulcent constituent responsible for soothing irritated mucous membranes and relieving dry coughs.
+Coltsfoot,Tussilago farfara,Leaf,Chlorogenic acid,Polyphenol,Caffeoylquinic acid,Moderate,Major,Contributes antioxidant activity and supports respiratory tissue protection.
+Coltsfoot,Tussilago farfara,Leaf,Tussilagone,Terpenoid,Sesquiterpene,High,Major,Characteristic sesquiterpene contributing anti-inflammatory and antitussive activity.
+Elecampane,Inula helenium,Root,β-Sitosterol,Sterol,Phytosterol,Moderate,Present,Supports anti-inflammatory activity and complements the root's phytosterol fraction.
+Elecampane,Inula helenium,Root,Stigmasterol,Sterol,Phytosterol,Low–Moderate,Present,Contributes anti-inflammatory activity and supports membrane-stabilizing effects.
+Elecampane,Inula helenium,Root,Alantolactone,Terpenoid,Sesquiterpene lactone,High,Marker,"Principal constituent contributing expectorant, antimicrobial, and anti-inflammatory activity."
+Elecampane,Inula helenium,Root,Inulin,Polysaccharide,Fructan,High,Major,Principal storage polysaccharide providing prebiotic activity and supporting gastrointestinal health.
+Elecampane,Inula helenium,Root,Isoalantolactone,Terpenoid,Sesquiterpene lactone,High,Major,Major sesquiterpene lactone complementing alantolactone and supporting respiratory activity.
+Garlic,Allium sativum,Bulb,Diallyl disulfide,Organosulfur compound,Sulfide,Moderate,Present,Contributes antimicrobial activity and is a major decomposition product of allicin.
+Garlic,Allium sativum,Bulb,S-Allyl cysteine,Organosulfur compound,Amino acid derivative,Moderate,Present,Principal water-soluble organosulfur constituent of aged garlic extracts; contributes antioxidant and cardioprotective activity.
+Garlic,Allium sativum,Bulb,γ-Glutamyl-S-allyl cysteine,Organosulfur compound,Amino acid derivative,Low–Moderate,Present,Biosynthetic precursor of alliin and S-allyl cysteine contributing to the characteristic sulfur profile.
+Garlic,Allium sativum,Bulb,Alliin,Organosulfur compound,Sulfoxide,High,Marker,Stable precursor that is converted to allicin upon tissue damage; defines fresh garlic chemistry.
+Garlic,Allium sativum,Bulb,Ajoene,Organosulfur compound,Sulfide,Moderate,Major,"Contributes antiplatelet, antimicrobial, and cardiovascular protective activity."
+Garlic,Allium sativum,Bulb,Allicin,Organosulfur compound,Thiosulfinate,High,Major,Principal antimicrobial constituent formed enzymatically from alliin after crushing or chopping.
+Gentian,Gentiana lutea,Root,Isogentisin,Xanthone,Xanthone,Moderate,Present,Supports antioxidant activity and complements the xanthone fraction.
+Gentian,Gentiana lutea,Root,Gentisic acid,Polyphenol,Phenolic acid,Low–Moderate,Present,Contributes antioxidant activity and complements the characteristic bitter chemistry.
+Gentian,Gentiana lutea,Root,Amarogentin,Glycoside,Secoiridoid glycoside,High,Marker,One of the bitterest natural compounds known; contributes powerful bitter tonic activity.
+Gentian,Gentiana lutea,Root,Gentiopicroside,Glycoside,Secoiridoid glycoside,High,Marker,Principal bitter constituent responsible for stomachic activity and stimulation of digestive secretions.
+Gentian,Gentiana lutea,Root,Gentisin,Xanthone,Xanthone,Moderate,Major,Characteristic xanthone contributing antioxidant and hepatoprotective activity.
+Gentian,Gentiana lutea,Root,Swertiamarin,Glycoside,Secoiridoid glycoside,Moderate,Major,Contributes bitter tonic and digestive-support activity while complementing the principal secoiridoids.
+Ginger,Zingiber officinale,Rhizome,Zingerone,Phenylpropanoid,Phenolic ketone,Moderate,Present,Formed from gingerols during heating; contributes digestive and antioxidant activity with less pungency.
+Ginger,Zingiber officinale,Rhizome,β-Sesquiphellandrene,Terpenoid,Sesquiterpene,Moderate,Present,Characteristic sesquiterpene contributing to the aromatic profile and antimicrobial activity.
+Ginger,Zingiber officinale,Rhizome,6-Gingerol,Phenylpropanoid,Phenolic ketone,High,Marker,"Principal pungent constituent contributing antiemetic, digestive, anti-inflammatory, and analgesic activity."
+Ginger,Zingiber officinale,Rhizome,10-Gingerol,Phenylpropanoid,Phenolic ketone,Moderate,Major,Supports anti-inflammatory and antioxidant activity and contributes to pungency.
+Ginger,Zingiber officinale,Rhizome,8-Gingerol,Phenylpropanoid,Phenolic ketone,Moderate,Major,Contributes anti-inflammatory and digestive activity while complementing 6-gingerol.
+Ginger,Zingiber officinale,Rhizome,6-Shogaol,Phenylpropanoid,Phenolic ketone,High,Major,Formed during drying or heating; contributes potent antiemetic and anti-inflammatory activity.
+Ginkgo,Ginkgo biloba,Leaf,Isorhamnetin,Flavonoid,Flavonol,Moderate,Present,Contributes antioxidant activity and completes the characteristic flavonol profile.
+Ginkgo,Ginkgo biloba,Leaf,Ginkgolide A,Terpenoid,Diterpenoid,High,Marker,Major platelet-activating factor (PAF) antagonist contributing neuroprotective and circulatory activity.
+Ginkgo,Ginkgo biloba,Leaf,Ginkgolide B,Terpenoid,Diterpenoid,High,Marker,Most potent natural PAF antagonist in the leaf; contributes neuroprotective and vascular effects.
+Ginkgo,Ginkgo biloba,Leaf,Kaempferol,Flavonoid,Flavonol,Moderate,Major,Supports antioxidant activity and complements the flavonol fraction.
+Ginkgo,Ginkgo biloba,Leaf,Quercetin,Flavonoid,Flavonol,Moderate,Major,Contributes antioxidant activity and supports vascular integrity.
+Ginkgo,Ginkgo biloba,Leaf,Bilobalide,Terpenoid,Sesquiterpene,High,Major,Contributes neuroprotective activity and supports mitochondrial and neuronal function.
+Gravel Root,Eutrochium purpureum,Root,Pyrrolizidine alkaloids,Alkaloid,Pyrrolizidine alkaloid,Low,Reported,Toxicologically significant constituents reported in some populations; included because of their safety relevance rather than therapeutic contribution.
+Gravel Root,Eutrochium purpureum,Root,Caffeic acid,Polyphenol,Hydroxycinnamic acid,Moderate,Present,Supports antioxidant and anti-inflammatory activity.
+Gravel Root,Eutrochium purpureum,Root,Eupatorin,Flavonoid,Flavone,Moderate,Present,Characteristic flavone contributing antioxidant and anti-inflammatory activity.
+Gravel Root,Eutrochium purpureum,Root,Quercetin,Flavonoid,Flavonol,Low–Moderate,Present,Contributes antioxidant and anti-inflammatory activity.
+Gravel Root,Eutrochium purpureum,Root,Euparin,Polyacetylene,Polyacetylene,High,Marker,Characteristic constituent contributing antimicrobial activity and serving as the principal phytochemical marker.
+Gravel Root,Eutrochium purpureum,Root,Chlorogenic acid,Polyphenol,Caffeoylquinic acid,Moderate,Major,Contributes antioxidant activity and supports urinary tract health.
+Holy Basil,Ocimum tenuiflorum,Leaf,Apigenin,Flavonoid,Flavone,Moderate,Present,Contributes antioxidant and anti-inflammatory activity while complementing the phenolic profile.
+Holy Basil,Ocimum tenuiflorum,Leaf,Luteolin,Flavonoid,Flavone,Moderate,Present,Supports antioxidant activity and complements the flavonoid fraction.
+Holy Basil,Ocimum tenuiflorum,Leaf,β-Caryophyllene,Terpenoid,Sesquiterpene,Low–Moderate,Present,Contributes anti-inflammatory and antimicrobial activity while enriching the characteristic essential oil profile.
+Holy Basil,Ocimum tenuiflorum,Leaf,Eugenol,Phenylpropanoid,Phenylpropene,High,Marker,"Principal constituent contributing antimicrobial, anti-inflammatory, analgesic, and adaptogenic activity."
+Holy Basil,Ocimum tenuiflorum,Leaf,Ursolic acid,Terpenoid,Ursane triterpenoid,Moderate,Major,"Supports anti-inflammatory, adaptogenic, and tissue-protective activity."
+Holy Basil,Ocimum tenuiflorum,Leaf,Rosmarinic acid,Polyphenol,Hydroxycinnamic acid,High,Major,"Contributes antioxidant, anti-inflammatory, and immunomodulatory activity."
+Indian Gooseberry,Phyllanthus emblica,Fruit,Emblicanin A,Tannin,Hydrolyzable tannin,High,Marker,Characteristic hydrolyzable tannin contributing antioxidant activity and one of the defining constituents of amla fruit.
+Indian Gooseberry,Phyllanthus emblica,Fruit,Chebulagic acid,Tannin,Ellagitannin,Moderate,Major,Characteristic hydrolyzable tannin complementing the emblicanins and contributing to the fruit's distinctive antioxidant chemistry.
+Indian Gooseberry,Phyllanthus emblica,Fruit,Pedunculagin,Tannin,Ellagitannin,Moderate,Major,Major ellagitannin complementing the emblicanins within the hydrolyzable tannin profile.
+Indian Gooseberry,Phyllanthus emblica,Fruit,Punigluconin,Tannin,Hydrolyzable tannin,Moderate,Major,Characteristic ellagitannin contributing antioxidant activity and reinforcing the fruit's tannin chemistry.
+Indian Gooseberry,Phyllanthus emblica,Fruit,1-O-Galloyl-β-D-glucose,Polyphenol,Gallotannin precursor,High,Major,Principal galloyl glucose and precursor to the characteristic hydrolyzable tannins of amla fruit.
+Indian Gooseberry,Phyllanthus emblica,Fruit,Emblicanin B,Tannin,Hydrolyzable tannin,High,Major,Companion hydrolyzable tannin complementing emblicanin A within the characteristic tannin fraction.
+Nettles,Urtica dioica,Leaf,Caffeic acid,Polyphenol,Hydroxycinnamic acid,Moderate,Present,Complements the phenolic acid profile and contributes antioxidant activity.
+Nettles,Urtica dioica,Leaf,Caffeoylmalic acid,Polyphenol,Hydroxycinnamic acid derivative,Low–Moderate,Present,Characteristic phenolic acid derivative contributing antioxidant activity and complementing the caffeic acid-rich profile.
+Nettles,Urtica dioica,Leaf,Isoquercitrin,Flavonoid,Flavonol glycoside,Low–Moderate,Present,Characteristic flavonoid glycoside contributing antioxidant and anti-inflammatory activity while complementing rutin.
+Nettles,Urtica dioica,Leaf,Rutin,Flavonoid,Flavonol glycoside,High,Marker,Principal flavonoid contributing antioxidant activity and supporting capillary integrity.
+Nettles,Urtica dioica,Leaf,Chlorogenic acid,Polyphenol,Caffeoylquinic acid,Moderate,Major,Contributes antioxidant activity and supports the herb's anti-inflammatory effects.
+Nettles,Urtica dioica,Leaf,Quercetin,Flavonoid,Flavonol,High,Major,Contributes anti-inflammatory activity and complements the flavonoid profile.

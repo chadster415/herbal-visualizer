@@ -256,6 +256,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onActionClick, onActi
           .from('constituent_profiles')
           .select('*')
           .not('herb_id', 'is', null)
+          .order('herb_id')
           .range(0, 4999),
       ]);
 
