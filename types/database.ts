@@ -13,6 +13,8 @@ export interface Herb {
   moisture?: MoistureEnergetic;
   tone?: ToneEnergetic;
   monograph_url?: string | null;
+  pinyin_name?: string | null;
+  is_tcm?: boolean;
 }
 
 export interface PrimaryAction {

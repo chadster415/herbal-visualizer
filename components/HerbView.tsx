@@ -64,6 +64,20 @@ interface ConstituentHerbRef {
   concentration_level: ConcentrationLevel;
 }
 
+interface DuiYaoHerbStub { id: number; common_name: string; latin_name: string; pinyin_name: string | null; }
+interface DuiYaoPair {
+  id: number;
+  herb1_id: number;
+  herb2_id: number;
+  book_page: number | null;
+  image_file: string | null;
+  combined_summary: string | null;
+  herb1: DuiYaoHerbStub;
+  herb2: DuiYaoHerbStub;
+  dui_yao_indications: { indication: string; sort_order: number }[];
+  dui_yao_herb_properties: { herb_id: number; property: string; sort_order: number }[];
+}
+
 interface HerbViewProps {
   selectedHerbId?: number | null;
   onHerbIdChange?: (herbId: number | null) => void;
@@ -163,6 +177,9 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onActionClick, onActi
   const [searchTerm, setSearchTerm] = useState('');
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const [loading, setLoading] = useState(true);
+  const [includeTCM, setIncludeTCM] = useState(false);
+  const [duiYaoPairs, setDuiYaoPairs] = useState<DuiYaoPair[]>([]);
+  const [duiYaoLoading, setDuiYaoLoading] = useState(false);
 
   // constituent_id → array of herb refs (for tooltip & existing Constituents section)
   const [constituentIndex, setConstituentIndex] = useState<Map<number, ConstituentHerbRef[]>>(new Map());
@@ -176,7 +193,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onActionClick, onActi
   const [alternatesOpen, setAlternatesOpen] = useState(false);
   const [sectionsOpen, setSectionsOpen] = useState({
     primaryActions: true, secondaryActions: true,
-    constituentProfile: true, constituents: true, disorders: true,
+    constituentProfile: true, constituents: true, disorders: true, duiYao: true,
   });
   const toggleSection = (key: keyof typeof sectionsOpen) =>
     setSectionsOpen((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -206,12 +223,33 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onActionClick, onActi
   useEffect(() => { fetchHerbs(); }, []);
 
   useEffect(() => {
+    if (selectedHerb == null) { setDuiYaoPairs([]); return; }
+    setDuiYaoPairs([]);
+    setDuiYaoLoading(true);
+    supabase
+      .from('dui_yao_pairs')
+      .select(`
+        id, herb1_id, herb2_id, book_page, image_file, combined_summary,
+        herb1:herbs!dui_yao_pairs_herb1_id_fkey(id, common_name, latin_name, pinyin_name),
+        herb2:herbs!dui_yao_pairs_herb2_id_fkey(id, common_name, latin_name, pinyin_name),
+        dui_yao_indications(indication, sort_order),
+        dui_yao_herb_properties(herb_id, property, sort_order)
+      `)
+      .or(`herb1_id.eq.${selectedHerb.id},herb2_id.eq.${selectedHerb.id}`)
+      .then(({ data, error }) => {
+        if (!error && data) setDuiYaoPairs(data as unknown as DuiYaoPair[]);
+        else setDuiYaoPairs([]);
+        setDuiYaoLoading(false);
+      });
+  }, [selectedHerb?.id]);
+
+  useEffect(() => {
     if (selectedHerbId != null && herbs.length > 0) {
       const herb = herbs.find((h) => h.id === selectedHerbId);
       if (herb) {
         setSelectedHerb(herb);
         setAlternatesOpen(false);
-        setSectionsOpen({ primaryActions: true, secondaryActions: true, constituentProfile: true, constituents: true, disorders: true });
+        setSectionsOpen({ primaryActions: true, secondaryActions: true, constituentProfile: true, constituents: true, disorders: true, duiYao: true });
         setTimeout(() => {
           herbRefs.current.get(selectedHerbId)?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }, 100);
@@ -293,7 +331,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onActionClick, onActi
     if (!herb) return;
     setSelectedHerb(herb);
     setAlternatesOpen(false);
-    setSectionsOpen({ primaryActions: true, secondaryActions: true, constituentProfile: true, constituents: true, disorders: true });
+    setSectionsOpen({ primaryActions: true, secondaryActions: true, constituentProfile: true, constituents: true, disorders: true, duiYao: true });
     onHerbIdChange?.(herbId);
     detailPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     setTimeout(() => {
@@ -419,11 +457,15 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onActionClick, onActi
       .filter((x) => x.herb != null);
   })();
 
-  const filteredHerbs = herbs.filter(
-    (h) =>
-      h.common_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      h.latin_name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredHerbs = herbs.filter((h) => {
+    if (!includeTCM && h.is_tcm) return false;
+    const term = searchTerm.toLowerCase();
+    return (
+      h.common_name.toLowerCase().includes(term) ||
+      h.latin_name.toLowerCase().includes(term) ||
+      (h.pinyin_name ?? '').toLowerCase().includes(term)
+    );
+  });
 
   function handlePillMouseEnter(constituentId: number, e: React.MouseEvent) {
     if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
@@ -472,7 +514,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onActionClick, onActi
                 const herb = filteredHerbs[highlightedIndex];
                 setSelectedHerb(herb);
                 setAlternatesOpen(false);
-                setSectionsOpen({ primaryActions: true, secondaryActions: true, constituentProfile: true, constituents: true, disorders: true });
+                setSectionsOpen({ primaryActions: true, secondaryActions: true, constituentProfile: true, constituents: true, disorders: true, duiYao: true });
                 onHerbIdChange?.(herb.id);
                 setSearchTerm('');
                 setHighlightedIndex(-1);
@@ -494,6 +536,16 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onActionClick, onActi
           )}
         </div>
 
+        <label className="flex items-center gap-2 mb-3 cursor-pointer select-none text-sm text-gray-600">
+          <input
+            type="checkbox"
+            checked={includeTCM}
+            onChange={(e) => setIncludeTCM(e.target.checked)}
+            className="h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500"
+          />
+          Include TCM-only herbs
+        </label>
+
         <div className="space-y-2 max-h-[70vh] overflow-y-auto px-1 py-1">
           {filteredHerbs.map((herb, idx) => (
             <button
@@ -505,7 +557,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onActionClick, onActi
               onClick={() => {
                 setSelectedHerb(herb);
                 setAlternatesOpen(false);
-                setSectionsOpen({ primaryActions: true, secondaryActions: true, constituentProfile: true, constituents: true, disorders: true });
+                setSectionsOpen({ primaryActions: true, secondaryActions: true, constituentProfile: true, constituents: true, disorders: true, duiYao: true });
                 onHerbIdChange?.(herb.id);
                 setSearchTerm('');
                 setHighlightedIndex(-1);
@@ -523,15 +575,23 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onActionClick, onActi
               <div className="flex items-start justify-between gap-1">
                 <div>
                   <div className="font-semibold text-gray-900">{herb.common_name}</div>
+                  {herb.pinyin_name && (
+                    <div className="text-xs text-gray-500">{herb.pinyin_name}</div>
+                  )}
                   <div className="text-sm italic text-gray-600">{herb.latin_name}</div>
                 </div>
-                <span className="text-sm leading-none shrink-0 mt-0.5">
-                  {[
-                    herb.temperature === 'warming' ? '🔥' : herb.temperature === 'cooling' ? '❄️' : '',
-                    herb.moisture === 'moistening' ? '💧' : herb.moisture === 'drying' ? '🌵' : '',
-                    herb.tone === 'toning' ? '⚡' : herb.tone === 'relaxing' ? '🌊' : '',
-                  ].join('')}
-                </span>
+                <div className="flex items-center gap-1 shrink-0 mt-0.5">
+                  {herb.is_tcm && (
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-red-50 border border-red-200 text-red-700 font-semibold">TCM</span>
+                  )}
+                  <span className="text-sm leading-none">
+                    {[
+                      herb.temperature === 'warming' ? '🔥' : herb.temperature === 'cooling' ? '❄️' : '',
+                      herb.moisture === 'moistening' ? '💧' : herb.moisture === 'drying' ? '🌵' : '',
+                      herb.tone === 'toning' ? '⚡' : herb.tone === 'relaxing' ? '🌊' : '',
+                    ].join('')}
+                  </span>
+                </div>
               </div>
             </button>
           ))}
@@ -556,16 +616,20 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onActionClick, onActi
                 </a>
               )}
             </div>
+            {selectedHerb.pinyin_name && (
+              <p className="text-lg text-gray-500 -mt-1 mb-1">{selectedHerb.pinyin_name}</p>
+            )}
             <p className="text-xl italic text-gray-600 mb-3">{selectedHerb.latin_name}</p>
 
-            {/* Section nav */}
-            <div className="flex flex-wrap gap-1.5 mb-6 text-xs">
+            {/* Section nav + expand/collapse all */}
+            <div className="flex flex-wrap gap-1.5 mb-2 text-xs">
               {[
                 { key: 'primaryActions' as const, label: 'Primary Actions' },
                 ...(selectedHerb.herb_secondary_actions.length > 0 ? [{ key: 'secondaryActions' as const, label: 'Secondary Actions' }] : []),
                 ...(selectedProfiles.length > 0 ? [{ key: 'constituentProfile' as const, label: 'Constituents' }] : []),
                 ...((selectedHerb.herb_constituents?.length ?? 0) > 0 ? [{ key: 'constituents' as const, label: 'Constituent Detail' }] : []),
                 ...((((selectedHerb.disorder_action_herbs?.length ?? 0) > 0) || ((selectedHerb.disorder_specific_remedies?.length ?? 0) > 0)) ? [{ key: 'disorders' as const, label: 'Disorders' }] : []),
+                ...(duiYaoPairs.length > 0 ? [{ key: 'duiYao' as const, label: 'Dui Yao Pairings' }] : []),
               ].map(({ key, label }) => (
                 <button
                   key={key}
@@ -575,6 +639,20 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onActionClick, onActi
                   {label}
                 </button>
               ))}
+            </div>
+            <div className="flex justify-end mb-5">
+              <button
+                onClick={() => {
+                  const allOpen = Object.values(sectionsOpen).every(Boolean);
+                  setSectionsOpen({ primaryActions: !allOpen, secondaryActions: !allOpen, constituentProfile: !allOpen, constituents: !allOpen, disorders: !allOpen, duiYao: !allOpen });
+                }}
+                className="flex items-center gap-1.5 px-3 py-1 rounded-full border border-gray-300 text-xs text-gray-500 hover:border-gray-400 hover:text-gray-700 transition-colors"
+              >
+                <svg className={`w-3 h-3 transition-transform ${Object.values(sectionsOpen).every(Boolean) ? '' : '-rotate-90'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+                {Object.values(sectionsOpen).every(Boolean) ? 'Collapse all' : 'Expand all'}
+              </button>
             </div>
 
             {/* Primary Actions & Body Systems */}
@@ -916,6 +994,94 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onActionClick, onActi
                       ));
                     })()}
                   </div>
+                )}
+              </div>
+            )}
+            {/* ── Dui Yao Pairings ─────────────────────────────────────── */}
+            {(duiYaoPairs.length > 0 || duiYaoLoading) && (
+              <div className="mt-6" ref={(el) => { sectionRefs.current.duiYao = el; }}>
+                <SectionHeader title="Dui Yao Pairings" open={sectionsOpen.duiYao} onToggle={() => toggleSection('duiYao')} />
+                {sectionsOpen.duiYao && (
+                  duiYaoLoading ? (
+                    <p className="text-gray-400 text-sm italic">Loading pairings…</p>
+                  ) : (
+                    <div className="space-y-4">
+                      {duiYaoPairs.map((pair) => {
+                        const partner = pair.herb1_id === selectedHerb!.id ? pair.herb2 : pair.herb1;
+                        const myProps = pair.dui_yao_herb_properties
+                          .filter((p) => p.herb_id === selectedHerb!.id)
+                          .sort((a, b) => a.sort_order - b.sort_order);
+                        const partnerProps = pair.dui_yao_herb_properties
+                          .filter((p) => p.herb_id === partner.id)
+                          .sort((a, b) => a.sort_order - b.sort_order);
+                        const indications = [...pair.dui_yao_indications].sort((a, b) => a.sort_order - b.sort_order);
+                        return (
+                          <div key={pair.id} className="border border-gray-200 rounded-lg overflow-hidden">
+                            <div className="bg-gray-50 px-4 py-2.5 flex items-start justify-between gap-2">
+                              <button
+                                onClick={() => navigateToHerb(partner.id)}
+                                className="text-left group"
+                              >
+                                <div className="font-semibold text-sm text-green-700 group-hover:text-green-900 group-hover:underline transition-colors">
+                                  Paired with: {partner.common_name}
+                                  {partner.pinyin_name && (
+                                    <span className="ml-1.5 font-normal text-gray-500 group-hover:text-gray-700">({partner.pinyin_name})</span>
+                                  )}
+                                </div>
+                                <div className="text-xs italic text-gray-500">{partner.latin_name}</div>
+                              </button>
+                              {pair.book_page && (
+                                <span className="shrink-0 text-xs text-gray-400 mt-0.5">p. {pair.book_page}</span>
+                              )}
+                            </div>
+                            {(myProps.length > 0 || partnerProps.length > 0) && (
+                              <div className="grid grid-cols-2 gap-3 px-4 py-3 border-t border-gray-100">
+                                {myProps.length > 0 && (
+                                  <div>
+                                    <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-1">{selectedHerb!.common_name}</p>
+                                    <ul className="space-y-0.5">
+                                      {myProps.map((prop, i) => (
+                                        <li key={i} className="text-xs text-gray-700 flex gap-1.5">
+                                          <span className="text-gray-400 shrink-0">•</span>{prop.property}
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                )}
+                                {partnerProps.length > 0 && (
+                                  <div>
+                                    <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-1">{partner.common_name}</p>
+                                    <ul className="space-y-0.5">
+                                      {partnerProps.map((prop, i) => (
+                                        <li key={i} className="text-xs text-gray-700 flex gap-1.5">
+                                          <span className="text-gray-400 shrink-0">•</span>{prop.property}
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                            {pair.combined_summary && (
+                              <div className="px-4 py-3 border-t border-gray-100">
+                                <p className="text-sm text-gray-700 leading-relaxed">{pair.combined_summary}</p>
+                              </div>
+                            )}
+                            {indications.length > 0 && (
+                              <div className="px-4 py-3 border-t border-gray-100">
+                                <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-1.5">Indications</p>
+                                <ol className="space-y-0.5 list-decimal list-inside">
+                                  {indications.map((ind, i) => (
+                                    <li key={i} className="text-xs text-gray-700">{ind.indication}</li>
+                                  ))}
+                                </ol>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )
                 )}
               </div>
             )}

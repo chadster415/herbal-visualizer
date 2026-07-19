@@ -13,6 +13,7 @@ interface HerbRow {
   id: number;
   common_name: string;
   latin_name: string;
+  pinyin_name: string | null;
   temperature: TemperatureEnergetic;
   moisture: MoistureEnergetic;
   tone: ToneEnergetic;
@@ -98,7 +99,8 @@ export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect 
     const [herbsRes, systemsRes, actionsRes] = await Promise.all([
       supabase
         .from('herbs')
-        .select('id, common_name, latin_name, temperature, moisture, tone, herb_primary_actions(primary_action_id, body_system_id), herb_menstruum(primary_label)')
+        .select('id, common_name, latin_name, temperature, moisture, tone, pinyin_name, herb_primary_actions(primary_action_id, body_system_id), herb_menstruum(primary_label)')
+        .eq('is_tcm', false)
         .order('common_name'),
       supabase.from('body_systems').select('id, name').order('name'),
       supabase.from('primary_actions').select('id, name').order('name'),
@@ -121,6 +123,7 @@ export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect 
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             system_ids: new Set<number>(h.herb_primary_actions.map((a: any) => a.body_system_id).filter(Boolean)),
             menstruum_label: menstruum?.primary_label ?? null,
+            pinyin_name: h.pinyin_name ?? null,
           };
         })
       );
@@ -136,11 +139,11 @@ export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect 
 
   const filteredHerbs = useMemo(() => {
     return herbs.filter((h) => {
-      if (tempFilter.size > 0    && !tempFilter.has(h.temperature))                            return false;
-      if (moistureFilter.size > 0 && !moistureFilter.has(h.moisture))                          return false;
-      if (toneFilter.size > 0    && !toneFilter.has(h.tone))                                    return false;
-      if (systemFilter.size > 0  && ![...systemFilter].some((id) => h.system_ids.has(id)))     return false;
-      if (actionFilter.size > 0  && ![...actionFilter].some((id) => h.action_ids.has(id)))     return false;
+      if (tempFilter.size > 0    && !tempFilter.has(h.temperature))                        return false;
+      if (moistureFilter.size > 0 && !moistureFilter.has(h.moisture))                      return false;
+      if (toneFilter.size > 0    && !toneFilter.has(h.tone))                                return false;
+      if (systemFilter.size > 0  && ![...systemFilter].some((id) => h.system_ids.has(id))) return false;
+      if (actionFilter.size > 0  && ![...actionFilter].some((id) => h.action_ids.has(id))) return false;
       return true;
     });
   }, [herbs, tempFilter, moistureFilter, toneFilter, systemFilter, actionFilter]);
@@ -342,6 +345,9 @@ export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect 
                         <span className="font-medium text-gray-900 text-sm">{herb.common_name}</span>
                         <span className="text-base leading-none shrink-0">{herbEmojis(herb)}</span>
                       </div>
+                      {herb.pinyin_name && (
+                        <div className="text-xs text-gray-500 mt-0.5">{herb.pinyin_name}</div>
+                      )}
                       <div className="text-xs italic text-gray-500 mt-0.5">{herb.latin_name}</div>
                       {(sortedSystemIds.length > 0 || herb.menstruum_label) && (
                         <div className="flex items-center flex-wrap gap-1 mt-1.5">
