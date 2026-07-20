@@ -263,6 +263,7 @@ type HerbSuggestion = {
   moisture?: string;
   tone?: string;
   strength?: string;
+  actions: string[];
 };
 type SystemHerbMap = Partial<Record<BodySystem, HerbSuggestion[]>>;
 
@@ -334,6 +335,8 @@ interface Props {
   onHerbSelect?: (herbId: number) => void;
 }
 
+type YesAnswers = Partial<Record<BodySystem, { excess: string[]; deficiency: string[] }>>;
+
 export function IntakeFormModal({ isOpen, onClose, onHerbSelect }: Props) {
   const [stage, setStage] = useState<Stage>('intro');
   const [biology, setBiology] = useState<Biology | null>(null);
@@ -341,6 +344,7 @@ export function IntakeFormModal({ isOpen, onClose, onHerbSelect }: Props) {
   const [genIndex, setGenIndex] = useState(0);
   const [systemScores, setSystemScores] = useState<SystemScores>(initialSystemScores());
   const [generalAnswers, setGeneralAnswers] = useState<(0 | 1 | 2)[]>([]);
+  const [yesAnswers, setYesAnswers] = useState<YesAnswers>({});
   const [systemHerbs, setSystemHerbs] = useState<SystemHerbMap>({});
   const [herbsLoading, setHerbsLoading] = useState(false);
 
@@ -348,21 +352,22 @@ export function IntakeFormModal({ isOpen, onClose, onHerbSelect }: Props) {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
-        const { stage: s, biology: b, sysIndex: si, genIndex: gi, systemScores: ss, generalAnswers: ga } = JSON.parse(saved);
+        const { stage: s, biology: b, sysIndex: si, genIndex: gi, systemScores: ss, generalAnswers: ga, yesAnswers: ya } = JSON.parse(saved);
         setStage(s);
         setBiology(b ?? null);
         setSysIndex(si ?? 0);
         setGenIndex(gi ?? 0);
         setSystemScores(ss ?? initialSystemScores());
         setGeneralAnswers(ga ?? []);
+        setYesAnswers(ya ?? {});
       }
     } catch { /* ignore */ }
   }, []);
 
   useEffect(() => {
     if (stage === 'intro') return;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ stage, biology, sysIndex, genIndex, systemScores, generalAnswers }));
-  }, [stage, biology, sysIndex, genIndex, systemScores, generalAnswers]);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ stage, biology, sysIndex, genIndex, systemScores, generalAnswers, yesAnswers }));
+  }, [stage, biology, sysIndex, genIndex, systemScores, generalAnswers, yesAnswers]);
 
   const reset = () => {
     localStorage.removeItem(STORAGE_KEY);
@@ -372,6 +377,7 @@ export function IntakeFormModal({ isOpen, onClose, onHerbSelect }: Props) {
     setGenIndex(0);
     setSystemScores(initialSystemScores());
     setGeneralAnswers([]);
+    setYesAnswers({});
     setSystemHerbs({});
   };
 
@@ -429,24 +435,30 @@ export function IntakeFormModal({ isOpen, onClose, onHerbSelect }: Props) {
           : pattern === 'deficiency' ? defActionIds
           : [...defActionIds, ...exActionIds];
 
-        const { data } = await supabase
+        const { data, error } = await supabase
           .from('herb_primary_actions')
-          .select('relative_strength, herbs(id, common_name, latin_name, temperature, moisture, tone)')
+          .select('relative_strength, primary_actions(name), herbs(id, common_name, latin_name, temperature, moisture, tone)')
           .in('body_system_id', dbIds)
           .in('primary_action_id', actionIds);
 
+        console.log('[IntakeDebug] rows:', data?.length, 'error:', error, 'first:', JSON.stringify(data?.[0]));
         if (!data) return;
         const strengthRank = (s?: string | null) => {
           switch (s) { case 'very_strong': return 4; case 'strong': return 3; case 'moderate': return 2; case 'mild': return 1; default: return 0; }
         };
         const seen = new Map<number, HerbSuggestion>();
         for (const row of data) {
-          const h = row.herbs as unknown as Omit<HerbSuggestion, 'strength'> | null;
+          const h = row.herbs as unknown as Omit<HerbSuggestion, 'strength' | 'actions'> | null;
           if (!h) continue;
           const rs = (row as { relative_strength?: string | null }).relative_strength ?? undefined;
+          const pa = (row as unknown as { primary_actions?: { name: string } | { name: string }[] | null }).primary_actions;
+          const actionName = Array.isArray(pa) ? pa[0]?.name : pa?.name;
           const existing = seen.get(h.id);
-          if (!existing || strengthRank(rs) > strengthRank(existing.strength)) {
-            seen.set(h.id, { ...h, strength: rs });
+          if (!existing) {
+            seen.set(h.id, { ...h, strength: rs, actions: actionName ? [actionName] : [] });
+          } else {
+            if (strengthRank(rs) > strengthRank(existing.strength)) existing.strength = rs;
+            if (actionName && !existing.actions.includes(actionName)) existing.actions.push(actionName);
           }
         }
         const herbs = [...seen.values()];
@@ -472,6 +484,10 @@ export function IntakeFormModal({ isOpen, onClose, onHerbSelect }: Props) {
         const next = { ...prev, [q.system]: { ...prev[q.system] } };
         next[q.system][q.indicates] += 1;
         return next;
+      });
+      setYesAnswers(prev => {
+        const sys = prev[q.system] ?? { excess: [], deficiency: [] };
+        return { ...prev, [q.system]: { ...sys, [q.indicates]: [...sys[q.indicates], q.text] } };
       });
     }
     if (sysIndex + 1 >= filteredSystemQuestions.length) {
@@ -568,6 +584,7 @@ export function IntakeFormModal({ isOpen, onClose, onHerbSelect }: Props) {
             mildComplaints={GENERAL_QUESTIONS.filter((_, i) => generalAnswers[i] === 1)}
             systemHerbs={systemHerbs}
             herbsLoading={herbsLoading}
+            yesAnswers={yesAnswers}
             onRetake={reset}
             onHerbSelect={onHerbSelect}
           />
@@ -823,7 +840,7 @@ function HerbCardList({ herbs, isExpanded, onToggle, onHerbSelect }: {
             <Tag
               key={herb.id}
               {...(onHerbSelect ? { onClick: () => onHerbSelect(herb.id) } : {})}
-              className={`text-left border rounded-lg py-1.5 px-2.5 transition-all ${cardBg} ${onHerbSelect ? 'cursor-pointer hover:shadow-sm hover:scale-[1.01]' : ''}`}
+              className={`group text-left border rounded-lg py-1.5 px-2.5 transition-all ${cardBg} ${onHerbSelect ? 'cursor-pointer hover:shadow-sm hover:scale-[1.01]' : ''}`}
             >
               <div className="flex items-start justify-between gap-1">
                 <span className="font-semibold text-gray-900 dark:text-gray-100 text-xs leading-snug">{herb.common_name}</span>
@@ -834,6 +851,11 @@ function HerbCardList({ herbs, isExpanded, onToggle, onHerbSelect }: {
                 <span className={`inline-block mt-1 text-[10px] font-semibold px-1.5 py-0.5 rounded ${strengthCls}`}>
                   {herb.strength!.replace('_', ' ')}
                 </span>
+              )}
+              {herb.actions.length > 0 && (
+                <div className="hidden group-hover:block mt-1.5 pt-1.5 border-t border-black/10 dark:border-white/10 text-[10px] text-gray-500 dark:text-gray-400 leading-relaxed">
+                  {herb.actions.join(' · ')}
+                </div>
               )}
             </Tag>
           );
@@ -860,6 +882,7 @@ function ResultsScreen({
   mildComplaints,
   systemHerbs,
   herbsLoading,
+  yesAnswers,
   onRetake,
   onHerbSelect,
 }: {
@@ -868,12 +891,14 @@ function ResultsScreen({
   mildComplaints: string[];
   systemHerbs: SystemHerbMap;
   herbsLoading: boolean;
+  yesAnswers: YesAnswers;
   onRetake: () => void;
   onHerbSelect?: (herbId: number) => void;
 }) {
   const [expandedSystems, setExpandedSystems] = useState<Set<string>>(new Set());
   const toggleExpanded = (sys: string) =>
     setExpandedSystems(prev => { const s = new Set(prev); s.has(sys) ? s.delete(sys) : s.add(sys); return s; });
+  const [activeTooltip, setActiveTooltip] = useState<{ system: string; kind: 'excess' | 'deficiency' } | null>(null);
 
   const hasAnyResults = systemResults.length > 0 || dominantComplaints.length > 0 || mildComplaints.length > 0;
 
@@ -925,12 +950,48 @@ function ResultsScreen({
                   {result.total} response{result.total !== 1 ? 's' : ''}
                 </span>
               </div>
-              <div className="flex gap-3 text-xs text-gray-500 dark:text-gray-400 mb-2">
+              <div className="flex gap-3 text-xs mb-2">
                 {result.excess > 0 && (
-                  <span className="text-amber-700 dark:text-amber-400">{result.excess} excess</span>
+                  <div className="relative">
+                    <span
+                      className="text-amber-700 dark:text-amber-400 cursor-default underline decoration-dotted"
+                      onMouseEnter={() => setActiveTooltip({ system: result.system, kind: 'excess' })}
+                      onMouseLeave={() => setActiveTooltip(null)}
+                    >
+                      {result.excess} excess
+                    </span>
+                    {activeTooltip?.system === result.system && activeTooltip?.kind === 'excess' && (
+                      <div className="absolute left-0 top-full mt-1 z-20 bg-white dark:bg-gray-900 border border-amber-200 dark:border-amber-700 rounded-lg shadow-lg p-3 w-64 pointer-events-none">
+                        <div className="text-[10px] font-semibold text-amber-700 dark:text-amber-400 uppercase tracking-wide mb-1.5">Excess responses</div>
+                        <ul className="flex flex-col gap-1">
+                          {(yesAnswers[result.system]?.excess ?? []).map((q, i) => (
+                            <li key={i} className="text-[11px] text-gray-600 dark:text-gray-300 leading-snug">• {q}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
                 )}
                 {result.deficiency > 0 && (
-                  <span className="text-blue-700 dark:text-blue-400">{result.deficiency} deficiency</span>
+                  <div className="relative">
+                    <span
+                      className="text-blue-700 dark:text-blue-400 cursor-default underline decoration-dotted"
+                      onMouseEnter={() => setActiveTooltip({ system: result.system, kind: 'deficiency' })}
+                      onMouseLeave={() => setActiveTooltip(null)}
+                    >
+                      {result.deficiency} deficiency
+                    </span>
+                    {activeTooltip?.system === result.system && activeTooltip?.kind === 'deficiency' && (
+                      <div className="absolute left-0 top-full mt-1 z-20 bg-white dark:bg-gray-900 border border-blue-200 dark:border-blue-700 rounded-lg shadow-lg p-3 w-64 pointer-events-none">
+                        <div className="text-[10px] font-semibold text-blue-700 dark:text-blue-400 uppercase tracking-wide mb-1.5">Deficiency responses</div>
+                        <ul className="flex flex-col gap-1">
+                          {(yesAnswers[result.system]?.deficiency ?? []).map((q, i) => (
+                            <li key={i} className="text-[11px] text-gray-600 dark:text-gray-300 leading-snug">• {q}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
               {herbsLoading && !systemHerbs[result.system] && (
