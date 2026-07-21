@@ -8,6 +8,7 @@ export interface Herb {
   id: number;
   latin_name: string;
   common_name: string;
+  plant_part?: string | null;
   created_at: string;
   temperature?: TemperatureEnergetic;
   moisture?: MoistureEnergetic;

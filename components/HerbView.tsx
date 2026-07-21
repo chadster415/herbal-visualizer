@@ -574,7 +574,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onActionClick, onActi
             >
               <div className="flex items-start justify-between gap-1">
                 <div>
-                  <div className="font-semibold text-gray-900">{herb.common_name}</div>
+                  <div className="font-semibold text-gray-900">{herb.common_name}{herb.plant_part ? ` (${herb.plant_part})` : ''}</div>
                   {herb.pinyin_name && (
                     <div className="text-xs text-gray-500">{herb.pinyin_name}</div>
                   )}
@@ -604,7 +604,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onActionClick, onActi
           <div>
             {/* Header */}
             <div className="flex items-start justify-between mb-2">
-              <h2 className="text-3xl font-bold text-green-800">{selectedHerb.common_name}</h2>
+              <h2 className="text-3xl font-bold text-green-800">{selectedHerb.common_name}{selectedHerb.plant_part ? ` (${selectedHerb.plant_part})` : ''}</h2>
               {selectedHerb.monograph_url && (
                 <a
                   href={selectedHerb.monograph_url}

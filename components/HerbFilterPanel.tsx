@@ -13,6 +13,7 @@ interface HerbRow {
   id: number;
   common_name: string;
   latin_name: string;
+  plant_part: string | null;
   pinyin_name: string | null;
   temperature: TemperatureEnergetic;
   moisture: MoistureEnergetic;
@@ -99,7 +100,7 @@ export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect 
     const [herbsRes, systemsRes, actionsRes] = await Promise.all([
       supabase
         .from('herbs')
-        .select('id, common_name, latin_name, temperature, moisture, tone, pinyin_name, herb_primary_actions(primary_action_id, body_system_id), herb_menstruum(primary_label)')
+        .select('id, common_name, latin_name, plant_part, temperature, moisture, tone, pinyin_name, herb_primary_actions(primary_action_id, body_system_id), herb_menstruum(primary_label)')
         .eq('is_tcm', false)
         .order('common_name'),
       supabase.from('body_systems').select('id, name').order('name'),
@@ -115,6 +116,7 @@ export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect 
             id: h.id,
             common_name: h.common_name,
             latin_name: h.latin_name,
+            plant_part: h.plant_part ?? null,
             temperature: (h.temperature ?? 'neutral') as TemperatureEnergetic,
             moisture:    (h.moisture    ?? 'neutral') as MoistureEnergetic,
             tone:        (h.tone        ?? 'neutral') as ToneEnergetic,
@@ -342,7 +344,7 @@ export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect 
                       className={`w-full text-left border rounded-lg px-4 py-2.5 transition-all hover:shadow-md hover:scale-[1.005] ${cardBg(herb.temperature)}`}
                     >
                       <div className="flex items-center justify-between gap-2">
-                        <span className="font-medium text-gray-900 text-sm">{herb.common_name}</span>
+                        <span className="font-medium text-gray-900 text-sm">{herb.common_name}{herb.plant_part ? ` (${herb.plant_part})` : ''}</span>
                         <span className="text-base leading-none shrink-0">{herbEmojis(herb)}</span>
                       </div>
                       {herb.pinyin_name && (

@@ -259,6 +259,7 @@ type HerbSuggestion = {
   id: number;
   common_name: string;
   latin_name: string;
+  plant_part?: string | null;
   temperature?: string;
   moisture?: string;
   tone?: string;
@@ -437,7 +438,7 @@ export function IntakeFormModal({ isOpen, onClose, onHerbSelect }: Props) {
 
         const { data, error } = await supabase
           .from('herb_primary_actions')
-          .select('relative_strength, primary_actions(name), herbs(id, common_name, latin_name, temperature, moisture, tone)')
+          .select('relative_strength, primary_actions(name), herbs(id, common_name, latin_name, plant_part, temperature, moisture, tone)')
           .in('body_system_id', dbIds)
           .in('primary_action_id', actionIds);
 
@@ -843,7 +844,7 @@ function HerbCardList({ herbs, isExpanded, onToggle, onHerbSelect }: {
               className={`group text-left border rounded-lg py-1.5 px-2.5 transition-all ${cardBg} ${onHerbSelect ? 'cursor-pointer hover:shadow-sm hover:scale-[1.01]' : ''}`}
             >
               <div className="flex items-start justify-between gap-1">
-                <span className="font-semibold text-gray-900 dark:text-gray-100 text-xs leading-snug">{herb.common_name}</span>
+                <span className="font-semibold text-gray-900 dark:text-gray-100 text-xs leading-snug">{herb.common_name}{herb.plant_part ? ` (${herb.plant_part})` : ''}</span>
                 {emojis && <span className="text-xs leading-none shrink-0 mt-0.5">{emojis}</span>}
               </div>
               <div className="text-xs italic text-gray-500 dark:text-gray-400 leading-snug">{herb.latin_name}</div>
