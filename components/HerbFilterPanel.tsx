@@ -72,6 +72,42 @@ function herbEmojis(h: HerbRow) {
   ].join('');
 }
 
+function checkPaneScroll(
+  el: HTMLDivElement | null,
+  setter: (s: { up: boolean; down: boolean }) => void,
+) {
+  if (!el) return;
+  setter({
+    up: el.scrollTop > 4,
+    down: el.scrollTop + el.clientHeight < el.scrollHeight - 4,
+  });
+}
+
+// ─── Scroll indicator ─────────────────────────────────────────────────────────
+
+function ScrollArrow({ direction, visible }: { direction: 'up' | 'down'; visible: boolean }) {
+  const isUp = direction === 'up';
+  return (
+    <div
+      className={`absolute ${isUp ? 'top-0' : 'bottom-0'} left-0 right-0 h-10 pointer-events-none z-10 flex ${isUp ? 'items-start pt-1.5' : 'items-end pb-1.5'} justify-center transition-opacity duration-200 ${visible ? 'opacity-100' : 'opacity-0'} ${isUp ? 'bg-gradient-to-b' : 'bg-gradient-to-t'} from-white/90 via-white/60 to-transparent`}
+    >
+      <svg
+        className="w-4 h-4 text-gray-400 drop-shadow"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d={isUp ? 'M5 15l7-7 7 7' : 'M19 9l-7 7-7-7'}
+        />
+      </svg>
+    </div>
+  );
+}
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect }: HerbFilterPanelProps) {
@@ -80,11 +116,16 @@ export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect 
   const [actions, setActions] = useState<Action[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const [tempFilter, setTempFilter]       = useState<Set<TemperatureEnergetic>>(new Set());
+  const [tempFilter, setTempFilter]         = useState<Set<TemperatureEnergetic>>(new Set());
   const [moistureFilter, setMoistureFilter] = useState<Set<MoistureEnergetic>>(new Set());
-  const [toneFilter, setToneFilter]       = useState<Set<ToneEnergetic>>(new Set());
-  const [systemFilter, setSystemFilter]   = useState<Set<number>>(new Set());
-  const [actionFilter, setActionFilter]   = useState<Set<number>>(new Set());
+  const [toneFilter, setToneFilter]         = useState<Set<ToneEnergetic>>(new Set());
+  const [systemFilter, setSystemFilter]     = useState<Set<number>>(new Set());
+  const [actionFilter, setActionFilter]     = useState<Set<number>>(new Set());
+
+  const filterPaneRef  = useRef<HTMLDivElement>(null);
+  const resultsPaneRef = useRef<HTMLDivElement>(null);
+  const [filterScroll, setFilterScroll]   = useState({ up: false, down: false });
+  const [resultsScroll, setResultsScroll] = useState({ up: false, down: false });
 
   const loaded = useRef(false);
 
@@ -94,6 +135,15 @@ export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect 
       fetchData();
     }
   }, [isOpen]);
+
+  useEffect(() => {
+    if (!loading) {
+      requestAnimationFrame(() => {
+        checkPaneScroll(filterPaneRef.current, setFilterScroll);
+        checkPaneScroll(resultsPaneRef.current, setResultsScroll);
+      });
+    }
+  }, [loading]);
 
   async function fetchData() {
     setLoading(true);
@@ -150,6 +200,10 @@ export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect 
     });
   }, [herbs, tempFilter, moistureFilter, toneFilter, systemFilter, actionFilter]);
 
+  useEffect(() => {
+    requestAnimationFrame(() => checkPaneScroll(resultsPaneRef.current, setResultsScroll));
+  }, [filteredHerbs]);
+
   const systemMap = useMemo(
     () => new Map(bodySystems.map((s) => [s.id, s.name])),
     [bodySystems]
@@ -175,12 +229,12 @@ export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect 
 
       {/* Slideover */}
       <div
-        className={`fixed top-0 right-0 h-full w-[500px] z-40 bg-white shadow-2xl border-l border-gray-200 flex flex-col transition-transform duration-300 ease-in-out ${
+        className={`fixed top-0 right-0 h-full w-[500px] z-40 bg-gray-50 shadow-2xl border-l border-gray-200 flex flex-col transition-transform duration-300 ease-in-out ${
           isOpen ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200 shrink-0">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200 bg-white shrink-0">
           <div>
             <h2 className="text-xl font-bold text-gray-900">Filter Herbs</h2>
             <p className="text-sm text-gray-500 mt-0.5">
@@ -207,186 +261,207 @@ export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect 
           </div>
         </div>
 
-        {/* Filter controls — scrollable, fixed max-height */}
-        <div className="border-b border-gray-200 px-5 py-4 space-y-5 overflow-y-auto shrink-0 max-h-[46vh]">
+        {/* Two-pane body */}
+        <div className="flex flex-col flex-1 min-h-0 p-3 gap-3 overflow-hidden">
 
-          {/* Temperature */}
-          <div>
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2">Temperature</p>
-            <div className="flex flex-wrap gap-2">
-              {TEMP_OPTIONS.map((opt) => (
-                <button
-                  key={opt.value}
-                  onClick={() => setTempFilter((prev) => toggle(prev, opt.value))}
-                  className={`border rounded-full px-3 py-1 text-sm font-medium transition-all ${
-                    tempFilter.has(opt.value) ? opt.on : opt.off
-                  }`}
-                >
-                  {opt.emoji && <span className="mr-1">{opt.emoji}</span>}
-                  {opt.label}
-                </button>
-              ))}
-            </div>
-          </div>
+          {/* Filter controls pane */}
+          <div className="relative border-2 border-gray-300 rounded-xl bg-white shadow-sm shrink-0 overflow-hidden">
+            <ScrollArrow direction="up" visible={filterScroll.up} />
+            <div
+              ref={filterPaneRef}
+              onScroll={() => checkPaneScroll(filterPaneRef.current, setFilterScroll)}
+              className="px-5 py-4 space-y-5 overflow-y-auto max-h-[46vh] rounded-xl"
+            >
 
-          {/* Moisture */}
-          <div>
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2">Moisture</p>
-            <div className="flex flex-wrap gap-2">
-              {MOISTURE_OPTIONS.map((opt) => (
-                <button
-                  key={opt.value}
-                  onClick={() => setMoistureFilter((prev) => toggle(prev, opt.value))}
-                  className={`border rounded-full px-3 py-1 text-sm font-medium transition-all ${
-                    moistureFilter.has(opt.value) ? opt.on : opt.off
-                  }`}
-                >
-                  {opt.emoji && <span className="mr-1">{opt.emoji}</span>}
-                  {opt.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Tone */}
-          <div>
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2">Tone</p>
-            <div className="flex flex-wrap gap-2">
-              {TONE_OPTIONS.map((opt) => (
-                <button
-                  key={opt.value}
-                  onClick={() => setToneFilter((prev) => toggle(prev, opt.value))}
-                  className={`border rounded-full px-3 py-1 text-sm font-medium transition-all ${
-                    toneFilter.has(opt.value) ? opt.on : opt.off
-                  }`}
-                >
-                  {opt.emoji && <span className="mr-1">{opt.emoji}</span>}
-                  {opt.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Body System */}
-          {bodySystems.length > 0 && (
-            <div>
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2">Body System</p>
-              <div className="flex flex-wrap gap-2">
-                {bodySystems.map((sys) => (
-                  <button
-                    key={sys.id}
-                    onClick={() => setSystemFilter((prev) => toggle(prev, sys.id))}
-                    className={`border rounded-full px-3 py-1 text-sm font-medium transition-all ${
-                      systemFilter.has(sys.id)
-                        ? 'bg-green-200 border-green-400 text-green-900'
-                        : 'bg-green-50 border-green-200 text-green-700 hover:bg-green-100'
-                    }`}
-                  >
-                    {sys.name}
-                  </button>
-                ))}
+              {/* Temperature */}
+              <div>
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2">Temperature</p>
+                <div className="flex flex-wrap gap-2">
+                  {TEMP_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.value}
+                      onClick={() => setTempFilter((prev) => toggle(prev, opt.value))}
+                      className={`border rounded-full px-3 py-1 text-sm font-medium transition-all ${
+                        tempFilter.has(opt.value) ? opt.on : opt.off
+                      }`}
+                    >
+                      {opt.emoji && <span className="mr-1">{opt.emoji}</span>}
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
 
-          {/* Action */}
-          {actions.length > 0 && (
-            <div>
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2">Action</p>
-              <div className="flex flex-wrap gap-2">
-                {actions.map((action) => (
-                  <button
-                    key={action.id}
-                    onClick={() => setActionFilter((prev) => toggle(prev, action.id))}
-                    className={`border rounded-full px-3 py-1 text-sm font-medium transition-all ${
-                      actionFilter.has(action.id)
-                        ? 'bg-violet-200 border-violet-400 text-violet-900'
-                        : 'bg-violet-50 border-violet-200 text-violet-700 hover:bg-violet-100'
-                    }`}
-                  >
-                    {action.name}
-                  </button>
-                ))}
+              {/* Moisture */}
+              <div>
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2">Moisture</p>
+                <div className="flex flex-wrap gap-2">
+                  {MOISTURE_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.value}
+                      onClick={() => setMoistureFilter((prev) => toggle(prev, opt.value))}
+                      className={`border rounded-full px-3 py-1 text-sm font-medium transition-all ${
+                        moistureFilter.has(opt.value) ? opt.on : opt.off
+                      }`}
+                    >
+                      {opt.emoji && <span className="mr-1">{opt.emoji}</span>}
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
-        </div>
 
-        {/* Results list */}
-        <div className="flex-1 overflow-y-auto min-h-0">
-          {loading ? (
-            <div className="flex items-center justify-center h-32 text-gray-400 text-sm">
-              Loading herbs…
-            </div>
-          ) : (
-            <>
-              {hasFilters && filteredHerbs.length === 0 && (
-                <div className="flex flex-col items-center justify-center h-32 gap-1">
-                  <p className="text-gray-400 text-sm">No herbs match all these filters.</p>
-                  <button onClick={clearAll} className="text-sm text-red-400 hover:text-red-600 underline">
-                    Clear filters
-                  </button>
+              {/* Tone */}
+              <div>
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2">Tone</p>
+                <div className="flex flex-wrap gap-2">
+                  {TONE_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.value}
+                      onClick={() => setToneFilter((prev) => toggle(prev, opt.value))}
+                      className={`border rounded-full px-3 py-1 text-sm font-medium transition-all ${
+                        toneFilter.has(opt.value) ? opt.on : opt.off
+                      }`}
+                    >
+                      {opt.emoji && <span className="mr-1">{opt.emoji}</span>}
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Body System */}
+              {bodySystems.length > 0 && (
+                <div>
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2">Body System</p>
+                  <div className="flex flex-wrap gap-2">
+                    {bodySystems.map((sys) => (
+                      <button
+                        key={sys.id}
+                        onClick={() => setSystemFilter((prev) => toggle(prev, sys.id))}
+                        className={`border rounded-full px-3 py-1 text-sm font-medium transition-all ${
+                          systemFilter.has(sys.id)
+                            ? 'bg-green-200 border-green-400 text-green-900'
+                            : 'bg-green-50 border-green-200 text-green-700 hover:bg-green-100'
+                        }`}
+                      >
+                        {sys.name}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               )}
 
-              <div className="p-3 space-y-1.5">
-                {filteredHerbs.map((herb) => {
-                  const sortedSystemIds = [...herb.system_ids].sort((a, b) => {
-                    const aSelected = systemFilter.has(a) ? 0 : 1;
-                    const bSelected = systemFilter.has(b) ? 0 : 1;
-                    if (aSelected !== bSelected) return aSelected - bSelected;
-                    return (systemMap.get(a) ?? '').localeCompare(systemMap.get(b) ?? '');
-                  });
-                  return (
-                    <button
-                      key={herb.id}
-                      onClick={() => onHerbSelect(herb.id)}
-                      className={`w-full text-left border rounded-lg px-4 py-2.5 transition-all hover:shadow-md hover:scale-[1.005] ${cardBg(herb.temperature)}`}
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="font-medium text-gray-900 text-sm">{herb.common_name}{herb.plant_part ? ` (${herb.plant_part})` : ''}</span>
-                        <span className="text-base leading-none shrink-0">{herbEmojis(herb)}</span>
-                      </div>
-                      {herb.pinyin_name && (
-                        <div className="text-xs text-gray-500 mt-0.5">{herb.pinyin_name}</div>
-                      )}
-                      <div className="text-xs italic text-gray-500 mt-0.5">{herb.latin_name}</div>
-                      {(sortedSystemIds.length > 0 || herb.menstruum_label) && (
-                        <div className="flex items-center flex-wrap gap-1 mt-1.5">
-                          {sortedSystemIds.map((sysId) => {
-                            const name = systemMap.get(sysId);
-                            if (!name) return null;
-                            const isActive = systemFilter.has(sysId);
-                            return (
-                              <span
-                                key={sysId}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  onSystemSelect?.(sysId);
-                                }}
-                                className={`text-xs px-2 py-0.5 rounded-full border transition-colors cursor-pointer ${
-                                  isActive
-                                    ? 'bg-green-200 border-green-400 text-green-900 hover:bg-green-300'
-                                    : 'bg-green-50 border-green-200 text-green-700 hover:bg-green-100'
-                                }`}
-                              >
-                                {name}
-                              </span>
-                            );
-                          })}
-                          {herb.menstruum_label && (
-                            <span className="text-xs px-2 py-0.5 rounded-full border bg-purple-50 border-purple-200 text-purple-700">
-                              {herb.menstruum_label}
-                            </span>
+              {/* Action */}
+              {actions.length > 0 && (
+                <div>
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2">Action</p>
+                  <div className="flex flex-wrap gap-2">
+                    {actions.map((action) => (
+                      <button
+                        key={action.id}
+                        onClick={() => setActionFilter((prev) => toggle(prev, action.id))}
+                        className={`border rounded-full px-3 py-1 text-sm font-medium transition-all ${
+                          actionFilter.has(action.id)
+                            ? 'bg-violet-200 border-violet-400 text-violet-900'
+                            : 'bg-violet-50 border-violet-200 text-violet-700 hover:bg-violet-100'
+                        }`}
+                      >
+                        {action.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+            <ScrollArrow direction="down" visible={filterScroll.down} />
+          </div>
+
+          {/* Results pane */}
+          <div className="relative border-2 border-gray-300 rounded-xl bg-white shadow-sm flex-1 min-h-0 flex flex-col overflow-hidden">
+            <ScrollArrow direction="up" visible={resultsScroll.up} />
+            <div
+              ref={resultsPaneRef}
+              onScroll={() => checkPaneScroll(resultsPaneRef.current, setResultsScroll)}
+              className="flex-1 overflow-y-auto min-h-0"
+            >
+              {loading ? (
+                <div className="flex items-center justify-center h-32 text-gray-400 text-sm">
+                  Loading herbs…
+                </div>
+              ) : (
+                <>
+                  {hasFilters && filteredHerbs.length === 0 && (
+                    <div className="flex flex-col items-center justify-center h-32 gap-1">
+                      <p className="text-gray-400 text-sm">No herbs match all these filters.</p>
+                      <button onClick={clearAll} className="text-sm text-red-400 hover:text-red-600 underline">
+                        Clear filters
+                      </button>
+                    </div>
+                  )}
+
+                  <div className="p-3 space-y-1.5">
+                    {filteredHerbs.map((herb) => {
+                      const sortedSystemIds = [...herb.system_ids].sort((a, b) => {
+                        const aSelected = systemFilter.has(a) ? 0 : 1;
+                        const bSelected = systemFilter.has(b) ? 0 : 1;
+                        if (aSelected !== bSelected) return aSelected - bSelected;
+                        return (systemMap.get(a) ?? '').localeCompare(systemMap.get(b) ?? '');
+                      });
+                      return (
+                        <button
+                          key={herb.id}
+                          onClick={() => onHerbSelect(herb.id)}
+                          className={`w-full text-left border rounded-lg px-4 py-2.5 transition-all hover:shadow-md hover:scale-[1.005] ${cardBg(herb.temperature)}`}
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="font-medium text-gray-900 text-sm">{herb.common_name}{herb.plant_part ? ` (${herb.plant_part})` : ''}</span>
+                            <span className="text-base leading-none shrink-0">{herbEmojis(herb)}</span>
+                          </div>
+                          {herb.pinyin_name && (
+                            <div className="text-xs text-gray-500 mt-0.5">{herb.pinyin_name}</div>
                           )}
-                        </div>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            </>
-          )}
+                          <div className="text-xs italic text-gray-500 mt-0.5">{herb.latin_name}</div>
+                          {(sortedSystemIds.length > 0 || herb.menstruum_label) && (
+                            <div className="flex items-center flex-wrap gap-1 mt-1.5">
+                              {sortedSystemIds.map((sysId) => {
+                                const name = systemMap.get(sysId);
+                                if (!name) return null;
+                                const isActive = systemFilter.has(sysId);
+                                return (
+                                  <span
+                                    key={sysId}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      onSystemSelect?.(sysId);
+                                    }}
+                                    className={`text-xs px-2 py-0.5 rounded-full border transition-colors cursor-pointer ${
+                                      isActive
+                                        ? 'bg-green-200 border-green-400 text-green-900 hover:bg-green-300'
+                                        : 'bg-green-50 border-green-200 text-green-700 hover:bg-green-100'
+                                    }`}
+                                  >
+                                    {name}
+                                  </span>
+                                );
+                              })}
+                              {herb.menstruum_label && (
+                                <span className="text-xs px-2 py-0.5 rounded-full border bg-purple-50 border-purple-200 text-purple-700">
+                                  {herb.menstruum_label}
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
+            </div>
+            <ScrollArrow direction="down" visible={resultsScroll.down} />
+          </div>
+
         </div>
       </div>
     </>
