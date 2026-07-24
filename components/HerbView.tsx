@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
+import { EnergeticEmojis } from './EnergeticEmojis';
 import type {
   Herb,
   PrimaryAction,
@@ -584,13 +585,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onActionClick, onActi
                   {herb.is_tcm && (
                     <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-red-50 border border-red-200 text-red-700 font-semibold">TCM</span>
                   )}
-                  <span className="text-sm leading-none">
-                    {[
-                      herb.temperature === 'warming' ? '🔥' : herb.temperature === 'cooling' ? '❄️' : '',
-                      herb.moisture === 'moistening' ? '💧' : herb.moisture === 'drying' ? '🌵' : '',
-                      herb.tone === 'toning' ? '⚡' : herb.tone === 'relaxing' ? '🌊' : '',
-                    ].join('')}
-                  </span>
+                  <EnergeticEmojis temperature={herb.temperature} moisture={herb.moisture} tone={herb.tone} className="text-sm leading-none" />
                 </div>
               </div>
             </button>

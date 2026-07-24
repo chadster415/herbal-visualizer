@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import type { PrimaryAction, Herb, BodySystem, StrengthLevel } from '@/types/database';
+import { EnergeticEmojis } from './EnergeticEmojis';
 
 interface ActionDescription {
   id: number;
@@ -130,16 +131,6 @@ export function ActionView({ onHerbClick, selectedActionId, onActionIdChange }: 
     }
   };
 
-  const getEnergeticEmojis = (herb: Herb) => {
-    const emojis: string[] = [];
-    if (herb.temperature === 'warming') emojis.push('🔥');
-    if (herb.temperature === 'cooling') emojis.push('❄️');
-    if (herb.moisture === 'moistening') emojis.push('💧');
-    if (herb.moisture === 'drying')     emojis.push('🌵');
-    if (herb.tone === 'toning')         emojis.push('⚡');
-    if (herb.tone === 'relaxing')       emojis.push('🌊');
-    return emojis.join('');
-  };
 
   if (loading) {
     return <div className="text-center py-8">Loading actions...</div>;
@@ -250,7 +241,7 @@ export function ActionView({ onHerbClick, selectedActionId, onActionIdChange }: 
                             <div className="flex items-center justify-between gap-1 mb-1">
                               <span className="font-medium">{item.herb.common_name}</span>
                               <div className="flex items-center gap-1 shrink-0">
-                                <span className="text-sm leading-none">{getEnergeticEmojis(item.herb)}</span>
+                                <EnergeticEmojis temperature={item.herb.temperature} moisture={item.herb.moisture} tone={item.herb.tone} className="text-sm leading-none" />
                                 {selectedAction.name === 'Tonic' && agingHerbIds.has(item.herb.id) && (
                                   <span className="text-base leading-none" title="Recommended for elders">🧓</span>
                                 )}

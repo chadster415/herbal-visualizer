@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
+import { EnergeticEmojis } from './EnergeticEmojis';
 import type { TemperatureEnergetic, MoistureEnergetic, ToneEnergetic } from '@/types/database';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -64,13 +65,6 @@ function cardBg(temp: TemperatureEnergetic) {
   return 'bg-gray-50 border-gray-200 hover:bg-gray-100';
 }
 
-function herbEmojis(h: HerbRow) {
-  return [
-    h.temperature === 'warming' ? '🔥' : h.temperature === 'cooling' ? '❄️' : '',
-    h.moisture === 'moistening' ? '💧' : h.moisture === 'drying' ? '🌵' : '',
-    h.tone === 'toning' ? '⚡' : h.tone === 'relaxing' ? '🌊' : '',
-  ].join('');
-}
 
 function checkPaneScroll(
   el: HTMLDivElement | null,
@@ -126,6 +120,12 @@ export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect 
   const resultsPaneRef = useRef<HTMLDivElement>(null);
   const [filterScroll, setFilterScroll]   = useState({ up: false, down: false });
   const [resultsScroll, setResultsScroll] = useState({ up: false, down: false });
+
+  const [filterPaneHeight, setFilterPaneHeight] = useState(240);
+  const bodyRef         = useRef<HTMLDivElement>(null);
+  const isDragging      = useRef(false);
+  const dragStartY      = useRef(0);
+  const dragStartHeight = useRef(0);
 
   const loaded = useRef(false);
 
@@ -234,43 +234,93 @@ export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect 
         }`}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200 bg-white shrink-0">
-          <div>
+        <div className="px-5 py-4 border-b border-gray-200 bg-white shrink-0">
+          <div className="flex items-center justify-between">
             <h2 className="text-xl font-bold text-gray-900">Filter Herbs</h2>
-            <p className="text-sm text-gray-500 mt-0.5">
+            <div className="flex items-center gap-3">
+              {hasFilters && (
+                <button
+                  onClick={clearAll}
+                  className="text-sm text-red-500 hover:text-red-700 font-medium transition-colors"
+                >
+                  Clear all
+                </button>
+              )}
+              <button
+                onClick={onClose}
+                className="p-2 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors text-lg leading-none"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-2 mt-1.5">
+            {TEMP_OPTIONS.filter((opt) => tempFilter.has(opt.value)).map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => setTempFilter((prev) => toggle(prev, opt.value))}
+                className={`border rounded-full px-3 py-1 text-sm font-medium transition-all ${opt.on}`}
+              >
+                {opt.emoji && <span className="mr-1">{opt.emoji}</span>}{opt.label}
+              </button>
+            ))}
+            {MOISTURE_OPTIONS.filter((opt) => moistureFilter.has(opt.value)).map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => setMoistureFilter((prev) => toggle(prev, opt.value))}
+                className={`border rounded-full px-3 py-1 text-sm font-medium transition-all ${opt.on}`}
+              >
+                {opt.emoji && <span className="mr-1">{opt.emoji}</span>}{opt.label}
+              </button>
+            ))}
+            {TONE_OPTIONS.filter((opt) => toneFilter.has(opt.value)).map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => setToneFilter((prev) => toggle(prev, opt.value))}
+                className={`border rounded-full px-3 py-1 text-sm font-medium transition-all ${opt.on}`}
+              >
+                {opt.emoji && <span className="mr-1">{opt.emoji}</span>}{opt.label}
+              </button>
+            ))}
+            {bodySystems.filter((sys) => systemFilter.has(sys.id)).map((sys) => (
+              <button
+                key={sys.id}
+                onClick={() => setSystemFilter((prev) => toggle(prev, sys.id))}
+                className="border rounded-full px-3 py-1 text-sm font-medium transition-all bg-green-200 border-green-400 text-green-900"
+              >
+                {sys.name}
+              </button>
+            ))}
+            {actions.filter((action) => actionFilter.has(action.id)).map((action) => (
+              <button
+                key={action.id}
+                onClick={() => setActionFilter((prev) => toggle(prev, action.id))}
+                className="border rounded-full px-3 py-1 text-sm font-medium transition-all bg-violet-200 border-violet-400 text-violet-900"
+              >
+                {action.name}
+              </button>
+            ))}
+            <p className="text-sm text-gray-500">
               {hasFilters
                 ? `${filteredHerbs.length} ${filteredHerbs.length === 1 ? 'herb matches' : 'herbs match'}`
                 : `${herbs.length} herbs total`}
             </p>
           </div>
-          <div className="flex items-center gap-3">
-            {hasFilters && (
-              <button
-                onClick={clearAll}
-                className="text-sm text-red-500 hover:text-red-700 font-medium transition-colors"
-              >
-                Clear all
-              </button>
-            )}
-            <button
-              onClick={onClose}
-              className="p-2 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors text-lg leading-none"
-            >
-              ✕
-            </button>
-          </div>
         </div>
 
         {/* Two-pane body */}
-        <div className="flex flex-col flex-1 min-h-0 p-3 gap-3 overflow-hidden">
+        <div ref={bodyRef} className="flex flex-col flex-1 min-h-0 p-3 overflow-hidden">
 
           {/* Filter controls pane */}
-          <div className="relative border-2 border-gray-300 rounded-xl bg-white shadow-sm shrink-0 overflow-hidden">
+          <div
+            className="relative border-2 border-gray-300 rounded-xl bg-white shadow-sm overflow-hidden shrink-0"
+            style={{ height: filterPaneHeight }}
+          >
             <ScrollArrow direction="up" visible={filterScroll.up} />
             <div
               ref={filterPaneRef}
               onScroll={() => checkPaneScroll(filterPaneRef.current, setFilterScroll)}
-              className="px-5 py-4 space-y-5 overflow-y-auto max-h-[46vh] rounded-xl"
+              className="px-5 py-4 space-y-5 overflow-y-auto h-full rounded-xl"
             >
 
               {/* Temperature */}
@@ -377,6 +427,28 @@ export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect 
             <ScrollArrow direction="down" visible={filterScroll.down} />
           </div>
 
+          {/* Drag handle */}
+          <div
+            className="flex items-center justify-center h-3 shrink-0 cursor-row-resize group"
+            onPointerDown={(e) => {
+              isDragging.current = true;
+              dragStartY.current = e.clientY;
+              dragStartHeight.current = filterPaneHeight;
+              e.currentTarget.setPointerCapture(e.pointerId);
+            }}
+            onPointerMove={(e) => {
+              if (!isDragging.current || !bodyRef.current) return;
+              const delta = e.clientY - dragStartY.current;
+              const containerH = bodyRef.current.getBoundingClientRect().height;
+              const maxH = containerH - 24 - 12 - 80; // padding + handle + min results height
+              setFilterPaneHeight(Math.max(60, Math.min(maxH, dragStartHeight.current + delta)));
+            }}
+            onPointerUp={() => { isDragging.current = false; }}
+            onPointerCancel={() => { isDragging.current = false; }}
+          >
+            <div className="w-8 h-1 rounded-full bg-gray-300 group-hover:bg-gray-500 transition-colors" />
+          </div>
+
           {/* Results pane */}
           <div className="relative border-2 border-gray-300 rounded-xl bg-white shadow-sm flex-1 min-h-0 flex flex-col overflow-hidden">
             <ScrollArrow direction="up" visible={resultsScroll.up} />
@@ -416,7 +488,7 @@ export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect 
                         >
                           <div className="flex items-center justify-between gap-2">
                             <span className="font-medium text-gray-900 text-sm">{herb.common_name}{herb.plant_part ? ` (${herb.plant_part})` : ''}</span>
-                            <span className="text-base leading-none shrink-0">{herbEmojis(herb)}</span>
+                            <EnergeticEmojis temperature={herb.temperature} moisture={herb.moisture} tone={herb.tone} className="text-base leading-none shrink-0" />
                           </div>
                           {herb.pinyin_name && (
                             <div className="text-xs text-gray-500 mt-0.5">{herb.pinyin_name}</div>

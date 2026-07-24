@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { TextPageLinks } from './TextPageLinks';
+import { EnergeticEmojis } from './EnergeticEmojis';
 import type {
   Disorder,
   DisorderNote,
@@ -170,16 +171,6 @@ export function DisorderView({ bodySystemId, onHerbClick, onActionClick, selecte
     }
   };
 
-  const getEnergeticEmojis = (herb: Herb) => {
-    const emojis: string[] = [];
-    if (herb.temperature === 'warming') emojis.push('🔥');
-    if (herb.temperature === 'cooling') emojis.push('❄️');
-    if (herb.moisture === 'moistening') emojis.push('💧');
-    if (herb.moisture === 'drying')     emojis.push('🌵');
-    if (herb.tone === 'toning')         emojis.push('⚡');
-    if (herb.tone === 'relaxing')       emojis.push('🌊');
-    return emojis.join('');
-  };
 
   const getStrengthBadge = (strength: string | undefined) => {
     switch (strength) {
@@ -322,7 +313,7 @@ export function DisorderView({ bodySystemId, onHerbClick, onActionClick, selecte
                     >
                       <div className="flex items-center gap-2">
                         <span className="font-medium text-gray-900 text-sm">{h.herbs.common_name}</span>
-                        <span className="text-sm leading-none shrink-0">{getEnergeticEmojis(h.herbs)}</span>
+                        <EnergeticEmojis temperature={h.herbs.temperature} moisture={h.herbs.moisture} tone={h.herbs.tone} className="text-sm leading-none shrink-0" />
                       </div>
                       <span className="text-xs italic text-gray-600">{h.herbs.latin_name}</span>
                       {h.note && <span className="text-xs text-gray-500 mt-0.5">{h.note}</span>}
@@ -383,7 +374,7 @@ export function DisorderView({ bodySystemId, onHerbClick, onActionClick, selecte
                     >
                       <div className="flex items-center justify-between gap-2 mb-1">
                         <div className="font-semibold text-gray-900">{item.herbs.common_name}</div>
-                        <span className="text-sm leading-none shrink-0">{getEnergeticEmojis(item.herbs)}</span>
+                        <EnergeticEmojis temperature={item.herbs.temperature} moisture={item.herbs.moisture} tone={item.herbs.tone} className="text-sm leading-none shrink-0" />
                       </div>
                       <div className="text-sm italic text-gray-600">{item.herbs.latin_name}</div>
                       {(() => {

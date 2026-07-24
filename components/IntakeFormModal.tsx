@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { EnergeticEmojis } from './EnergeticEmojis';
 
 type BodySystem =
   | 'UPPER_GI'
@@ -821,11 +822,6 @@ function HerbCardList({ herbs, isExpanded, onToggle, onHerbSelect }: {
     <div className="mt-2">
       <div className="grid grid-cols-2 gap-1.5">
         {visible.map(herb => {
-          const emojis = [
-            herb.temperature === 'warming' ? '🔥' : herb.temperature === 'cooling' ? '❄️' : null,
-            herb.moisture === 'moistening' ? '💧' : herb.moisture === 'drying' ? '🌵' : null,
-            herb.tone === 'toning' ? '⚡' : herb.tone === 'relaxing' ? '🌊' : null,
-          ].filter(Boolean).join('');
           const cardBg = herb.temperature === 'warming'
             ? 'bg-amber-50 border-amber-200 hover:bg-amber-100 dark:bg-amber-900/20 dark:border-amber-700'
             : herb.temperature === 'cooling'
@@ -845,7 +841,7 @@ function HerbCardList({ herbs, isExpanded, onToggle, onHerbSelect }: {
             >
               <div className="flex items-start justify-between gap-1">
                 <span className="font-semibold text-gray-900 dark:text-gray-100 text-xs leading-snug">{herb.common_name}{herb.plant_part ? ` (${herb.plant_part})` : ''}</span>
-                {emojis && <span className="text-xs leading-none shrink-0 mt-0.5">{emojis}</span>}
+                <EnergeticEmojis temperature={herb.temperature} moisture={herb.moisture} tone={herb.tone} className="text-xs leading-none shrink-0 mt-0.5" />
               </div>
               <div className="text-xs italic text-gray-500 dark:text-gray-400 leading-snug">{herb.latin_name}</div>
               {strengthCls && (

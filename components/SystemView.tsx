@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import type { BodySystem, Herb, PrimaryAction, StrengthLevel } from '@/types/database';
 import { DisorderView } from './DisorderView';
+import { EnergeticEmojis } from './EnergeticEmojis';
 
 interface SystemNote {
   id: number;
@@ -123,16 +124,6 @@ export function SystemView({ onHerbClick, onActionClick, selectedSystemId, onSys
     }
   };
 
-  const getEnergeticEmojis = (herb: Herb) => {
-    const emojis: string[] = [];
-    if (herb.temperature === 'warming') emojis.push('🔥');
-    if (herb.temperature === 'cooling') emojis.push('❄️');
-    if (herb.moisture === 'moistening') emojis.push('💧');
-    if (herb.moisture === 'drying')     emojis.push('🌵');
-    if (herb.tone === 'toning')         emojis.push('⚡');
-    if (herb.tone === 'relaxing')       emojis.push('🌊');
-    return emojis.join('');
-  };
 
   if (loading) {
     return <div className="text-center py-8">Loading body systems...</div>;
@@ -242,7 +233,7 @@ export function SystemView({ onHerbClick, onActionClick, selectedSystemId, onSys
                             >
                               <div className="flex items-center justify-between gap-1 mb-1">
                                 <span className="font-medium text-sm">{item.herb.common_name}</span>
-                                <span className="text-sm leading-none shrink-0">{getEnergeticEmojis(item.herb)}</span>
+                                <EnergeticEmojis temperature={item.herb.temperature} moisture={item.herb.moisture} tone={item.herb.tone} className="text-sm leading-none shrink-0" />
                               </div>
                               <div className="flex items-center justify-between gap-1">
                                 <span className="text-xs italic text-gray-600">{item.herb.latin_name}</span>
