@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { EnergeticEmojis } from './EnergeticEmojis';
+import { ArrowRightIcon, CheckCircleIcon, ClipboardDocumentListIcon, XMarkIcon } from '@heroicons/react/24/outline';
 
 type BodySystem =
   | 'UPPER_GI'
@@ -533,7 +534,7 @@ export function IntakeFormModal({ isOpen, onClose, onHerbSelect }: Props) {
       className={`fixed top-0 right-0 h-full w-[480px] z-40 bg-white dark:bg-gray-800 shadow-2xl border-l border-gray-200 dark:border-gray-700 flex flex-col transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}
     >
       <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700 shrink-0">
-        <h2 className="text-lg font-bold text-green-800 dark:text-green-300">📋 Intake Assessment</h2>
+        <h2 className="text-lg font-bold text-green-800 dark:text-green-300 flex items-center gap-2"><ClipboardDocumentListIcon className="w-5 h-5" /> Intake Assessment</h2>
         <div className="flex items-center gap-3">
           {stage !== 'intro' && (
             <button
@@ -545,10 +546,10 @@ export function IntakeFormModal({ isOpen, onClose, onHerbSelect }: Props) {
           )}
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 text-xl leading-none"
+            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
             aria-label="Close"
           >
-            ✕
+            <XMarkIcon className="w-5 h-5" />
           </button>
         </div>
       </div>
@@ -612,9 +613,9 @@ function IntroScreen({ onStart }: { onStart: () => void }) {
       </ul>
       <button
         onClick={onStart}
-        className="self-center px-8 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors"
+        className="self-center px-8 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
       >
-        Begin →
+        Begin <ArrowRightIcon className="w-4 h-4" />
       </button>
     </div>
   );
@@ -645,12 +646,12 @@ function SystemBadge({ system, indicates }: { system: BodySystem; indicates: 'ex
       <span className="px-2 py-0.5 bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300 rounded text-xs font-medium">
         {SYSTEM_LABELS[system]}{skipNote}
       </span>
-      <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+      <span className={`flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${
         indicates === 'excess'
           ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300'
           : 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300'
       }`}>
-        → {indicates === 'excess' ? 'Excess' : 'Deficiency'}
+        <ArrowRightIcon className="w-3 h-3" /> {indicates === 'excess' ? 'Excess' : 'Deficiency'}
       </span>
     </div>
   );
@@ -705,7 +706,7 @@ function SystemQuizScreen({
 function GeneralIntroScreen({ onContinue }: { onContinue: () => void }) {
   return (
     <div className="flex flex-col gap-5 items-center text-center">
-      <div className="text-4xl">✅</div>
+      <CheckCircleIcon className="w-10 h-10 text-green-500" />
       <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100">Body Systems Complete</h3>
       <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
         Next: <strong>General Complaints</strong>. For each condition, rate how frequently you experience it:
@@ -726,9 +727,9 @@ function GeneralIntroScreen({ onContinue }: { onContinue: () => void }) {
       </div>
       <button
         onClick={onContinue}
-        className="px-8 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors"
+        className="px-8 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
       >
-        Continue →
+        Continue <ArrowRightIcon className="w-4 h-4" />
       </button>
     </div>
   );

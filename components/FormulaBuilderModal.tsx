@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import { ArrowLeftIcon, ArrowRightIcon, CheckIcon, XMarkIcon } from '@heroicons/react/24/outline';
 
 type Stage = 'context' | 'build' | 'review';
 type Role = 'base' | 'synergist' | 'specific';
@@ -556,7 +557,7 @@ export function FormulaBuilderModal({ isOpen, onClose, onHerbClick }: Props) {
         disabled={!selectedSystem || !selectedDisorder || loading}
         className="w-full py-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium transition-colors"
       >
-        {loading ? 'Loading…' : 'Build Formula →'}
+        {loading ? 'Loading…' : <span className="flex items-center gap-2 justify-center">Build Formula <ArrowRightIcon className="w-4 h-4" /></span>}
       </button>
     </div>
   );
@@ -591,7 +592,7 @@ export function FormulaBuilderModal({ isOpen, onClose, onHerbClick }: Props) {
             onClick={() => setStage('context')}
             className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 flex-shrink-0 ml-4 mt-0.5"
           >
-            ← back
+            <ArrowLeftIcon className="w-4 h-4" /> back
           </button>
         </div>
 
@@ -636,7 +637,7 @@ export function FormulaBuilderModal({ isOpen, onClose, onHerbClick }: Props) {
                   <div className="text-xs text-gray-500 dark:text-gray-400">{cfg.sub}</div>
                   {sel && (
                     <div className="text-xs text-gray-600 dark:text-gray-300 font-medium mt-1 italic truncate">
-                      ✓ {sel.latin_name}
+                      <CheckIcon className="w-3 h-3 inline mr-0.5" /> {sel.latin_name}
                     </div>
                   )}
                 </div>
@@ -667,7 +668,7 @@ export function FormulaBuilderModal({ isOpen, onClose, onHerbClick }: Props) {
             className="w-full py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed text-white font-medium transition-colors text-sm"
           >
             {allSelected
-              ? 'Review Formula →'
+              ? <span className="flex items-center gap-2 justify-center">Review Formula <ArrowRightIcon className="w-4 h-4" /></span>
               : `Still need: ${unselected.map((r) => ROLE_CFG[r].label).join(', ')}`}
           </button>
         </div>
@@ -705,7 +706,7 @@ export function FormulaBuilderModal({ isOpen, onClose, onHerbClick }: Props) {
               onClick={() => { onHerbClick(herb.id); onClose(); }}
               className={`mt-2 text-xs ${cfg.text} hover:underline`}
             >
-              View herb →
+              View herb <ArrowRightIcon className="w-3 h-3 inline ml-0.5" />
             </button>
           )}
         </div>
@@ -785,7 +786,7 @@ export function FormulaBuilderModal({ isOpen, onClose, onHerbClick }: Props) {
             onClick={() => setStage('build')}
             className="flex-1 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
           >
-            ← Adjust
+            <ArrowLeftIcon className="w-4 h-4 inline mr-0.5" /> Adjust
           </button>
           <button
             onClick={onClose}
@@ -815,10 +816,10 @@ export function FormulaBuilderModal({ isOpen, onClose, onHerbClick }: Props) {
         {/* Close */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 z-10 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 text-xl leading-none"
+          className="absolute top-4 right-4 z-10 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
           aria-label="Close"
         >
-          ✕
+          <XMarkIcon className="w-5 h-5" />
         </button>
 
         {/* Progress dots / back link */}
@@ -828,7 +829,7 @@ export function FormulaBuilderModal({ isOpen, onClose, onHerbClick }: Props) {
               onClick={() => setShowInfo(false)}
               className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
             >
-              ← Back to Formula Builder
+              <ArrowLeftIcon className="w-4 h-4" /> Back to Formula Builder
             </button>
           ) : (
             <div className="flex items-center gap-3">

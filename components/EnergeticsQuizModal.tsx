@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { ArrowRightIcon, FireIcon, XMarkIcon } from '@heroicons/react/24/outline';
 
 type Dimension = 'cold' | 'hot' | 'damp' | 'dry' | 'tense' | 'lax';
 
@@ -164,13 +165,13 @@ export function EnergeticsQuizModal({ isOpen, onClose, onHerbSelect }: Props) {
       className={`fixed top-0 right-0 h-full w-[440px] z-40 bg-white dark:bg-gray-800 shadow-2xl border-l border-gray-200 dark:border-gray-700 flex flex-col transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}
     >
       <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700 shrink-0">
-        <h2 className="text-lg font-bold text-green-800 dark:text-green-300">🌿 Energetics Quiz</h2>
+        <h2 className="text-lg font-bold text-green-800 dark:text-green-300 flex items-center gap-2"><FireIcon className="w-5 h-5" /> Energetics Quiz</h2>
         <button
           onClick={onClose}
-          className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 text-xl leading-none"
+          className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
           aria-label="Close"
         >
-          ✕
+          <XMarkIcon className="w-5 h-5" />
         </button>
       </div>
 
@@ -203,9 +204,9 @@ function IntroScreen({ onStart }: { onStart: () => void }) {
       </p>
       <button
         onClick={onStart}
-        className="self-center px-8 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors"
+        className="self-center px-8 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
       >
-        Begin →
+        Begin <ArrowRightIcon className="w-4 h-4" />
       </button>
     </div>
   );

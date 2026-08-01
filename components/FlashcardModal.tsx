@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
+import { ArrowRightIcon } from '@heroicons/react/24/outline';
 
 interface Herb {
   id: number;
@@ -144,9 +145,9 @@ export function FlashcardModal({ isOpen, onClose }: Props) {
               <p className="text-xs text-gray-400">space / enter to advance</p>
               <button
                 onClick={revealed ? next : () => setRevealed(true)}
-                className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors"
+                className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
               >
-                {revealed ? 'Next →' : 'Reveal'}
+                {revealed ? <><span>Next</span><ArrowRightIcon className="w-4 h-4" /></> : 'Reveal'}
               </button>
             </div>
           </>
