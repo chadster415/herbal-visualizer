@@ -48,6 +48,7 @@ export function FlashcardModal({ isOpen, onClose }: Props) {
     supabase
       .from('herbs')
       .select('id, latin_name, common_name')
+      .eq('is_tcm', false)
       .order('latin_name')
       .then(({ data }) => {
         const h = data ?? [];
