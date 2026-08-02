@@ -87,6 +87,7 @@ export interface DisorderNote {
   disorder_id: number;
   note_text: string;
   sort_order: number;
+  section: string;
   created_at: string;
 }
 

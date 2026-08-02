@@ -41,6 +41,17 @@ export function SystemView({ onHerbClick, onActionClick, selectedSystemId, onSys
     fetchSystems();
   }, []);
 
+  // Respond to external selectedSystemId changes (back button, body diagram modal, etc.)
+  useEffect(() => {
+    if (selectedSystemId == null || systems.length === 0) return;
+    if (selectedSystem?.id === selectedSystemId) return;
+    const system = systems.find((s) => s.id === selectedSystemId);
+    if (system) {
+      setSelectedSystem(system);
+      setViewMode(selectedDisorderId != null ? 'disorders' : 'actions');
+    }
+  }, [selectedSystemId, systems]);
+
   async function fetchSystems() {
     try {
       const [{ data, error }, { data: disorderCounts }, { data: notesData }] = await Promise.all([
@@ -74,12 +85,6 @@ export function SystemView({ onHerbClick, onActionClick, selectedSystemId, onSys
         }));
 
       setSystems(systemsWithCounts);
-
-      // Restore selection when navigating back
-      if (selectedSystemId != null) {
-        const system = systemsWithCounts.find((s) => s.id === selectedSystemId);
-        if (system) setSelectedSystem(system);
-      }
     } catch (error) {
       console.error('Error fetching systems:', error);
     } finally {

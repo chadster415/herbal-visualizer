@@ -155,6 +155,9 @@ export function DisorderView({ bodySystemId, onHerbClick, onActionClick, selecte
       if (selectedDisorderId != null) {
         const match = sortedData.find((d) => d.id === selectedDisorderId) ?? null;
         if (match) setSelectedDisorder(match);
+      } else {
+        const overall = sortedData.find((d) => d.name === 'Overall') ?? null;
+        if (overall) setSelectedDisorder(overall);
       }
     } catch (error) {
       console.error('Error fetching disorders:', error);
@@ -253,14 +256,16 @@ export function DisorderView({ bodySystemId, onHerbClick, onActionClick, selecte
             />
 
             {/* Notes */}
-            {selectedDisorder.disorder_notes.length > 0 && (
+            {selectedDisorder.disorder_notes.filter((n) => n.section === 'general').length > 0 && (
               <div className="bg-green-50 border border-green-200 border-l-4 border-l-green-600 rounded-lg p-4">
                 <ul className="list-disc list-inside space-y-2">
-                  {selectedDisorder.disorder_notes.map((note) => (
-                    <li key={note.id} className="text-gray-700">
-                      {note.note_text}
-                    </li>
-                  ))}
+                  {selectedDisorder.disorder_notes
+                    .filter((n) => n.section === 'general')
+                    .map((note) => (
+                      <li key={note.id} className="text-gray-700">
+                        {note.note_text}
+                      </li>
+                    ))}
                 </ul>
               </div>
             )}
@@ -305,7 +310,7 @@ export function DisorderView({ bodySystemId, onHerbClick, onActionClick, selecte
 
               const HerbPills = ({ herbs }: { herbs: typeof selectedDisorder.disorder_action_herbs }) => (
                 <div className="flex flex-wrap gap-2 mt-2">
-                  {herbs.sort((a, b) => a.sort_order - b.sort_order).map((h, idx) => (
+                  {herbs.sort((a, b) => a.herbs.common_name.localeCompare(b.herbs.common_name)).map((h, idx) => (
                     <button
                       key={idx}
                       onClick={(e) => { e.stopPropagation(); onHerbClick?.(h.herbs.id); }}
@@ -322,9 +327,20 @@ export function DisorderView({ bodySystemId, onHerbClick, onActionClick, selecte
                 </div>
               );
 
+              const actionNotes = selectedDisorder.disorder_notes.filter((n) => n.section === 'actions_indicated');
+
               return (
                 <div className="border-l-4 border-blue-500 pl-4" ref={actionsRef}>
                   <h3 className="text-xl font-semibold text-gray-800 mb-3">Actions Indicated</h3>
+                  {actionNotes.length > 0 && (
+                    <div className="mb-3 bg-blue-50 rounded-lg p-3">
+                      <ul className="list-disc list-inside space-y-1">
+                        {actionNotes.map((note) => (
+                          <li key={note.id} className="text-sm text-gray-700">{note.note_text}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                   <div className="space-y-2">
                     {selectedDisorder.disorder_actions_indicated
                       .sort((a, b) => a.primary_actions.name.localeCompare(b.primary_actions.name))
@@ -337,7 +353,7 @@ export function DisorderView({ bodySystemId, onHerbClick, onActionClick, selecte
                               className="w-full text-left"
                             >
                               <div className="font-semibold text-green-700 mb-1">{item.primary_actions.name}</div>
-                              <p className="text-sm text-gray-700">{item.description}</p>
+                              {item.description && <p className="text-sm text-gray-700">{item.description}</p>}
                             </button>
                             {herbs.length > 0 && <HerbPills herbs={herbs} />}
                           </div>

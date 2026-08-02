@@ -9,6 +9,7 @@ import { EnergeticsQuizModal } from '@/components/EnergeticsQuizModal';
 import { HerbFilterPanel } from '@/components/HerbFilterPanel';
 import { FormulaBuilderModal } from '@/components/FormulaBuilderModal';
 import { IntakeFormModal } from '@/components/IntakeFormModal';
+import { BodyDiagramModal } from '@/components/BodyDiagramModal';
 import {
   ArrowLeftIcon,
   BeakerIcon,
@@ -17,6 +18,7 @@ import {
   FireIcon,
   MagnifyingGlassIcon,
   RectangleStackIcon,
+  UserIcon,
 } from '@heroicons/react/24/outline';
 
 type ViewMode = 'herb' | 'action' | 'system';
@@ -41,6 +43,7 @@ export default function Home() {
   const [herbFilterOpen, setHerbFilterOpen] = useState(false);
   const [formulaBuilderOpen, setFormulaBuilderOpen] = useState(false);
   const [intakeFormOpen, setIntakeFormOpen] = useState(false);
+  const [bodyDiagramOpen, setBodyDiagramOpen] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<'browse' | 'practice' | null>(null);
 
   const pushAndNavigate = (next: NavEntry) => {
@@ -140,15 +143,25 @@ export default function Home() {
                 {viewModeLabel} <ChevronDownIcon className="w-4 h-4 opacity-80" />
               </button>
               {openDropdown === 'browse' && (
-                <div className="absolute top-full mt-1 left-0 bg-white border border-green-200 rounded-lg shadow-lg min-w-[160px] overflow-hidden z-10">
+                <div className="absolute top-full mt-1 left-0 bg-white border border-green-200 rounded-lg shadow-lg min-w-[190px] overflow-hidden z-10">
                   {(['herb', 'action', 'system'] as const).map((mode) => (
-                    <button
-                      key={mode}
-                      onClick={() => { switchTab(mode); setOpenDropdown(null); }}
-                      className={`w-full text-left px-4 py-2.5 text-green-800 hover:bg-green-50 transition-all ${viewMode === mode ? 'bg-green-100 font-semibold' : ''}`}
-                    >
-                      {mode === 'herb' ? 'By Herb' : mode === 'action' ? 'By Action' : 'By Body System'}
-                    </button>
+                    <div key={mode} className={`flex items-center ${viewMode === mode ? 'bg-green-100' : ''}`}>
+                      <button
+                        onClick={() => { switchTab(mode); setOpenDropdown(null); }}
+                        className={`flex-1 text-left px-4 py-2.5 text-green-800 hover:bg-green-50 transition-all ${viewMode === mode ? 'font-semibold' : ''}`}
+                      >
+                        {mode === 'herb' ? 'By Herb' : mode === 'action' ? 'By Action' : 'By Body System'}
+                      </button>
+                      {mode === 'system' && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setBodyDiagramOpen(true); setOpenDropdown(null); }}
+                          title="Browse body diagram"
+                          className="pr-3 pl-1 py-2.5 text-green-600 hover:text-green-800 transition-all"
+                        >
+                          <UserIcon className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
                   ))}
                 </div>
               )}
@@ -206,7 +219,7 @@ export default function Home() {
       </header>
 
       <main>
-        {viewMode === 'herb' && <HerbView selectedHerbId={selectedHerbId} onHerbIdChange={setSelectedHerbId} onActionClick={handleActionClick} onActionNameClick={handleActionNameClick} onDisorderClick={handleDisorderClick} />}
+        {viewMode === 'herb' && <HerbView selectedHerbId={selectedHerbId} onHerbIdChange={setSelectedHerbId} onHerbClick={handleHerbClick} onActionClick={handleActionClick} onActionNameClick={handleActionNameClick} onDisorderClick={handleDisorderClick} />}
         {viewMode === 'action' && <ActionView selectedActionId={selectedActionId} onActionIdChange={setSelectedActionId} onHerbClick={handleHerbClick} />}
         {viewMode === 'system' && (
           <SystemView
@@ -228,6 +241,18 @@ export default function Home() {
       />
       <EnergeticsQuizModal isOpen={energeticsQuizOpen} onClose={() => setEnergeticsQuizOpen(false)} onHerbSelect={handleQuizHerbSelect} />
       <IntakeFormModal isOpen={intakeFormOpen} onClose={() => setIntakeFormOpen(false)} onHerbSelect={handleHerbClick} />
+      <BodyDiagramModal
+        open={bodyDiagramOpen}
+        onClose={() => setBodyDiagramOpen(false)}
+        onSystemSelect={(systemId) => {
+          setHistory([]);
+          setViewMode('system');
+          setSelectedSystemId(systemId);
+          setSelectedDisorderId(null);
+          setSelectedHerbId(null);
+          setSelectedActionId(null);
+        }}
+      />
       <HerbFilterPanel
         isOpen={herbFilterOpen}
         onClose={() => setHerbFilterOpen(false)}

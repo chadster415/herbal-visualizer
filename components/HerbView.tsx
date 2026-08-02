@@ -82,6 +82,7 @@ interface DuiYaoPair {
 interface HerbViewProps {
   selectedHerbId?: number | null;
   onHerbIdChange?: (herbId: number | null) => void;
+  onHerbClick?: (herbId: number) => void;
   onActionClick?: (actionId: number) => void;
   onActionNameClick?: (name: string) => void;
   onDisorderClick?: (disorderId: number, systemId: number) => void;
@@ -171,7 +172,7 @@ function SectionHeader({ title, open, onToggle }: { title: string; open: boolean
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function HerbView({ selectedHerbId, onHerbIdChange, onActionClick, onActionNameClick, onDisorderClick }: HerbViewProps) {
+export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onActionClick, onActionNameClick, onDisorderClick }: HerbViewProps) {
   const [herbs, setHerbs] = useState<HerbData[]>([]);
   const [allProfiles, setAllProfiles] = useState<ConstituentProfile[]>([]);
   const [selectedHerb, setSelectedHerb] = useState<HerbData | null>(null);
@@ -333,12 +334,12 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onActionClick, onActi
     setSelectedHerb(herb);
     setAlternatesOpen(false);
     setSectionsOpen({ primaryActions: true, secondaryActions: true, constituentProfile: true, constituents: true, disorders: true, duiYao: true });
-    onHerbIdChange?.(herbId);
-    detailPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    onHerbClick?.(herbId);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
     setTimeout(() => {
       herbRefs.current.get(herbId)?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }, 100);
-  }, [herbs, onHerbIdChange]);
+  }, [herbs, onHerbClick]);
 
   // All profiles for the selected herb (used for both marker display and alternates)
   const selectedProfiles = selectedHerb
