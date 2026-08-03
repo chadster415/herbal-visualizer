@@ -53,6 +53,7 @@ export default function Home() {
     setSelectedActionId(next.selectedActionId);
     setSelectedSystemId(next.selectedSystemId);
     setSelectedDisorderId(next.selectedDisorderId);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const goBack = () => {
