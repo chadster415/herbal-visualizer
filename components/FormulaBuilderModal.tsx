@@ -11,6 +11,7 @@ interface Herb {
   id: number;
   latin_name: string;
   common_name: string;
+  plant_part: string | null;
   temperature: string | null;
   moisture: string | null;
   tone: string | null;
@@ -174,15 +175,15 @@ export function FormulaBuilderModal({ isOpen, onClose, onHerbClick }: Props) {
     const [baseRes, synRes, specRes, prescIdRes, indicatedActionsRes] = await Promise.all([
       supabase
         .from('herb_primary_actions')
-        .select('herbs(id, latin_name, common_name, temperature, moisture, tone), primary_actions(name)')
+        .select('herbs(id, latin_name, common_name, plant_part, temperature, moisture, tone), primary_actions(name)')
         .eq('body_system_id', selectedSystem.id),
       supabase
         .from('disorder_action_herbs')
-        .select('herbs(id, latin_name, common_name, temperature, moisture, tone), primary_actions(name)')
+        .select('herbs(id, latin_name, common_name, plant_part, temperature, moisture, tone), primary_actions(name)')
         .eq('disorder_id', selectedDisorder.id),
       supabase
         .from('disorder_specific_remedies')
-        .select('herbs(id, latin_name, common_name, temperature, moisture, tone), description')
+        .select('herbs(id, latin_name, common_name, plant_part, temperature, moisture, tone), description')
         .eq('disorder_id', selectedDisorder.id),
       supabase
         .from('disorder_prescriptions')
@@ -204,13 +205,13 @@ export function FormulaBuilderModal({ isOpen, onClose, onHerbClick }: Props) {
       prescIds.length > 0
         ? supabase
             .from('prescription_herbs')
-            .select('herbs(id, latin_name, common_name, temperature, moisture, tone), prescription_herb_actions(primary_actions(name))')
+            .select('herbs(id, latin_name, common_name, plant_part, temperature, moisture, tone), prescription_herb_actions(primary_actions(name))')
             .in('prescription_id', prescIds)
         : Promise.resolve({ data: [] as unknown[], error: null }),
       indicatedActionIds.length > 0
         ? supabase
             .from('herb_primary_actions')
-            .select('herbs(id, latin_name, common_name, temperature, moisture, tone), primary_actions(name)')
+            .select('herbs(id, latin_name, common_name, plant_part, temperature, moisture, tone), primary_actions(name)')
             .in('primary_action_id', indicatedActionIds)
             .eq('body_system_id', selectedSystem.id)
         : Promise.resolve({ data: [] as unknown[], error: null }),
@@ -317,7 +318,7 @@ export function FormulaBuilderModal({ isOpen, onClose, onHerbClick }: Props) {
             <div className="text-sm font-medium italic text-gray-900 dark:text-gray-100 leading-tight">
               {c.herb.latin_name}
             </div>
-            <div className="text-xs text-gray-500 dark:text-gray-400">{c.herb.common_name}</div>
+            <div className="text-xs text-gray-500 dark:text-gray-400">{c.herb.common_name}{c.herb.plant_part ? ` (${c.herb.plant_part})` : ''}</div>
             {c.context && (
               <div className="text-xs text-gray-400 dark:text-gray-500 mt-1 line-clamp-2">{c.context}</div>
             )}
@@ -699,7 +700,7 @@ export function FormulaBuilderModal({ isOpen, onClose, onHerbClick }: Props) {
           <div className="font-semibold italic text-gray-900 dark:text-gray-100 text-sm leading-tight">
             {herb.latin_name}
           </div>
-          <div className="text-xs text-gray-500 dark:text-gray-400 mb-2">{herb.common_name}</div>
+          <div className="text-xs text-gray-500 dark:text-gray-400 mb-2">{herb.common_name}{herb.plant_part ? ` (${herb.plant_part})` : ''}</div>
           <div className="flex flex-wrap gap-1">{energeticBadges(herb)}</div>
           {onHerbClick && (
             <button

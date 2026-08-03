@@ -252,6 +252,14 @@ export default function Home() {
           setSelectedHerbId(null);
           setSelectedActionId(null);
         }}
+        onDisorderSelect={(systemId, disorderId) => {
+          setHistory([]);
+          setViewMode('system');
+          setSelectedSystemId(systemId);
+          setSelectedDisorderId(disorderId);
+          setSelectedHerbId(null);
+          setSelectedActionId(null);
+        }}
       />
       <HerbFilterPanel
         isOpen={herbFilterOpen}

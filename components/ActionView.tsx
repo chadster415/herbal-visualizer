@@ -239,7 +239,7 @@ export function ActionView({ onHerbClick, selectedActionId, onActionIdChange }: 
                             className={`border rounded-lg py-1.5 px-3 hover:shadow-md hover:scale-105 transition-all cursor-pointer text-left ${getTemperatureCard(item.herb)}`}
                           >
                             <div className="flex items-center justify-between gap-1 mb-1">
-                              <span className="font-medium">{item.herb.common_name}</span>
+                              <span className="font-medium">{item.herb.common_name}{item.herb.plant_part ? ` (${item.herb.plant_part})` : ''}</span>
                               <div className="flex items-center gap-1 shrink-0">
                                 <EnergeticEmojis temperature={item.herb.temperature} moisture={item.herb.moisture} tone={item.herb.tone} className="text-sm leading-none" />
                                 {selectedAction.name === 'Tonic' && agingHerbIds.has(item.herb.id) && (

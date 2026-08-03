@@ -821,7 +821,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
                                 >
                                   <div className="flex items-center justify-between gap-2 mb-1.5">
                                     <div>
-                                      <span className="font-medium text-gray-900 text-sm">{herb.common_name}</span>
+                                      <span className="font-medium text-gray-900 text-sm">{herb.common_name}{herb.plant_part ? ` (${herb.plant_part})` : ''}</span>
                                       <span className="text-xs italic text-gray-500 ml-2">{herb.latin_name}</span>
                                     </div>
                                     <div className="flex items-center gap-1.5 shrink-0">

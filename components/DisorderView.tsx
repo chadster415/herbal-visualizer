@@ -317,11 +317,10 @@ export function DisorderView({ bodySystemId, onHerbClick, onActionClick, selecte
                       className={`inline-flex flex-col items-start border rounded-lg px-3 py-1.5 transition-all hover:shadow-md ${getTemperatureCard(h.herbs)}`}
                     >
                       <div className="flex items-center gap-2">
-                        <span className="font-medium text-gray-900 text-sm">{h.herbs.common_name}</span>
+                        <span className="font-medium text-gray-900 text-sm">{h.herbs.common_name}{h.herbs.plant_part ? ` (${h.herbs.plant_part})` : ''}</span>
                         <EnergeticEmojis temperature={h.herbs.temperature} moisture={h.herbs.moisture} tone={h.herbs.tone} className="text-sm leading-none shrink-0" />
                       </div>
                       <span className="text-xs italic text-gray-600">{h.herbs.latin_name}</span>
-                      {h.note && <span className="text-xs text-gray-500 mt-0.5">{h.note}</span>}
                     </button>
                   ))}
                 </div>
@@ -389,7 +388,7 @@ export function DisorderView({ bodySystemId, onHerbClick, onActionClick, selecte
                       className={`w-full text-left border rounded-lg py-1.5 px-3 hover:shadow-md hover:scale-[1.01] transition-all ${getTemperatureCard(item.herbs)}`}
                     >
                       <div className="flex items-center justify-between gap-2 mb-1">
-                        <div className="font-semibold text-gray-900">{item.herbs.common_name}</div>
+                        <div className="font-semibold text-gray-900">{item.herbs.common_name}{item.herbs.plant_part ? ` (${item.herbs.plant_part})` : ''}</div>
                         <EnergeticEmojis temperature={item.herbs.temperature} moisture={item.herbs.moisture} tone={item.herbs.tone} className="text-sm leading-none shrink-0" />
                       </div>
                       <div className="text-sm italic text-gray-600">{item.herbs.latin_name}</div>
@@ -438,7 +437,7 @@ export function DisorderView({ bodySystemId, onHerbClick, onActionClick, selecte
                           >
                             <div className="flex items-baseline gap-2 mb-1">
                               <span className="font-medium text-gray-900">
-                                {prescHerb.herbs.common_name}
+                                {prescHerb.herbs.common_name}{prescHerb.herbs.plant_part ? ` (${prescHerb.herbs.plant_part})` : ''}
                               </span>
                               <span className="text-xs text-gray-500">
                                 {prescHerb.parts}
@@ -447,11 +446,6 @@ export function DisorderView({ bodySystemId, onHerbClick, onActionClick, selecte
                             <span className="text-xs italic text-gray-600">
                               {prescHerb.herbs.latin_name}
                             </span>
-                            {prescHerb.note && (
-                              <span className="text-xs text-gray-500 mt-0.5">
-                                ({prescHerb.note})
-                              </span>
-                            )}
                             {prescHerb.prescription_herb_actions.length > 0 && (
                               <div className="flex flex-wrap gap-1 mt-2">
                                 {prescHerb.prescription_herb_actions.map((action, idx) => (

@@ -237,7 +237,7 @@ export function SystemView({ onHerbClick, onActionClick, selectedSystemId, onSys
                               className={`border rounded-lg py-2.5 px-3 hover:shadow-md hover:scale-105 transition-all cursor-pointer text-left ${getTemperatureCard(item.herb)}`}
                             >
                               <div className="flex items-center justify-between gap-1 mb-1">
-                                <span className="font-medium text-sm">{item.herb.common_name}</span>
+                                <span className="font-medium text-sm">{item.herb.common_name}{item.herb.plant_part ? ` (${item.herb.plant_part})` : ''}</span>
                                 <EnergeticEmojis temperature={item.herb.temperature} moisture={item.herb.moisture} tone={item.herb.tone} className="text-sm leading-none shrink-0" />
                               </div>
                               <div className="flex items-center justify-between gap-1">

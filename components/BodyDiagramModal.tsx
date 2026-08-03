@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { XMarkIcon } from '@heroicons/react/24/outline';
+import { XMarkIcon, ChevronDownIcon } from '@heroicons/react/24/outline';
 import { supabase } from '@/lib/supabase';
 
 interface BodySystem {
@@ -9,10 +9,17 @@ interface BodySystem {
   name: string;
 }
 
+interface Disorder {
+  id: number;
+  name: string;
+  body_system_id: number;
+}
+
 interface Props {
   open: boolean;
   onClose: () => void;
   onSystemSelect: (systemId: number) => void;
+  onDisorderSelect?: (systemId: number, disorderId: number) => void;
 }
 
 // Which DB system names belong to each anatomical region
@@ -52,10 +59,12 @@ const BODY_REGIONS = [
 ];
 const SYSTEMIC_REGIONS = ['skin', 'immune', 'aging'];
 
-export function BodyDiagramModal({ open, onClose, onSystemSelect }: Props) {
+export function BodyDiagramModal({ open, onClose, onSystemSelect, onDisorderSelect }: Props) {
   const [systems, setSystems] = useState<BodySystem[]>([]);
   const [hoveredRegion, setHoveredRegion] = useState<string | null>(null);
   const [activeRegion, setActiveRegion] = useState<string | null>(null);
+  const [expandedDisorderRegion, setExpandedDisorderRegion] = useState<string | null>(null);
+  const [disordersCache, setDisordersCache] = useState<Record<number, Disorder[]>>({});
 
   useEffect(() => {
     if (!open) return;
@@ -83,6 +92,41 @@ export function BodyDiagramModal({ open, onClose, onSystemSelect }: Props) {
     } else if (matched.length > 1) {
       setActiveRegion(activeRegion === regionId ? null : regionId);
     }
+  };
+
+  const toggleDisorders = async (e: React.MouseEvent, regionId: string) => {
+    e.stopPropagation();
+    if (expandedDisorderRegion === regionId) {
+      setExpandedDisorderRegion(null);
+      return;
+    }
+    setExpandedDisorderRegion(regionId);
+    const systemIds = regionId.startsWith('systemic-')
+      ? [parseInt(regionId.slice('systemic-'.length), 10)]
+      : regionSystems(regionId).map((s) => s.id);
+    const unloaded = systemIds.filter((id) => !disordersCache[id]);
+    if (unloaded.length > 0) {
+      const { data } = await supabase
+        .from('disorders')
+        .select('id, name, body_system_id')
+        .in('body_system_id', unloaded)
+        .order('name');
+      if (data) {
+        setDisordersCache((prev) => {
+          const next = { ...prev };
+          for (const d of data as Disorder[]) {
+            if (!next[d.body_system_id]) next[d.body_system_id] = [];
+            next[d.body_system_id].push(d);
+          }
+          return next;
+        });
+      }
+    }
+  };
+
+  const disordersForRegion = (regionId: string): Disorder[] => {
+    const matched = regionSystems(regionId);
+    return matched.flatMap((s) => disordersCache[s.id] ?? []).sort((a, b) => a.name.localeCompare(b.name));
   };
 
   const regionProps = (regionId: string) => ({
@@ -185,41 +229,103 @@ export function BodyDiagramModal({ open, onClose, onSystemSelect }: Props) {
         <div className="flex-1 flex flex-col gap-2 mt-10 overflow-y-auto" style={{ maxHeight: 390 }}>
           {/* Legend */}
           <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Body Regions</p>
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col gap-0.5">
             {BODY_REGIONS.map((regionId) => {
               const matched = regionSystems(regionId);
               if (matched.length === 0) return null;
               const isHovered = hoveredRegion === regionId;
+              const isExpanded = expandedDisorderRegion === regionId;
+              const disorders = disordersForRegion(regionId);
               return (
-                <button
-                  key={regionId}
-                  onClick={() => handleRegionClick(regionId)}
-                  onMouseEnter={() => setHoveredRegion(regionId)}
-                  onMouseLeave={() => setHoveredRegion(null)}
-                  className={`flex items-center gap-2 text-sm text-left px-2 py-1.5 rounded-lg transition-all ${isHovered ? 'bg-gray-100' : 'hover:bg-gray-50'}`}
-                >
-                  <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: REGION_COLORS[regionId] }} />
-                  <span className="text-gray-700">{matched.map((s) => s.name).join(' / ')}</span>
-                </button>
+                <div key={regionId}>
+                  <div
+                    className={`flex items-center gap-2 text-sm px-2 py-1.5 rounded-lg transition-all ${isHovered ? 'bg-gray-100' : 'hover:bg-gray-50'}`}
+                    onMouseEnter={() => setHoveredRegion(regionId)}
+                    onMouseLeave={() => setHoveredRegion(null)}
+                  >
+                    <button
+                      className="flex items-center gap-2 flex-1 text-left"
+                      onClick={() => handleRegionClick(regionId)}
+                    >
+                      <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: REGION_COLORS[regionId] }} />
+                      <span className="text-gray-700">{matched.map((s) => s.name).join(' / ')}</span>
+                    </button>
+                    <button
+                      onClick={(e) => toggleDisorders(e, regionId)}
+                      className="p-0.5 rounded text-gray-400 hover:text-gray-600 hover:bg-gray-200 transition-all flex-shrink-0"
+                      title="Show disorders"
+                    >
+                      <ChevronDownIcon className={`w-3.5 h-3.5 transition-transform duration-150 ${isExpanded ? 'rotate-180' : ''}`} />
+                    </button>
+                  </div>
+                  {isExpanded && (
+                    <div className="ml-5 mb-1 flex flex-col">
+                      {disorders.length === 0 ? (
+                        <span className="text-xs text-gray-400 px-2 py-1">Loading…</span>
+                      ) : (
+                        disorders.map((d) => (
+                          <button
+                            key={d.id}
+                            onClick={() => { onDisorderSelect?.(d.body_system_id, d.id); onClose(); }}
+                            className="text-left text-xs text-gray-600 hover:text-green-700 hover:bg-green-50 px-2 py-0.5 rounded transition-all"
+                          >
+                            {d.name}
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  )}
+                </div>
               );
             })}
           </div>
 
           <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mt-3">Systemic</p>
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col gap-0.5">
             {SYSTEMIC_REGIONS.map((regionId) => {
               const matched = regionSystems(regionId);
               if (matched.length === 0) return null;
-              return matched.map((sys) => (
-                <button
-                  key={sys.id}
-                  onClick={() => { onSystemSelect(sys.id); onClose(); }}
-                  className="flex items-center gap-2 text-sm text-left px-2 py-1.5 rounded-lg hover:bg-gray-50 transition-all"
-                >
-                  <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: REGION_COLORS[regionId] }} />
-                  <span className="text-gray-700">{sys.name}</span>
-                </button>
-              ));
+              return matched.map((sys) => {
+                const isExpanded = expandedDisorderRegion === `systemic-${sys.id}`;
+                const disorders = disordersCache[sys.id] ?? [];
+                return (
+                  <div key={sys.id}>
+                    <div className="flex items-center gap-2 text-sm px-2 py-1.5 rounded-lg hover:bg-gray-50 transition-all">
+                      <button
+                        className="flex items-center gap-2 flex-1 text-left"
+                        onClick={() => { onSystemSelect(sys.id); onClose(); }}
+                      >
+                        <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: REGION_COLORS[regionId] }} />
+                        <span className="text-gray-700">{sys.name}</span>
+                      </button>
+                      <button
+                        onClick={(e) => toggleDisorders(e, `systemic-${sys.id}`)}
+                        className="p-0.5 rounded text-gray-400 hover:text-gray-600 hover:bg-gray-200 transition-all flex-shrink-0"
+                        title="Show disorders"
+                      >
+                        <ChevronDownIcon className={`w-3.5 h-3.5 transition-transform duration-150 ${isExpanded ? 'rotate-180' : ''}`} />
+                      </button>
+                    </div>
+                    {isExpanded && (
+                      <div className="ml-5 mb-1 flex flex-col">
+                        {disorders.length === 0 ? (
+                          <span className="text-xs text-gray-400 px-2 py-1">Loading…</span>
+                        ) : (
+                          [...disorders].sort((a, b) => a.name.localeCompare(b.name)).map((d) => (
+                            <button
+                              key={d.id}
+                              onClick={() => { onDisorderSelect?.(d.body_system_id, d.id); onClose(); }}
+                              className="text-left text-xs text-gray-600 hover:text-green-700 hover:bg-green-50 px-2 py-0.5 rounded transition-all"
+                            >
+                              {d.name}
+                            </button>
+                          ))
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              });
             })}
           </div>
 
