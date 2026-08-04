@@ -258,6 +258,229 @@ These herbs exist as multiple rows (one per part) — always use the 3-arg `ensu
 
 Use source context (e.g., "dandelion root" vs "dandelion leaf") to determine which part to reference. When source is ambiguous, default to the part most clinically associated with the action.
 
+## PDF Book → Herb Image Section Pattern
+
+This pattern adds a new collapsible section to each herb's detail page, backed by page images extracted from a PDF reference book. Used for Stockley's Herbal Medicines Interactions (contraindications); repeat for other books.
+
+### Files involved
+
+| File | Purpose |
+|---|---|
+| `public/{section}/{herb_id}/page_NN.jpg` | Extracted page images, 150 DPI JPEG |
+| `lib/{section}-manifest.ts` | Static map: `herb_id → page_count` |
+| `components/{Section}Modal.tsx` | Image-viewer modal (left/right navigation) |
+| `components/HerbView.tsx` | Add section + modal state + nav entry |
+
+The existing `ContraindicationsModal.tsx` is a complete, reusable template — copy and adapt for new books.
+
+### Step 1 — Explore the PDF structure
+
+```bash
+# Get page count
+pdfinfo path/to/book.pdf | grep Pages
+
+# Extract text with form-feed page separators
+pdftotext path/to/book.pdf /tmp/pdf_text.txt
+
+# Inspect first lines of each page to understand the structure
+python3 -c "
+with open('/tmp/pdf_text.txt') as f:
+    pages = f.read().split('\f')
+for i in range(20, 35):
+    lines = pages[i].split('\n')
+    print(f'Page {i+1}:', [repr(l) for l in lines[:5]])
+"
+```
+
+### Step 2 — Map herb names to PDF page ranges
+
+Key insight: `pdftotext` uses `\f` (form feed, ASCII 12) as page separator, so `content.split('\f')` gives one string per page with index = pdf_page - 1.
+
+**Detection pattern used for Stockley's** — a page starts a NEW herb section when:
+- `lines[0]` is not a digit (not a page number like "14")
+- `lines[0]` differs from the previous herb name (same herb name = continuation)
+
+```python
+import json, unicodedata
+
+with open('/tmp/pdf_text.txt') as f:
+    pages = f.read().split('\f')
+
+SKIP_PREFIX = 'No interactions have been included'  # placeholder pages to skip
+herb_pages = {}
+current_herb = None
+
+for i, page_text in enumerate(pages):
+    pdf_page = i + 1
+    if pdf_page < FIRST_HERB_PAGE or pdf_page >= INDEX_START_PAGE:
+        continue
+    lines = page_text.split('\n')
+    line0 = lines[0].strip() if lines else ''
+    if not line0 or line0.startswith(SKIP_PREFIX):
+        if current_herb: herb_pages[current_herb].append(pdf_page)
+        continue
+    if line0[0].isdigit():
+        if current_herb: herb_pages[current_herb].append(pdf_page)
+        continue
+    norm = unicodedata.normalize('NFC', line0)
+    if current_herb and unicodedata.normalize('NFC', current_herb) == norm:
+        herb_pages[current_herb].append(pdf_page)
+        continue
+    current_herb = line0
+    herb_pages[current_herb] = [pdf_page]
+
+with open('/tmp/herb_pages.json', 'w') as f:
+    json.dump(herb_pages, f, indent=2, ensure_ascii=False)
+```
+
+`FIRST_HERB_PAGE` and `INDEX_START_PAGE` — find these by visually checking pages:
+```bash
+pdftoppm -r 150 -f 20 -l 25 path/to/book.pdf /tmp/pg
+magick /tmp/pg-022.ppm -resize 900x /tmp/preview.jpg
+# Read /tmp/preview.jpg to see what's on each page
+```
+
+The page offset (PDF page number vs printed book page number) is fixed throughout: `pdf_page = book_page + offset`. Verify by checking the bottom page number on a rendered page image.
+
+### Step 3 — Match PDF herbs to DB herb IDs
+
+Get DB herbs:
+```bash
+PGPASSWORD=postgres /opt/homebrew/Cellar/libpq/18.1/bin/psql \
+  -h 127.0.0.1 -p 54322 -U postgres -d postgres \
+  -t -A -F'|' \
+  -c "SELECT id, common_name, latin_name FROM herbal.herbs ORDER BY common_name;" \
+  > /tmp/db_herbs.txt
+```
+
+Build an explicit map (PDF name → DB id). Fuzzy matching breaks on alternate names; always review and correct manually. Common cases from Stockley's:
+- PDF uses British spellings: `Liquorice` → DB `Licorice`, `Chamomile, German` → DB `Chamomile`
+- PDF uses Latin genus: `Agnus castus` → DB `Chasteberry`, `Passiflora` → DB `Passionflower`
+- PDF has duplicates for same DB herb: `Aloe vera` + `Aloes` both → `Aloe` id — combine their pages
+- Compounds/nutrients (Caffeine, Melatonin, Flavonoids) have no DB herb entry — map to `None`
+- Unicode issues: accented chars like `Maté` may be NFD in the PDF; use `unicodedata.normalize('NFC', key)` when looking up
+
+Build `db_to_pages` (DB id → `{pdf_sections, all_pages}`), then serialize to `/tmp/db_{section}_pages.json`.
+
+### Step 4 — Extract images
+
+```bash
+# Tools available on this machine:
+# pdftoppm  → /opt/homebrew/bin/pdftoppm
+# magick    → /usr/local/bin/magick  (ImageMagick v7)
+
+python3 << 'EOF'
+import json, os, subprocess
+
+PDF = "path/to/book.pdf"
+OUT_BASE = "public/{section}"  # relative to app root
+
+with open('/tmp/db_{section}_pages.json') as f:
+    db_pages = json.load(f)
+
+for db_id, info in sorted(db_pages.items(), key=lambda x: int(x[0])):
+    herb_dir = os.path.join(OUT_BASE, db_id)
+    os.makedirs(herb_dir, exist_ok=True)
+    for page_num, pdf_page in enumerate(info['all_pages'], 1):
+        out_jpg = os.path.join(herb_dir, f"page_{page_num:02d}.jpg")
+        if os.path.exists(out_jpg): continue
+        tmp = f"/tmp/ex_{db_id}_{pdf_page}"
+        subprocess.run(['pdftoppm', '-r', '150', '-f', str(pdf_page), '-l', str(pdf_page),
+                        '-jpeg', '-jpegopt', 'quality=85', PDF, tmp])
+        ppm_out = f"{tmp}-{pdf_page:03d}.jpg"
+        if os.path.exists(ppm_out):
+            os.rename(ppm_out, out_jpg)
+        else:  # fallback: ppm → magick convert
+            ppm = f"{tmp}-{pdf_page:03d}.ppm"
+            subprocess.run(['magick', ppm, '-quality', '85', out_jpg])
+            if os.path.exists(ppm): os.remove(ppm)
+EOF
+```
+
+150 DPI produces ~100–200 KB/page JPEGs, readable and fast-loading.
+
+### Step 5 — Generate the manifest
+
+```python
+import json
+
+with open('/tmp/db_{section}_pages.json') as f:
+    data = json.load(f)
+
+lines = ["// Auto-generated — maps herb DB id → page count",
+         "export const SECTION_NAME: Record<number, number> = {"]
+for herb_id, info in sorted(data.items(), key=lambda x: int(x[0])):
+    lines.append(f"  {herb_id}: {len(info['all_pages'])},  // {', '.join(info['pdf_sections'])}")
+lines.append("};")
+
+with open('lib/{section}-manifest.ts', 'w') as f:
+    f.write('\n'.join(lines) + '\n')
+```
+
+### Step 6 — Wire into HerbView.tsx
+
+Four touch points in `HerbView.tsx`:
+
+**1. Imports** (top of file):
+```typescript
+import { NewSectionModal } from './NewSectionModal';
+import { NEW_MANIFEST } from '@/lib/new-manifest';
+```
+
+**2. State** (near existing `sectionsOpen`):
+```typescript
+const [sectionsOpen, setSectionsOpen] = useState({
+  // ... existing keys ...
+  newSection: true,   // add here
+});
+const [newSectionModalOpen, setNewSectionModalOpen] = useState(false);
+```
+Also add `newSection: true/!allOpen` to every `setSectionsOpen({...})` literal in the file — there are currently 5 of them (search for `setSectionsOpen({`).
+
+**3. Section nav pill** (in the nav pill array, ~line 622):
+```typescript
+...(NEW_MANIFEST[selectedHerb.id] ? [{ key: 'newSection' as const, label: 'Section Label' }] : []),
+```
+
+**4. Section JSX + modal** (after the last existing section, before the closing `</div>`):
+```tsx
+{NEW_MANIFEST[selectedHerb.id] && (
+  <div className="mt-6" ref={(el) => { sectionRefs.current.newSection = el; }}>
+    <SectionHeader title="Section Title" open={sectionsOpen.newSection} onToggle={() => toggleSection('newSection')} />
+    {sectionsOpen.newSection && (
+      <div className="pl-4 border-l-2 border-red-100">
+        <button
+          onClick={() => setNewSectionModalOpen(true)}
+          className="flex items-center gap-3 w-full text-left border border-red-200 rounded-lg px-4 py-3 bg-red-50 hover:bg-red-100 hover:border-red-300 transition-all group"
+        >
+          {/* icon, title, page count, chevron — see ContraindicationsModal section for full JSX */}
+        </button>
+      </div>
+    )}
+  </div>
+)}
+
+{selectedHerb && NEW_MANIFEST[selectedHerb.id] && (
+  <NewSectionModal
+    isOpen={newSectionModalOpen}
+    onClose={() => setNewSectionModalOpen(false)}
+    herbId={selectedHerb.id}
+    pageCount={NEW_MANIFEST[selectedHerb.id]}
+    herbName={selectedHerb.common_name}
+  />
+)}
+```
+
+### Existing contraindications section (Stockley's)
+
+- Images: `public/contraindications/{herb_id}/page_NN.jpg`
+- Manifest: `lib/contraindications-manifest.ts` → `CONTRAINDICATIONS: Record<number, number>`
+- Modal: `components/ContraindicationsModal.tsx`
+- 103 herbs covered, 64 MB total
+- Source PDF: `/Users/chadarmstrong/Downloads/herbal_medicines_interactions-1.pdf`
+- Full herb→page mapping saved at `/tmp/db_contraindication_pages.json` (103 entries)
+- PDF structure: herb pages 22–411, index pages 412+; book page = pdf_page − 9
+
 ## Backups
 ```bash
 PGPASSWORD=postgres /opt/homebrew/Cellar/libpq/18.1/bin/pg_dump \

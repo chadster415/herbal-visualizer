@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { EnergeticEmojis } from './EnergeticEmojis';
 import { ContraindicationsModal } from './ContraindicationsModal';
 import { CONTRAINDICATIONS } from '@/lib/contraindications-manifest';
+import { MM_MATERIA_MEDICA } from '@/lib/mm-materia-medica';
 import type {
   Herb,
   PrimaryAction,
@@ -198,7 +199,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
   const [sectionsOpen, setSectionsOpen] = useState({
     primaryActions: true, secondaryActions: true,
     constituentProfile: true, constituents: true, disorders: true, duiYao: true,
-    contraindications: true,
+    contraindications: true, mmMateriaMedica: true,
   });
   const toggleSection = (key: keyof typeof sectionsOpen) =>
     setSectionsOpen((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -256,7 +257,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
       if (herb) {
         setSelectedHerb(herb);
         setAlternatesOpen(false);
-        setSectionsOpen({ primaryActions: true, secondaryActions: true, constituentProfile: true, constituents: true, disorders: true, duiYao: true, contraindications: true });
+        setSectionsOpen({ primaryActions: true, secondaryActions: true, constituentProfile: true, constituents: true, disorders: true, duiYao: true, contraindications: true, mmMateriaMedica: true });
         setTimeout(() => {
           herbRefs.current.get(selectedHerbId)?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }, 100);
@@ -338,7 +339,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
     if (!herb) return;
     setSelectedHerb(herb);
     setAlternatesOpen(false);
-    setSectionsOpen({ primaryActions: true, secondaryActions: true, constituentProfile: true, constituents: true, disorders: true, duiYao: true, contraindications: true });
+    setSectionsOpen({ primaryActions: true, secondaryActions: true, constituentProfile: true, constituents: true, disorders: true, duiYao: true, contraindications: true, mmMateriaMedica: true });
     onHerbClick?.(herbId);
     window.scrollTo({ top: 0, behavior: 'smooth' });
     setTimeout(() => {
@@ -521,7 +522,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
                 const herb = filteredHerbs[highlightedIndex];
                 setSelectedHerb(herb);
                 setAlternatesOpen(false);
-                setSectionsOpen({ primaryActions: true, secondaryActions: true, constituentProfile: true, constituents: true, disorders: true, duiYao: true, contraindications: true });
+                setSectionsOpen({ primaryActions: true, secondaryActions: true, constituentProfile: true, constituents: true, disorders: true, duiYao: true, contraindications: true, mmMateriaMedica: true });
                 onHerbIdChange?.(herb.id);
                 setSearchTerm('');
                 setHighlightedIndex(-1);
@@ -564,7 +565,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
               onClick={() => {
                 setSelectedHerb(herb);
                 setAlternatesOpen(false);
-                setSectionsOpen({ primaryActions: true, secondaryActions: true, constituentProfile: true, constituents: true, disorders: true, duiYao: true, contraindications: true });
+                setSectionsOpen({ primaryActions: true, secondaryActions: true, constituentProfile: true, constituents: true, disorders: true, duiYao: true, contraindications: true, mmMateriaMedica: true });
                 onHerbIdChange?.(herb.id);
                 setSearchTerm('');
                 setHighlightedIndex(-1);
@@ -632,6 +633,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
                 ...((((selectedHerb.disorder_action_herbs?.length ?? 0) > 0) || ((selectedHerb.disorder_specific_remedies?.length ?? 0) > 0)) ? [{ key: 'disorders' as const, label: 'Disorders' }] : []),
                 ...(duiYaoPairs.length > 0 ? [{ key: 'duiYao' as const, label: 'Dui Yao Pairings' }] : []),
                 ...(CONTRAINDICATIONS[selectedHerb.id] ? [{ key: 'contraindications' as const, label: 'Drug Interactions' }] : []),
+                ...(MM_MATERIA_MEDICA[selectedHerb.id] ? [{ key: 'mmMateriaMedica' as const, label: 'MM Materia Medica' }] : []),
               ].map(({ key, label }) => (
                 <button
                   key={key}
@@ -646,7 +648,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
               <button
                 onClick={() => {
                   const allOpen = Object.values(sectionsOpen).every(Boolean);
-                  setSectionsOpen({ primaryActions: !allOpen, secondaryActions: !allOpen, constituentProfile: !allOpen, constituents: !allOpen, disorders: !allOpen, duiYao: !allOpen, contraindications: !allOpen });
+                  setSectionsOpen({ primaryActions: !allOpen, secondaryActions: !allOpen, constituentProfile: !allOpen, constituents: !allOpen, disorders: !allOpen, duiYao: !allOpen, contraindications: !allOpen, mmMateriaMedica: !allOpen });
                 }}
                 className="flex items-center gap-1.5 px-3 py-1 rounded-full border border-gray-300 text-xs text-gray-500 hover:border-gray-400 hover:text-gray-700 transition-colors"
               >
@@ -1087,6 +1089,59 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
                 )}
               </div>
             )}
+            {/* ── Michael Moore Materia Medica ──────────────────────────── */}
+            {MM_MATERIA_MEDICA[selectedHerb.id] && (() => {
+              const rawText = MM_MATERIA_MEDICA[selectedHerb.id];
+              const isPregnancyContraindicated = rawText.startsWith('*');
+              const lines = rawText.split('\n');
+              const header = lines[0].replace(/^\*/, '').trim();
+              const bodyLines = lines.slice(1);
+              const statusLine = bodyLines.find((l) => l.trim().startsWith('STATUS'));
+              const statusCode = statusLine ? statusLine.replace(/.*STATUS\s*:\s*/, '').trim() : null;
+              const bodyText = bodyLines
+                .filter((l) => !l.trim().startsWith('STATUS'))
+                .join('\n')
+                .trim();
+              const STATUS_LABELS: Record<string, string> = {
+                'W': 'Wildcrafted', 'C': 'Cultivated', 'A': 'Abundant',
+                'LA': 'Limited', 'Rare': 'Rare', 'E': 'Endangered', 'U': 'Unknown',
+              };
+              const statusParts = statusCode
+                ? statusCode.split('/').map((s) => STATUS_LABELS[s.trim()] ?? s.trim())
+                : [];
+              return (
+                <div className="mt-6" ref={(el) => { sectionRefs.current.mmMateriaMedica = el; }}>
+                  <SectionHeader title="Michael Moore Materia Medica" open={sectionsOpen.mmMateriaMedica} onToggle={() => toggleSection('mmMateriaMedica')} />
+                  {sectionsOpen.mmMateriaMedica && (
+                    <div className="pl-4 border-l-2 border-green-100 space-y-3">
+                      {isPregnancyContraindicated && (
+                        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 border border-amber-200 rounded-lg w-fit">
+                          <svg className="w-3.5 h-3.5 text-amber-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+                          </svg>
+                          <span className="text-xs font-semibold text-amber-800">Avoid in pregnancy</span>
+                        </div>
+                      )}
+                      <p className="text-xs text-gray-400 italic">{header}</p>
+                      <pre className="text-sm text-gray-700 whitespace-pre-wrap font-sans leading-relaxed">{bodyText}</pre>
+                      {statusParts.length > 0 && (
+                        <div className="flex items-center gap-2 flex-wrap pt-1">
+                          <span className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Ecological status</span>
+                          {statusParts.map((part) => (
+                            <span key={part} className="text-xs px-2 py-0.5 rounded-full bg-green-50 border border-green-200 text-green-800 font-medium">
+                              {part}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                      <p className="text-xs text-gray-400 pt-1">
+                        Source: <span className="italic">Herbal Materia Medica 5.0</span> © Michael Moore (1995)
+                      </p>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
             {/* ── Drug Interactions ─────────────────────────────────────── */}
             {CONTRAINDICATIONS[selectedHerb.id] && (
               <div className="mt-6" ref={(el) => { sectionRefs.current.contraindications = el; }}>
