@@ -12,6 +12,12 @@ interface SystemNote {
   sort_order: number;
 }
 
+interface DisorderListItem {
+  id: number;
+  name: string;
+  sort_order: number;
+}
+
 interface SystemData extends BodySystem {
   herb_primary_actions: Array<{
     herbs: Herb;
@@ -20,6 +26,7 @@ interface SystemData extends BodySystem {
   }>;
   disorder_count?: number;
   system_notes?: SystemNote[];
+  disorders?: DisorderListItem[];
 }
 
 interface SystemViewProps {
@@ -35,7 +42,7 @@ export function SystemView({ onHerbClick, onActionClick, selectedSystemId, onSys
   const [systems, setSystems] = useState<SystemData[]>([]);
   const [selectedSystem, setSelectedSystem] = useState<SystemData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [viewMode, setViewMode] = useState<'actions' | 'disorders'>('disorders');
+  const [viewMode, setViewMode] = useState<'actions' | 'disorders'>('actions');
 
   useEffect(() => {
     fetchSystems();
@@ -43,7 +50,11 @@ export function SystemView({ onHerbClick, onActionClick, selectedSystemId, onSys
 
   // Respond to external selectedSystemId changes (back button, body diagram modal, etc.)
   useEffect(() => {
-    if (selectedSystemId == null || systems.length === 0) return;
+    if (selectedSystemId == null) {
+      setSelectedSystem(null);
+      return;
+    }
+    if (systems.length === 0) return;
     if (selectedSystem?.id === selectedSystemId) return;
     const system = systems.find((s) => s.id === selectedSystemId);
     if (system) {
@@ -54,20 +65,21 @@ export function SystemView({ onHerbClick, onActionClick, selectedSystemId, onSys
 
   async function fetchSystems() {
     try {
-      const [{ data, error }, { data: disorderCounts }, { data: notesData }] = await Promise.all([
+      const [{ data, error }, { data: disorderData }, { data: notesData }] = await Promise.all([
         supabase
           .from('body_systems')
           .select(`*, herb_primary_actions (herbs (*), primary_actions (*), relative_strength)`)
           .order('name'),
-        supabase.from('disorders').select('body_system_id'),
+        supabase.from('disorders').select('id, name, body_system_id, sort_order').order('sort_order'),
         supabase.from('body_system_notes').select('body_system_id, id, note_text, sort_order').order('sort_order'),
       ]);
 
       if (error) throw error;
 
-      const countMap = new Map<number, number>();
-      disorderCounts?.forEach((d) => {
-        countMap.set(d.body_system_id, (countMap.get(d.body_system_id) || 0) + 1);
+      const disorderMap = new Map<number, DisorderListItem[]>();
+      disorderData?.forEach((d) => {
+        if (!disorderMap.has(d.body_system_id)) disorderMap.set(d.body_system_id, []);
+        disorderMap.get(d.body_system_id)!.push({ id: d.id, name: d.name, sort_order: d.sort_order });
       });
 
       const notesMap = new Map<number, SystemNote[]>();
@@ -76,15 +88,16 @@ export function SystemView({ onHerbClick, onActionClick, selectedSystemId, onSys
         notesMap.get(n.body_system_id)!.push({ id: n.id, note_text: n.note_text, sort_order: n.sort_order });
       });
 
-      const systemsWithCounts = (data || [])
+      const systemsWithData = (data || [])
         .filter((system) => system.name !== 'All')
         .map((system) => ({
           ...system,
-          disorder_count: countMap.get(system.id) || 0,
+          disorders: disorderMap.get(system.id) ?? [],
+          disorder_count: disorderMap.get(system.id)?.length ?? 0,
           system_notes: notesMap.get(system.id) ?? [],
         }));
 
-      setSystems(systemsWithCounts);
+      setSystems(systemsWithData);
     } catch (error) {
       console.error('Error fetching systems:', error);
     } finally {
@@ -92,23 +105,27 @@ export function SystemView({ onHerbClick, onActionClick, selectedSystemId, onSys
     }
   }
 
-  const groupByAction = (systemData: SystemData) => {
-    const grouped = new Map<
-      string,
-      Array<{ herb: Herb; strength: StrengthLevel | null }>
-    >();
+  const navigateToSystem = (system: SystemData) => {
+    setSelectedSystem(system);
+    setViewMode('actions');
+    onSystemChange?.(system.id);
+    onDisorderChange?.(null);
+  };
 
+  const navigateToDisorder = (system: SystemData, disorderId: number) => {
+    setSelectedSystem(system);
+    setViewMode('disorders');
+    onSystemChange?.(system.id);
+    onDisorderChange?.(disorderId);
+  };
+
+  const groupByAction = (systemData: SystemData) => {
+    const grouped = new Map<string, Array<{ herb: Herb; strength: StrengthLevel | null }>>();
     systemData.herb_primary_actions.forEach((item) => {
       const actionName = item.primary_actions.name;
-      if (!grouped.has(actionName)) {
-        grouped.set(actionName, []);
-      }
-      grouped.get(actionName)!.push({
-        herb: item.herbs,
-        strength: item.relative_strength,
-      });
+      if (!grouped.has(actionName)) grouped.set(actionName, []);
+      grouped.get(actionName)!.push({ herb: item.herbs, strength: item.relative_strength });
     });
-
     return grouped;
   };
 
@@ -129,7 +146,6 @@ export function SystemView({ onHerbClick, onActionClick, selectedSystemId, onSys
     }
   };
 
-
   if (loading) {
     return <div className="text-center py-8">Loading body systems...</div>;
   }
@@ -139,16 +155,11 @@ export function SystemView({ onHerbClick, onActionClick, selectedSystemId, onSys
       {/* System List */}
       <div className="lg:col-span-1 bg-white rounded-lg shadow-lg p-6">
         <h3 className="text-lg font-semibold text-gray-800 mb-4">Body Systems</h3>
-
         <div className="space-y-2">
           {systems.map((system) => (
             <button
               key={system.id}
-              onClick={() => {
-                setSelectedSystem(system);
-                onSystemChange?.(system.id);
-                onDisorderChange?.(null);
-              }}
+              onClick={() => navigateToSystem(system)}
               className={`w-full text-left p-3 rounded-lg transition-all ${
                 selectedSystem?.id === system.id
                   ? 'bg-green-100 border-2 border-green-500'
@@ -167,15 +178,15 @@ export function SystemView({ onHerbClick, onActionClick, selectedSystemId, onSys
         </div>
       </div>
 
-      {/* System Details */}
+      {/* Main panel */}
       <div className="lg:col-span-2 bg-white rounded-lg shadow-lg p-6">
         {selectedSystem ? (
+          // ── Detail view ────────────────────────────────────────────────────
           <div>
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-3xl font-bold text-green-800">
                 {selectedSystem.name} System
               </h2>
-
               {(selectedSystem.disorder_count ?? 0) > 0 && (
                 <div className="flex gap-2">
                   <button
@@ -196,7 +207,7 @@ export function SystemView({ onHerbClick, onActionClick, selectedSystemId, onSys
                         : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                     }`}
                   >
-                    Actions & Herbs
+                    Actions &amp; Herbs
                   </button>
                 </div>
               )}
@@ -260,8 +271,42 @@ export function SystemView({ onHerbClick, onActionClick, selectedSystemId, onSys
             )}
           </div>
         ) : (
-          <div className="flex items-center justify-center h-full text-gray-400">
-            <p className="text-lg">Select a body system to view herbs and actions</p>
+          // ── Overview: all systems + disorders ───────────────────────────────
+          <div>
+            <h3 className="text-lg font-semibold text-gray-700 mb-4">All Systems &amp; Disorders</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
+              {systems.map((system) => (
+                <div key={system.id} className="border border-gray-100 rounded-lg p-3 flex flex-col gap-1.5">
+                  <div className="flex items-start justify-between gap-2">
+                    <button
+                      onClick={() => navigateToSystem(system)}
+                      className="font-semibold text-green-800 hover:text-green-600 hover:underline text-left leading-tight"
+                    >
+                      {system.name}
+                    </button>
+                    <span className="text-xs text-gray-400 whitespace-nowrap pt-0.5 shrink-0">
+                      {system.herb_primary_actions.length} herbs
+                    </span>
+                  </div>
+                  {(system.disorders?.length ?? 0) > 0 ? (
+                    <ul className="space-y-0.5 border-t border-gray-100 pt-1.5">
+                      {system.disorders!.map((disorder) => (
+                        <li key={disorder.id}>
+                          <button
+                            onClick={() => navigateToDisorder(system, disorder.id)}
+                            className="text-sm text-left text-gray-500 hover:text-green-700 hover:underline w-full"
+                          >
+                            {disorder.name}
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-xs text-gray-400 italic border-t border-gray-100 pt-1.5">No disorders recorded</p>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </div>
