@@ -43,11 +43,20 @@ export function SystemView({ onHerbClick, onActionClick, selectedSystemId, onSys
   const [selectedSystem, setSelectedSystem] = useState<SystemData | null>(null);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<'actions' | 'disorders'>('actions');
+  const [disorderSearch, setDisorderSearch] = useState('');
+  const [dropdownIndex, setDropdownIndex] = useState(-1);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const scrollSkipRef = useRef(true);
 
   useEffect(() => {
     fetchSystems();
   }, []);
+
+  useEffect(() => {
+    if (dropdownIndex < 0 || !dropdownRef.current) return;
+    const items = dropdownRef.current.querySelectorAll('li');
+    items[dropdownIndex]?.scrollIntoView({ block: 'nearest' });
+  }, [dropdownIndex]);
 
   useEffect(() => {
     if (scrollSkipRef.current) { scrollSkipRef.current = false; return; }
@@ -279,7 +288,66 @@ export function SystemView({ onHerbClick, onActionClick, selectedSystemId, onSys
         ) : (
           // ── Overview: all systems + disorders ───────────────────────────────
           <div>
-            <h3 className="text-lg font-semibold text-gray-700 mb-4">All Systems &amp; Disorders</h3>
+            <div className="flex items-center gap-3 mb-4 relative">
+              <h3 className="text-lg font-semibold text-gray-700 shrink-0">All Systems &amp; Disorders</h3>
+              <div className="relative">
+                {(() => {
+                  const matches = disorderSearch.length >= 2
+                    ? systems.flatMap((system) =>
+                        (system.disorders ?? [])
+                          .filter((d) => d.name.toLowerCase().includes(disorderSearch.toLowerCase()))
+                          .map((disorder) => ({ disorder, system }))
+                      )
+                    : [];
+                  const selectMatch = (idx: number) => {
+                    const m = matches[idx];
+                    if (!m) return;
+                    navigateToDisorder(m.system, m.disorder.id);
+                    setDisorderSearch('');
+                    setDropdownIndex(-1);
+                  };
+                  return (
+                    <>
+                      <input
+                        type="text"
+                        value={disorderSearch}
+                        onChange={(e) => { setDisorderSearch(e.target.value); setDropdownIndex(-1); }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Escape') { setDisorderSearch(''); setDropdownIndex(-1); }
+                          else if (e.key === 'ArrowDown') { e.preventDefault(); setDropdownIndex((i) => Math.min(i + 1, matches.length - 1)); }
+                          else if (e.key === 'ArrowUp') { e.preventDefault(); setDropdownIndex((i) => Math.max(i - 1, -1)); }
+                          else if (e.key === 'Enter') { selectMatch(dropdownIndex); }
+                        }}
+                        placeholder="Search disorders…"
+                        className="border border-gray-200 rounded-lg px-3 py-1 text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:border-green-400 w-52"
+                      />
+                      {disorderSearch.length >= 2 && (
+                        <div ref={dropdownRef} className="absolute left-0 top-full mt-1 z-20 bg-white border border-gray-200 rounded-lg shadow-lg w-80 max-h-72 overflow-y-auto">
+                          {matches.length > 0 ? (
+                            <ul className="py-1">
+                              {matches.map(({ disorder, system }, idx) => (
+                                <li key={disorder.id}>
+                                  <button
+                                    onClick={() => selectMatch(idx)}
+                                    onMouseEnter={() => setDropdownIndex(idx)}
+                                    className={`w-full text-left px-3 py-2 flex items-baseline justify-between gap-2 ${idx === dropdownIndex ? 'bg-green-50' : 'hover:bg-green-50'}`}
+                                  >
+                                    <span className="text-sm text-gray-800">{disorder.name}</span>
+                                    <span className="text-xs text-gray-400 shrink-0">{system.name}</span>
+                                  </button>
+                                </li>
+                              ))}
+                            </ul>
+                          ) : (
+                            <p className="text-sm text-gray-400 italic px-3 py-2">No matches</p>
+                          )}
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
+              </div>
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
               {systems.map((system) => (
                 <div key={system.id} className="border border-gray-100 rounded-lg p-3 flex flex-col gap-1.5">

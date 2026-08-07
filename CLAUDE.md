@@ -146,6 +146,20 @@ herbal-visualizer/
 - Wrap each logical unit in its own `DO $$ ... END $$;` block
 - Use `RAISE NOTICE` for progress feedback
 - **User runs migrations manually** in the Supabase SQL Editor — never automate this
+- **Every migration that creates a new table must end with explicit grants AND RLS policies** — the `GRANT ALL ON ALL TABLES` in migration 001 only covers tables that existed at that moment; prod Supabase also auto-enables RLS on new tables, so both are required:
+  ```sql
+  GRANT ALL ON TABLE herbal.new_table TO postgres, anon, authenticated, service_role;
+  GRANT ALL ON SEQUENCE herbal.new_table_id_seq TO postgres, anon, authenticated, service_role;
+  ALTER TABLE herbal.new_table ENABLE ROW LEVEL SECURITY;
+  DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='herbal' AND tablename='new_table' AND policyname='anon_read') THEN
+      CREATE POLICY "anon_read" ON herbal.new_table FOR SELECT USING (true);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='herbal' AND tablename='new_table' AND policyname='service_write') THEN
+      CREATE POLICY "service_write" ON herbal.new_table FOR ALL TO service_role USING (true) WITH CHECK (true);
+    END IF;
+  END $$;
+  ```
 
 ## Common Migration Pattern: Add Herbs to a Body System
 

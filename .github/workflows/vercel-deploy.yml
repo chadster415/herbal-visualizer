@@ -38,6 +38,7 @@ jobs:
           echo -n "${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" | npx vercel env add NEXT_PUBLIC_SUPABASE_ANON_KEY production --token=${{ secrets.VERCEL_TOKEN }} || echo "NEXT_PUBLIC_SUPABASE_ANON_KEY already exists"
           echo -n "${{ secrets.NEXT_PUBLIC_TURNSTILE_SITE_KEY }}" | npx vercel env add NEXT_PUBLIC_TURNSTILE_SITE_KEY production --token=${{ secrets.VERCEL_TOKEN }} || echo "NEXT_PUBLIC_TURNSTILE_SITE_KEY already exists"
           echo -n "${{ secrets.TURNSTILE_SECRET_KEY }}" | npx vercel env add TURNSTILE_SECRET_KEY production --token=${{ secrets.VERCEL_TOKEN }} || echo "TURNSTILE_SECRET_KEY already exists"
+          echo -n "${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" | npx vercel env add SUPABASE_SERVICE_ROLE_KEY production --token=${{ secrets.VERCEL_TOKEN }} || echo "SUPABASE_SERVICE_ROLE_KEY already exists"
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_HERBAL_PROJECT_ID }}

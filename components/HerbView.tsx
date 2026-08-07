@@ -60,6 +60,12 @@ interface HerbData extends Herb {
     constituents: Constituent;
   }>;
   herb_menstruum: HerbMenstruum | null;
+  herb_monograph_links: Array<{
+    id: number;
+    url: string;
+    label: string | null;
+    sort_order: number;
+  }>;
 }
 
 // flat cross-reference: constituent_id → list of {herb_id, level}
@@ -205,6 +211,9 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
     setSectionsOpen((prev) => ({ ...prev, [key]: !prev[key] }));
 
   const [contraindicationsOpen, setContraindicationsOpen] = useState(false);
+  const [addLinkOpen, setAddLinkOpen] = useState(false);
+  const [newLinkUrl, setNewLinkUrl] = useState('');
+  const [addLinkSaving, setAddLinkSaving] = useState(false);
 
   const herbRefs = useRef<Map<number, HTMLButtonElement>>(new Map());
   const detailPanelRef = useRef<HTMLDivElement>(null);
@@ -310,7 +319,8 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
               sort_order,
               constituents (*)
             ),
-            herb_menstruum (*)
+            herb_menstruum (*),
+            herb_monograph_links (*)
           `)
           .order('common_name'),
         supabase
@@ -346,6 +356,30 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
       console.error('Error fetching herbs:', err);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleAddLink() {
+    if (!selectedHerb || !newLinkUrl.trim()) return;
+    setAddLinkSaving(true);
+    try {
+      const res = await fetch('/api/monograph-links', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ herb_id: selectedHerb.id, url: newLinkUrl.trim() }),
+      });
+      if (!res.ok) throw new Error('Failed to add link');
+      const newLink = await res.json();
+      const updatedLinks = [...(selectedHerb.herb_monograph_links ?? []), newLink];
+      const updated = { ...selectedHerb, herb_monograph_links: updatedLinks };
+      setSelectedHerb(updated);
+      setHerbs((prev) => prev.map((h) => (h.id === selectedHerb.id ? updated : h)));
+      setAddLinkOpen(false);
+      setNewLinkUrl('');
+    } catch (err) {
+      console.error('Error adding monograph link:', err);
+    } finally {
+      setAddLinkSaving(false);
     }
   }
 
@@ -618,40 +652,57 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
         {selectedHerb ? (
           <div>
             {/* Header */}
-            <div className="flex items-start justify-between mb-2">
-              <h2 className="text-3xl font-bold text-green-800">{selectedHerb.common_name}{selectedHerb.plant_part ? ` (${selectedHerb.plant_part})` : ''}</h2>
-              {selectedHerb.monograph_url && (
-                <a
-                  href={selectedHerb.monograph_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="ml-4 shrink-0 px-4 py-2 bg-green-700 text-white text-sm font-bold rounded hover:bg-green-800 transition-colors"
+            <div className="flex items-start justify-between mb-3">
+              <div>
+                <h2 className="text-3xl font-bold text-green-800">{selectedHerb.common_name}{selectedHerb.plant_part ? ` (${selectedHerb.plant_part})` : ''}</h2>
+                {selectedHerb.pinyin_name && (
+                  <p className="text-lg text-gray-500 mt-0.5">{selectedHerb.pinyin_name}</p>
+                )}
+                <p className="text-xl italic text-gray-600">{selectedHerb.latin_name}</p>
+              </div>
+              <div className="flex flex-col items-end gap-1 ml-4 shrink-0">
+                {(selectedHerb.herb_monograph_links ?? [])
+                  .slice()
+                  .sort((a, b) => a.sort_order - b.sort_order)
+                  .map((link) => (
+                    <a
+                      key={link.id}
+                      href={link.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-4 py-2 bg-green-700 text-white text-sm font-bold rounded hover:bg-green-800 transition-colors"
+                    >
+                      {link.label || 'MONOGRAPH'}
+                    </a>
+                  ))}
+                <button
+                  onClick={() => { setNewLinkUrl(''); setAddLinkOpen(true); }}
+                  className="px-3 py-1 text-green-700 border border-green-300 rounded hover:bg-green-50 transition-colors text-sm font-bold leading-none"
+                  title="Add monograph link"
                 >
-                  MONOGRAPH
-                </a>
-              )}
+                  +
+                </button>
+              </div>
             </div>
-            {selectedHerb.pinyin_name && (
-              <p className="text-lg text-gray-500 -mt-1 mb-1">{selectedHerb.pinyin_name}</p>
-            )}
-            <p className="text-xl italic text-gray-600 mb-3">{selectedHerb.latin_name}</p>
 
             {/* Section nav + expand/collapse all */}
             <div className="flex flex-wrap gap-1.5 mb-2 text-xs">
               {[
-                { key: 'primaryActions' as const, label: 'Primary Actions' },
-                ...(selectedHerb.herb_secondary_actions.length > 0 ? [{ key: 'secondaryActions' as const, label: 'Secondary Actions' }] : []),
-                ...(selectedProfiles.length > 0 ? [{ key: 'constituentProfile' as const, label: 'Constituents' }] : []),
-                ...((selectedHerb.herb_constituents?.length ?? 0) > 0 ? [{ key: 'constituents' as const, label: 'Constituent Detail' }] : []),
-                ...((((selectedHerb.disorder_action_herbs?.length ?? 0) > 0) || ((selectedHerb.disorder_specific_remedies?.length ?? 0) > 0)) ? [{ key: 'disorders' as const, label: 'Disorders' }] : []),
-                ...(duiYaoPairs.length > 0 ? [{ key: 'duiYao' as const, label: 'Dui Yao Pairings' }] : []),
-                ...(CONTRAINDICATIONS[selectedHerb.id] ? [{ key: 'contraindications' as const, label: 'Drug Interactions' }] : []),
-                ...(MM_MATERIA_MEDICA[selectedHerb.id] ? [{ key: 'mmMateriaMedica' as const, label: 'MM Materia Medica' }] : []),
-              ].map(({ key, label }) => (
+                { key: 'primaryActions' as const, label: 'Primary Actions', pink: false },
+                ...(selectedHerb.herb_secondary_actions.length > 0 ? [{ key: 'secondaryActions' as const, label: 'Secondary Actions', pink: false }] : []),
+                ...(selectedProfiles.length > 0 ? [{ key: 'constituentProfile' as const, label: 'Constituents', pink: false }] : []),
+                ...((selectedHerb.herb_constituents?.length ?? 0) > 0 ? [{ key: 'constituents' as const, label: 'General Constituents', pink: false }] : []),
+                ...((((selectedHerb.disorder_action_herbs?.length ?? 0) > 0) || ((selectedHerb.disorder_specific_remedies?.length ?? 0) > 0)) ? [{ key: 'disorders' as const, label: 'Disorders', pink: false }] : []),
+                ...(duiYaoPairs.length > 0 ? [{ key: 'duiYao' as const, label: 'Dui Yao Pairings', pink: false }] : []),
+                ...(MM_MATERIA_MEDICA[selectedHerb.id] ? [{ key: 'mmMateriaMedica' as const, label: 'MM Materia Medica', pink: false }] : []),
+                ...(CONTRAINDICATIONS[selectedHerb.id] ? [{ key: 'contraindications' as const, label: 'Drug Interactions', pink: true }] : []),
+              ].map(({ key, label, pink }) => (
                 <button
                   key={key}
                   onClick={() => scrollToSection(key)}
-                  className="px-2.5 py-1 rounded-full border border-gray-300 text-gray-500 hover:border-green-500 hover:text-green-700 transition-colors"
+                  className={pink
+                    ? 'px-2.5 py-1 rounded-full border border-red-200 text-red-400 bg-red-50 hover:border-red-400 hover:text-red-600 transition-colors'
+                    : 'px-2.5 py-1 rounded-full border border-gray-300 text-gray-500 hover:border-green-500 hover:text-green-700 transition-colors'}
                 >
                   {label}
                 </button>
@@ -1199,6 +1250,45 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
           pageCount={CONTRAINDICATIONS[selectedHerb.id]}
           herbName={selectedHerb.common_name}
         />
+      )}
+
+      {/* Add monograph link modal */}
+      {addLinkOpen && (
+        <div
+          className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center"
+          onClick={() => setAddLinkOpen(false)}
+        >
+          <div
+            className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md mx-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-lg font-bold text-gray-800 mb-4">Add Monograph Link</h3>
+            <input
+              type="url"
+              value={newLinkUrl}
+              onChange={(e) => setNewLinkUrl(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') handleAddLink(); }}
+              placeholder="https://docs.google.com/..."
+              className="w-full border border-gray-300 rounded px-3 py-2 text-sm mb-4 focus:outline-none focus:border-green-500"
+              autoFocus
+            />
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setAddLinkOpen(false)}
+                className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleAddLink}
+                disabled={!newLinkUrl.trim() || addLinkSaving}
+                className="px-4 py-2 text-sm font-bold bg-green-700 text-white rounded hover:bg-green-800 disabled:opacity-50 transition-colors"
+              >
+                {addLinkSaving ? 'Adding...' : 'Add'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Constituent hover tooltip — rendered via fixed positioning */}

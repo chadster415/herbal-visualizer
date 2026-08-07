@@ -212,6 +212,15 @@ export interface HerbConstituent {
   constituents: Constituent;
 }
 
+export interface HerbMonographLink {
+  id: number;
+  herb_id: number;
+  url: string;
+  label?: string | null;
+  sort_order: number;
+  created_at: string;
+}
+
 export interface HerbMenstruum {
   herb_id: number;
   alcohol_pct_min?: number | null;
