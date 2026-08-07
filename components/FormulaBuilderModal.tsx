@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { ArrowLeftIcon, ArrowRightIcon, CheckIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { ArrowLeftIcon, ArrowRightIcon, CheckIcon, InformationCircleIcon, XMarkIcon } from '@heroicons/react/24/outline';
 
 type Stage = 'context' | 'build' | 'review';
 type Role = 'base' | 'synergist' | 'specific';
@@ -71,6 +71,26 @@ const ROLE_CFG = {
   },
 } as const;
 
+const ROLE_INFO: Record<Role, string[]> = {
+  base: [
+    'All herbs linked to the selected body system, filtered to those with at least one tonic or nourishing action.',
+    'Qualifying action keywords: tonic, adaptogen, alterative, nutritive, restorative.',
+    "Sorted by how closely the herb's energetics oppose the patient's constitution (dots).",
+  ],
+  synergist: [
+    'Herbs drawn from three sources, then deduplicated:',
+    '① Herbs recorded under specific therapeutic actions for this disorder.',
+    '② Herbs included in any prescription written for this disorder.',
+    '③ Herbs linked to the disorder\'s indicated actions within this body system.',
+    'Sorted by energetics match.',
+  ],
+  specific: [
+    'Herbs explicitly recorded as specific remedies for this disorder — chosen for their energetic or symptom precision.',
+    'The italicised note on each card is the rationale from the source material.',
+    'Sorted by energetics match.',
+  ],
+};
+
 // Herbs with opposing energetics to patient constitution score higher
 function scoreHerb(herb: Herb, c: Constitution): number {
   let n = 0;
@@ -124,6 +144,7 @@ export function FormulaBuilderModal({ isOpen, onClose, onHerbClick }: Props) {
   const [loading, setLoading] = useState(false);
   const [activeRole, setActiveRole] = useState<Role>('base');
   const [showInfo, setShowInfo] = useState(false);
+  const [infoOpenRole, setInfoOpenRole] = useState<Role | null>(null);
 
   // Stage 1
   const [systems, setSystems] = useState<{ id: number; name: string }[]>([]);
@@ -320,7 +341,7 @@ export function FormulaBuilderModal({ isOpen, onClose, onHerbClick }: Props) {
             </div>
             <div className="text-xs text-gray-500 dark:text-gray-400">{c.herb.common_name}{c.herb.plant_part ? ` (${c.herb.plant_part})` : ''}</div>
             {c.context && (
-              <div className="text-xs text-gray-400 dark:text-gray-500 mt-1 line-clamp-2">{c.context}</div>
+              <div title={c.context} className="text-xs text-gray-400 dark:text-gray-500 mt-1 line-clamp-2">{c.context}</div>
             )}
             <div className="flex flex-wrap gap-1 mt-1.5">{energeticBadges(c.herb)}</div>
           </div>
@@ -634,12 +655,28 @@ export function FormulaBuilderModal({ isOpen, onClose, onHerbClick }: Props) {
                 className={`flex flex-col min-h-0 ${!isActiveOnMobile ? 'hidden md:flex' : ''}`}
               >
                 <div className={`flex-shrink-0 rounded-t-lg border-t-2 ${cfg.border} ${cfg.headerBg} px-3 py-2 mb-2`}>
-                  <div className={`font-semibold text-sm ${cfg.text}`}>{cfg.label}</div>
+                  <div className="flex items-center justify-between gap-1">
+                    <div className={`font-semibold text-sm ${cfg.text}`}>{cfg.label}</div>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setInfoOpenRole(infoOpenRole === role ? null : role); }}
+                      className={`flex-shrink-0 transition-opacity ${infoOpenRole === role ? 'opacity-100' : 'opacity-40 hover:opacity-80'} ${cfg.text}`}
+                      title="How this list is built"
+                    >
+                      <InformationCircleIcon className="w-4 h-4" />
+                    </button>
+                  </div>
                   <div className="text-xs text-gray-500 dark:text-gray-400">{cfg.sub}</div>
                   {sel && (
                     <div className="text-xs text-gray-600 dark:text-gray-300 font-medium mt-1 italic truncate">
                       <CheckIcon className="w-3 h-3 inline mr-0.5" /> {sel.latin_name}
                     </div>
+                  )}
+                  {infoOpenRole === role && (
+                    <ul className="mt-2 pt-2 border-t border-gray-200 dark:border-gray-600 space-y-1">
+                      {ROLE_INFO[role].map((line, i) => (
+                        <li key={i} className="text-xs text-gray-600 dark:text-gray-300 leading-snug">{line}</li>
+                      ))}
+                    </ul>
                   )}
                 </div>
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import type { BodySystem, Herb, PrimaryAction, StrengthLevel } from '@/types/database';
 import { DisorderView } from './DisorderView';
@@ -43,10 +43,16 @@ export function SystemView({ onHerbClick, onActionClick, selectedSystemId, onSys
   const [selectedSystem, setSelectedSystem] = useState<SystemData | null>(null);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<'actions' | 'disorders'>('actions');
+  const scrollSkipRef = useRef(true);
 
   useEffect(() => {
     fetchSystems();
   }, []);
+
+  useEffect(() => {
+    if (scrollSkipRef.current) { scrollSkipRef.current = false; return; }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [viewMode, selectedSystem?.id]);
 
   // Respond to external selectedSystemId changes (back button, body diagram modal, etc.)
   useEffect(() => {
@@ -284,13 +290,16 @@ export function SystemView({ onHerbClick, onActionClick, selectedSystemId, onSys
                     >
                       {system.name}
                     </button>
-                    <span className="text-xs text-gray-400 whitespace-nowrap pt-0.5 shrink-0">
+                    <button
+                      onClick={() => navigateToSystem(system)}
+                      className="text-xs text-green-700 hover:text-green-500 hover:underline whitespace-nowrap pt-0.5 shrink-0"
+                    >
                       {system.herb_primary_actions.length} herbs
-                    </span>
+                    </button>
                   </div>
                   {(system.disorders?.length ?? 0) > 0 ? (
                     <ul className="space-y-0.5 border-t border-gray-100 pt-1.5">
-                      {system.disorders!.map((disorder) => (
+                      {[...system.disorders!].sort((a, b) => a.name.localeCompare(b.name)).map((disorder) => (
                         <li key={disorder.id}>
                           <button
                             onClick={() => navigateToDisorder(system, disorder.id)}

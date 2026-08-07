@@ -217,6 +217,23 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
     }, 50);
   };
 
+  // Scroll only within the sidebar's overflow-y container — never touches window scroll
+  function scrollHerbInSidebar(herbId: number) {
+    const el = herbRefs.current.get(herbId);
+    if (!el) return;
+    let container: HTMLElement | null = el.parentElement;
+    while (container) {
+      const { overflowY } = getComputedStyle(container);
+      if (overflowY === 'auto' || overflowY === 'scroll') break;
+      container = container.parentElement;
+    }
+    if (!container) return;
+    const cRect = container.getBoundingClientRect();
+    const eRect = el.getBoundingClientRect();
+    const scrollTop = eRect.top - cRect.top + container.scrollTop - 20;
+    container.scrollTo({ top: Math.max(0, scrollTop), behavior: 'smooth' });
+  }
+
   useEffect(() => {
     if (highlightedIndex < 0) return;
     const filtered = herbs.filter(
@@ -225,7 +242,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
         h.latin_name.toLowerCase().includes(searchTerm.toLowerCase())
     );
     const herb = filtered[highlightedIndex];
-    if (herb) herbRefs.current.get(herb.id)?.scrollIntoView({ block: 'nearest' });
+    if (herb) scrollHerbInSidebar(herb.id);
   }, [highlightedIndex, herbs, searchTerm]);
 
   useEffect(() => { fetchHerbs(); }, []);
@@ -258,9 +275,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
         setSelectedHerb(herb);
         setAlternatesOpen(false);
         setSectionsOpen({ primaryActions: true, secondaryActions: true, constituentProfile: true, constituents: true, disorders: true, duiYao: true, contraindications: true, mmMateriaMedica: true });
-        setTimeout(() => {
-          herbRefs.current.get(selectedHerbId)?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        }, 100);
+        setTimeout(() => { scrollHerbInSidebar(selectedHerbId); }, 100);
       }
     }
   }, [selectedHerbId, herbs]);
@@ -342,9 +357,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
     setSectionsOpen({ primaryActions: true, secondaryActions: true, constituentProfile: true, constituents: true, disorders: true, duiYao: true, contraindications: true, mmMateriaMedica: true });
     onHerbClick?.(herbId);
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    setTimeout(() => {
-      herbRefs.current.get(herbId)?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    }, 100);
+    scrollHerbInSidebar(herbId);
   }, [herbs, onHerbClick]);
 
   // All profiles for the selected herb (used for both marker display and alternates)
@@ -526,7 +539,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
                 onHerbIdChange?.(herb.id);
                 setSearchTerm('');
                 setHighlightedIndex(-1);
-                detailPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                window.scrollTo({ top: 0, behavior: 'smooth' });
               } else if (e.key === 'Escape') {
                 setHighlightedIndex(-1);
               }
@@ -569,7 +582,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
                 onHerbIdChange?.(herb.id);
                 setSearchTerm('');
                 setHighlightedIndex(-1);
-                detailPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
               className={`w-full text-left p-3 rounded-lg border transition-all scroll-my-1 ${
                 selectedHerb?.id === herb.id ? 'ring-2 ring-green-500 ring-offset-1' :

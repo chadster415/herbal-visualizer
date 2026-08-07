@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { HerbView } from '@/components/HerbView';
 import { ActionView } from '@/components/ActionView';
 import { SystemView } from '@/components/SystemView';
@@ -32,6 +32,14 @@ interface NavEntry {
 }
 
 export default function Home() {
+  const [scrollTrigger, setScrollTrigger] = useState(0);
+  const isFirstRender = useRef(true);
+
+  useEffect(() => {
+    if (isFirstRender.current) { isFirstRender.current = false; return; }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [scrollTrigger]);
+
   const [viewMode, setViewMode] = useState<ViewMode>('herb');
   const [selectedHerbId, setSelectedHerbId] = useState<number | null>(null);
   const [selectedActionId, setSelectedActionId] = useState<number | null>(null);
@@ -53,7 +61,7 @@ export default function Home() {
     setSelectedActionId(next.selectedActionId);
     setSelectedSystemId(next.selectedSystemId);
     setSelectedDisorderId(next.selectedDisorderId);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setScrollTrigger((k) => k + 1);
   };
 
   const goBack = () => {
@@ -220,8 +228,8 @@ export default function Home() {
       </header>
 
       <main>
-        {viewMode === 'herb' && <HerbView selectedHerbId={selectedHerbId} onHerbIdChange={setSelectedHerbId} onHerbClick={handleHerbClick} onActionClick={handleActionClick} onActionNameClick={handleActionNameClick} onDisorderClick={handleDisorderClick} />}
-        {viewMode === 'action' && <ActionView selectedActionId={selectedActionId} onActionIdChange={setSelectedActionId} onHerbClick={handleHerbClick} />}
+        <div className={viewMode !== 'herb' ? 'hidden' : ''}><HerbView selectedHerbId={selectedHerbId} onHerbIdChange={setSelectedHerbId} onHerbClick={handleHerbClick} onActionClick={handleActionClick} onActionNameClick={handleActionNameClick} onDisorderClick={handleDisorderClick} /></div>
+        <div className={viewMode !== 'action' ? 'hidden' : ''}><ActionView selectedActionId={selectedActionId} onActionIdChange={setSelectedActionId} onHerbClick={handleHerbClick} /></div>
         {viewMode === 'system' && (
           <SystemView
             onHerbClick={handleHerbClick}
