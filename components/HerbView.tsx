@@ -216,7 +216,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
   const [selectedSupplement, setSelectedSupplement] = useState<Supplement | null>(null);
   const [duiYaoPairs, setDuiYaoPairs] = useState<DuiYaoPair[]>([]);
   const [duiYaoLoading, setDuiYaoLoading] = useState(false);
-  const [mobileListOpen, setMobileListOpen] = useState(false);
+  const [mobileListOpen, setMobileListOpen] = useState(true);
 
   // constituent_id → array of herb refs (for tooltip & existing Constituents section)
   const [constituentIndex, setConstituentIndex] = useState<Map<number, ConstituentHerbRef[]>>(new Map());
@@ -337,7 +337,11 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
   }, [selectedHerb?.id]);
 
   useEffect(() => {
-    if (selectedHerbId != null && herbs.length > 0) {
+    if (selectedHerbId == null) {
+      setMobileListOpen(true);
+      return;
+    }
+    if (herbs.length > 0) {
       const herb = herbs.find((h) => h.id === selectedHerbId);
       if (herb) {
         setSelectedHerb(herb);
@@ -1000,7 +1004,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
                             className="flex flex-col px-3 py-1.5 rounded-lg border bg-amber-50 border-amber-300 cursor-default select-none"
                           >
                             <span className="text-base font-semibold text-amber-900">{p.constituent}</span>
-                            <div className="flex flex-col gap-1 mt-0.5">
+                            <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-1 sm:gap-1.5 mt-0.5">
                               {(p.class || p.subclass) && (
                                 <div className="flex items-center gap-1.5">
                                   {p.class && <span className="text-xs text-gray-500">{p.class}</span>}
@@ -1024,7 +1028,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
                               )}
                             </div>
                             {p.notes && (
-                              <p className="text-xs text-gray-600 italic mt-1 leading-snug max-w-[18rem]">{p.notes}</p>
+                              <p className="text-xs text-gray-600 italic mt-1 leading-snug">{p.notes}</p>
                             )}
                           </div>
                         ))}

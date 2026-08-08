@@ -32,7 +32,6 @@ function solubilityColor(solubility: string) {
   switch (solubility) {
     case 'fat-soluble':         return 'bg-amber-100 text-amber-800 border-amber-300';
     case 'water-soluble':       return 'bg-sky-100 text-sky-800 border-sky-300';
-    case 'oil-soluble':         return 'bg-yellow-100 text-yellow-800 border-yellow-300';
     case 'water & fat-soluble': return 'bg-teal-100 text-teal-800 border-teal-300';
     default:                    return 'bg-gray-100 text-gray-600 border-gray-200';
   }

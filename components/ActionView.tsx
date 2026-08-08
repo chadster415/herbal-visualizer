@@ -32,7 +32,7 @@ export function ActionView({ onHerbClick, selectedActionId, onActionIdChange }: 
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [agingHerbIds, setAgingHerbIds] = useState<Set<number>>(new Set());
-  const [mobileListOpen, setMobileListOpen] = useState(false);
+  const [mobileListOpen, setMobileListOpen] = useState(true);
   const actionRefs = useRef<Map<number, HTMLButtonElement>>(new Map());
   const systemRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const detailPanelRef = useRef<HTMLDivElement>(null);
@@ -43,11 +43,14 @@ export function ActionView({ onHerbClick, selectedActionId, onActionIdChange }: 
 
   // Sync with external selectedActionId prop
   useEffect(() => {
-    if (selectedActionId !== undefined && selectedActionId !== null && actions.length > 0) {
+    if (selectedActionId == null) {
+      setMobileListOpen(true);
+      return;
+    }
+    if (actions.length > 0) {
       const action = actions.find((a) => a.id === selectedActionId);
       if (action) {
         setSelectedAction(action);
-        // Scroll the selected action into view
         setTimeout(() => {
           const actionElement = actionRefs.current.get(selectedActionId);
           if (actionElement) {
