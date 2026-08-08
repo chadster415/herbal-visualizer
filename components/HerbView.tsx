@@ -583,11 +583,30 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
     );
   });
 
+  function calcTooltipPos(el: HTMLElement) {
+    const rect = el.getBoundingClientRect();
+    const POPUP_W = 272;
+    const x = Math.min(rect.left, window.innerWidth - POPUP_W - 8);
+    const spaceBelow = window.innerHeight - rect.bottom - 6;
+    const y = spaceBelow > 200 ? rect.bottom + 6 : Math.max(8, rect.top - 300);
+    return { x, y };
+  }
+
   function handlePillMouseEnter(constituentId: number, e: React.MouseEvent) {
     if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
-    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-    setTooltipPos({ x: rect.left, y: rect.bottom + 6 });
+    setTooltipPos(calcTooltipPos(e.currentTarget as HTMLElement));
     hoverTimerRef.current = setTimeout(() => setHoveredConstituentId(constituentId), 120);
+  }
+
+  function handlePillClick(constituentId: number, e: React.MouseEvent) {
+    e.stopPropagation();
+    if (hoveredConstituentId === constituentId) {
+      setHoveredConstituentId(null);
+      setTooltipPos(null);
+    } else {
+      setTooltipPos(calcTooltipPos(e.currentTarget as HTMLElement));
+      setHoveredConstituentId(constituentId);
+    }
   }
 
   function handlePillMouseLeave() {
@@ -610,7 +629,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
   if (loading) return <div className="text-center py-8">Loading herbs...</div>;
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start" onClick={() => { if (hoveredConstituentId != null) { setHoveredConstituentId(null); setTooltipPos(null); } }}>
       {/* Herb List */}
       <div className="lg:col-span-1 bg-white rounded-lg shadow-lg p-6">
         <div className="flex gap-2 items-center mb-4">
@@ -967,7 +986,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
                 <SectionHeader title="Constituent Profile Markers" open={sectionsOpen.constituentProfile} onToggle={() => toggleSection('constituentProfile')} />
                 {sectionsOpen.constituentProfile && (
                   <div>
-                    <div className="flex flex-wrap gap-2 mb-4">
+                    <div className="flex flex-col gap-2 mb-4">
                       {[...selectedProfiles]
                         .sort((a, b) => {
                           const SO: Record<string, number> = { Marker: 0, Major: 1, Present: 2, Reported: 3 };
@@ -981,19 +1000,27 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
                             className="flex flex-col px-3 py-1.5 rounded-lg border bg-amber-50 border-amber-300 cursor-default select-none"
                           >
                             <span className="text-base font-semibold text-amber-900">{p.constituent}</span>
-                            <div className="flex items-center gap-1.5 mt-0.5">
-                              {p.class && <span className="text-xs text-gray-500">{p.class}</span>}
-                              {p.class && p.subclass && <span className="text-xs text-gray-400">›</span>}
-                              {p.subclass && <span className="text-xs text-amber-700 font-medium">{p.subclass}</span>}
-                              {p.status && (
-                                <span className={`text-xs px-1.5 py-0.5 rounded-full border font-medium ml-1 ${statusBadgeColor(p.status)}`}>
-                                  {p.status}
-                                </span>
+                            <div className="flex flex-col gap-1 mt-0.5">
+                              {(p.class || p.subclass) && (
+                                <div className="flex items-center gap-1.5">
+                                  {p.class && <span className="text-xs text-gray-500">{p.class}</span>}
+                                  {p.class && p.subclass && <span className="text-xs text-gray-400">›</span>}
+                                  {p.subclass && <span className="text-xs text-amber-700 font-medium">{p.subclass}</span>}
+                                </div>
                               )}
-                              {p.importance && (
-                                <span className={`text-xs px-1.5 py-0.5 rounded-full border font-medium ${importanceBadgeColor(p.importance)}`}>
-                                  {p.importance}
-                                </span>
+                              {(p.status || p.importance) && (
+                                <div className="flex flex-wrap items-center gap-1.5">
+                                  {p.status && (
+                                    <span className={`text-xs px-1.5 py-0.5 rounded-full border font-medium ${statusBadgeColor(p.status)}`}>
+                                      {p.status}
+                                    </span>
+                                  )}
+                                  {p.importance && (
+                                    <span className={`text-xs px-1.5 py-0.5 rounded-full border font-medium ${importanceBadgeColor(p.importance)}`}>
+                                      {p.importance}
+                                    </span>
+                                  )}
+                                </div>
                               )}
                             </div>
                             {p.notes && (
@@ -1115,9 +1142,10 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
                           return (
                             <div
                               key={hc.constituent_id}
-                              className="relative"
+                              className="relative cursor-pointer"
                               onMouseEnter={(e) => handlePillMouseEnter(hc.constituent_id, e)}
                               onMouseLeave={handlePillMouseLeave}
+                              onClick={(e) => handlePillClick(hc.constituent_id, e)}
                             >
                               <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium border cursor-default select-none ${LEVEL_COLOR[hc.concentration_level]}`}>
                                 {hc.constituents.name}
@@ -1480,6 +1508,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
           <div
             onMouseEnter={handleTooltipMouseEnter}
             onMouseLeave={handleTooltipMouseLeave}
+            onClick={(e) => e.stopPropagation()}
             style={{ position: 'fixed', left: tooltipPos.x, top: tooltipPos.y, zIndex: 9999 }}
             className="bg-white border border-gray-200 rounded-lg shadow-xl p-3 w-64 max-h-72 overflow-y-auto"
           >
