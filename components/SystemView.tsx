@@ -46,7 +46,9 @@ export function SystemView({ onHerbClick, onActionClick, onSupplementClick, sele
   const [viewMode, setViewMode] = useState<'actions' | 'disorders'>('actions');
   const [disorderSearch, setDisorderSearch] = useState('');
   const [dropdownIndex, setDropdownIndex] = useState(-1);
+  const [mobileListOpen, setMobileListOpen] = useState(true);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const detailPanelRef = useRef<HTMLDivElement>(null);
   const scrollSkipRef = useRef(true);
 
   useEffect(() => {
@@ -68,6 +70,7 @@ export function SystemView({ onHerbClick, onActionClick, onSupplementClick, sele
   useEffect(() => {
     if (selectedSystemId == null) {
       setSelectedSystem(null);
+      setMobileListOpen(true);
       return;
     }
     if (systems.length === 0) return;
@@ -126,6 +129,10 @@ export function SystemView({ onHerbClick, onActionClick, onSupplementClick, sele
     setViewMode('actions');
     onSystemChange?.(system.id);
     onDisorderChange?.(null);
+    if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+      setMobileListOpen(false);
+      setTimeout(() => detailPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+    }
   };
 
   const navigateToDisorder = (system: SystemData, disorderId: number) => {
@@ -133,6 +140,10 @@ export function SystemView({ onHerbClick, onActionClick, onSupplementClick, sele
     setViewMode('disorders');
     onSystemChange?.(system.id);
     onDisorderChange?.(disorderId);
+    if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+      setMobileListOpen(false);
+      setTimeout(() => detailPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+    }
   };
 
   const groupByAction = (systemData: SystemData) => {
@@ -169,9 +180,20 @@ export function SystemView({ onHerbClick, onActionClick, onSupplementClick, sele
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
       {/* System List */}
-      <div className="lg:col-span-1 bg-white rounded-lg shadow-lg p-6">
-        <h3 className="text-lg font-semibold text-gray-800 mb-4">Body Systems</h3>
-        <div className="space-y-2">
+      <div className={`lg:col-span-1 bg-white rounded-lg shadow-lg lg:p-6 ${mobileListOpen ? 'p-6' : 'p-3'}`}>
+        <div className={`flex items-center justify-between lg:mb-4 ${mobileListOpen ? 'mb-4' : ''}`}>
+          <h3 className="text-lg font-semibold text-gray-800">Body Systems</h3>
+          <button
+            className="lg:hidden p-2 rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-all"
+            onClick={() => setMobileListOpen((prev) => !prev)}
+            aria-label="Toggle body systems list"
+          >
+            <svg className={`w-5 h-5 transition-transform duration-200 ${mobileListOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+        </div>
+        <div className={`${mobileListOpen ? '' : 'hidden'} lg:block space-y-2`}>
           {systems.map((system) => (
             <button
               key={system.id}
@@ -195,16 +217,16 @@ export function SystemView({ onHerbClick, onActionClick, onSupplementClick, sele
       </div>
 
       {/* Main panel */}
-      <div className="lg:col-span-2 bg-white rounded-lg shadow-lg p-6">
+      <div ref={detailPanelRef} className="lg:col-span-2 bg-white rounded-lg shadow-lg p-6">
         {selectedSystem ? (
           // ── Detail view ────────────────────────────────────────────────────
           <div>
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
               <h2 className="text-3xl font-bold text-green-800">
                 {selectedSystem.name} System
               </h2>
               {(selectedSystem.disorder_count ?? 0) > 0 && (
-                <div className="flex gap-2">
+                <div className="flex gap-2 shrink-0">
                   <button
                     onClick={() => setViewMode('disorders')}
                     className={`px-4 py-2 rounded-lg font-medium transition-all ${
@@ -290,7 +312,7 @@ export function SystemView({ onHerbClick, onActionClick, onSupplementClick, sele
         ) : (
           // ── Overview: all systems + disorders ───────────────────────────────
           <div>
-            <div className="flex items-center gap-3 mb-4 relative">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-4">
               <h3 className="text-lg font-semibold text-gray-700 shrink-0">All Systems &amp; Disorders</h3>
               <div className="relative">
                 {(() => {

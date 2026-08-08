@@ -1,6 +1,14 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+
+const SOLUBILITY_COLORS: Record<string, { bubble: string; name: string; dose: string; note: string; category: string }> = {
+  'water-soluble':       { bubble: 'bg-blue-50 hover:bg-blue-100 border border-blue-200 hover:border-blue-300',     name: 'text-blue-900',   dose: 'text-blue-600',   note: 'text-blue-500',   category: 'text-blue-400' },
+  'fat-soluble':         { bubble: 'bg-amber-50 hover:bg-amber-100 border border-amber-200 hover:border-amber-300', name: 'text-amber-900',  dose: 'text-amber-600',  note: 'text-amber-500',  category: 'text-amber-400' },
+  'water & fat-soluble': { bubble: 'bg-purple-50 hover:bg-purple-100 border border-purple-200 hover:border-purple-300', name: 'text-purple-900', dose: 'text-purple-600', note: 'text-purple-500', category: 'text-purple-400' },
+  'oil-soluble':         { bubble: 'bg-amber-50 hover:bg-amber-100 border border-amber-200 hover:border-amber-300', name: 'text-amber-900',  dose: 'text-amber-600',  note: 'text-amber-500',  category: 'text-amber-400' },
+};
+const DEFAULT_SUPP_COLORS = { bubble: 'bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 hover:border-indigo-300', name: 'text-indigo-900', dose: 'text-indigo-600', note: 'text-indigo-500', category: 'text-indigo-400' };
 import { supabase } from '@/lib/supabase';
 import { TextPageLinks } from './TextPageLinks';
 import { EnergeticEmojis } from './EnergeticEmojis';
@@ -70,6 +78,7 @@ export function DisorderView({ bodySystemId, onHerbClick, onActionClick, onSuppl
   const [disorders, setDisorders] = useState<DisorderData[]>([]);
   const [selectedDisorder, setSelectedDisorder] = useState<DisorderData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [disorderListOpen, setDisorderListOpen] = useState(true);
   const [imageManifest, setImageManifest] = useState<Record<string, number>>({});
   const [strengthMap, setStrengthMap] = useState<Map<number, string>>(new Map());
   const actionsRef = useRef<HTMLDivElement | null>(null);
@@ -169,7 +178,7 @@ export function DisorderView({ bodySystemId, onHerbClick, onActionClick, onSuppl
       setDisorders(sortedData);
       if (selectedDisorderId != null) {
         const match = sortedData.find((d) => d.id === selectedDisorderId) ?? null;
-        if (match) setSelectedDisorder(match);
+        if (match) { setSelectedDisorder(match); setDisorderListOpen(false); }
       } else {
         const overall = sortedData.find((d) => d.name === 'Overall') ?? null;
         if (overall) setSelectedDisorder(overall);
@@ -232,30 +241,51 @@ export function DisorderView({ bodySystemId, onHerbClick, onActionClick, onSuppl
   return (
     <div className="space-y-4">
       {/* Disorder Selector */}
-      <div className="flex flex-wrap gap-2">
-        {disorders
-          .slice()
-          .sort((a, b) => {
-            if (a.name === 'Overall') return -1;
-            if (b.name === 'Overall') return 1;
-            return a.name.localeCompare(b.name);
-          })
-          .map((disorder) => (
+      <div>
+        {selectedDisorder && (
+          <div className="flex items-center gap-2 mb-2">
+            <span className="px-3 py-1.5 rounded-lg border text-sm font-medium bg-green-600 text-white border-green-600">
+              {selectedDisorder.name}
+            </span>
             <button
-              key={disorder.id}
-              onClick={() => {
-                setSelectedDisorder(disorder);
-                onDisorderChange?.(disorder.id);
-              }}
-              className={`px-3 py-1.5 rounded-lg border text-sm font-medium transition-all ${
-                selectedDisorder?.id === disorder.id
-                  ? 'bg-green-600 text-white border-green-600'
-                  : 'bg-white text-gray-700 border-gray-300 hover:bg-green-50 hover:border-green-400'
-              }`}
+              onClick={() => setDisorderListOpen((prev) => !prev)}
+              className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700 px-2 py-1 rounded-lg hover:bg-gray-100 transition-all"
+              aria-label="Toggle disorder list"
             >
-              {disorder.name}
+              <svg className={`w-4 h-4 transition-transform duration-200 ${disorderListOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
             </button>
-          ))}
+          </div>
+        )}
+        {(!selectedDisorder || disorderListOpen) && (
+          <div className="flex flex-wrap gap-2">
+            {disorders
+              .slice()
+              .sort((a, b) => {
+                if (a.name === 'Overall') return -1;
+                if (b.name === 'Overall') return 1;
+                return a.name.localeCompare(b.name);
+              })
+              .map((disorder) => (
+                <button
+                  key={disorder.id}
+                  onClick={() => {
+                    setSelectedDisorder(disorder);
+                    onDisorderChange?.(disorder.id);
+                    setDisorderListOpen(false);
+                  }}
+                  className={`px-3 py-1.5 rounded-lg border text-sm font-medium transition-all ${
+                    selectedDisorder?.id === disorder.id
+                      ? 'bg-green-600 text-white border-green-600'
+                      : 'bg-white text-gray-700 border-gray-300 hover:bg-green-50 hover:border-green-400'
+                  }`}
+                >
+                  {disorder.name}
+                </button>
+              ))}
+          </div>
+        )}
       </div>
 
       {/* Disorder Details */}
@@ -479,24 +509,27 @@ export function DisorderView({ bodySystemId, onHerbClick, onActionClick, onSuppl
                             )}
                           </button>
                         ))}
-                        {prescription.prescription_supplements.map((ps) => (
+                        {prescription.prescription_supplements.map((ps) => {
+                          const sc = SOLUBILITY_COLORS[ps.supplements.solubility ?? ''] ?? DEFAULT_SUPP_COLORS;
+                          return (
                           <button
                             key={`supp-${ps.id}`}
                             onClick={() => onSupplementClick?.(ps.supplements.id)}
-                            className="relative inline-flex flex-col items-start bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 hover:border-indigo-300 rounded-lg px-3 py-2 transition-all hover:shadow-md"
+                            className={`relative inline-flex flex-col items-start ${sc.bubble} rounded-lg px-3 py-2 transition-all hover:shadow-md`}
                           >
                             <div className="flex items-baseline gap-2 mb-1">
-                              <span className="font-medium text-indigo-900">{ps.supplements.name}</span>
+                              <span className={`font-medium ${sc.name}`}>{ps.supplements.name}</span>
                             </div>
                             {ps.dose && (
-                              <span className="text-xs text-indigo-600 font-medium">{ps.dose}</span>
+                              <span className={`text-xs font-medium ${sc.dose}`}>{ps.dose}</span>
                             )}
                             {ps.note && (
-                              <span className="text-[10px] text-indigo-500 italic">{ps.note}</span>
+                              <span className={`text-[10px] italic ${sc.note}`}>{ps.note}</span>
                             )}
-                            <span className="text-[10px] text-indigo-400 mt-0.5">{ps.supplements.category}</span>
+                            <span className={`text-[10px] mt-0.5 ${sc.category}`}>{ps.supplements.category}</span>
                           </button>
-                        ))}
+                          );
+                        })}
                       </div>
 
                       <div className="text-sm text-gray-700 bg-white rounded p-3">

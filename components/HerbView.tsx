@@ -149,6 +149,25 @@ function getStrengthColor(strength: StrengthLevel | null) {
   }
 }
 
+function solubilityStyles(s: string | null) {
+  switch (s) {
+    case 'water-soluble':       return { badge: 'bg-sky-100 border-sky-200 text-sky-700',    card: 'bg-sky-50/40 border-sky-100 hover:bg-sky-50 hover:border-sky-200',    cardSelected: 'ring-2 ring-sky-400 ring-offset-1 bg-sky-50 border-sky-200' };
+    case 'fat-soluble':         return { badge: 'bg-amber-100 border-amber-200 text-amber-700', card: 'bg-amber-50/40 border-amber-100 hover:bg-amber-50 hover:border-amber-200', cardSelected: 'ring-2 ring-amber-400 ring-offset-1 bg-amber-50 border-amber-200' };
+    case 'water & fat-soluble': return { badge: 'bg-purple-100 border-purple-200 text-purple-700', card: 'bg-purple-50/40 border-purple-100 hover:bg-purple-50 hover:border-purple-200', cardSelected: 'ring-2 ring-purple-400 ring-offset-1 bg-purple-50 border-purple-200' };
+    case 'oil-soluble':         return { badge: 'bg-amber-100 border-amber-200 text-amber-700', card: 'bg-amber-50/40 border-amber-100 hover:bg-amber-50 hover:border-amber-200', cardSelected: 'ring-2 ring-amber-400 ring-offset-1 bg-amber-50 border-amber-200' };
+    default:                    return { badge: 'bg-indigo-100 border-indigo-200 text-indigo-700', card: 'bg-indigo-50/40 border-indigo-100 hover:bg-indigo-50 hover:border-indigo-200', cardSelected: 'ring-2 ring-indigo-500 ring-offset-1 bg-indigo-50 border-indigo-200' };
+  }
+}
+
+function solubilityLabel(s: string | null) {
+  switch (s) {
+    case 'fat-soluble':         return 'fat-sol';
+    case 'water-soluble':       return 'water-sol';
+    case 'water & fat-soluble': return 'water+fat';
+    default:                    return s ?? '';
+  }
+}
+
 function menstruumBadges(m: HerbMenstruum) {
   const badges: { label: string; color: string }[] = [];
   if (m.alcohol_pct_min != null || m.alcohol_pct_max != null) {
@@ -197,6 +216,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
   const [selectedSupplement, setSelectedSupplement] = useState<Supplement | null>(null);
   const [duiYaoPairs, setDuiYaoPairs] = useState<DuiYaoPair[]>([]);
   const [duiYaoLoading, setDuiYaoLoading] = useState(false);
+  const [mobileListOpen, setMobileListOpen] = useState(false);
 
   // constituent_id → array of herb refs (for tooltip & existing Constituents section)
   const [constituentIndex, setConstituentIndex] = useState<Map<number, ConstituentHerbRef[]>>(new Map());
@@ -593,46 +613,64 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
       {/* Herb List */}
       <div className="lg:col-span-1 bg-white rounded-lg shadow-lg p-6">
-        <div className="relative mb-4">
-          <input
-            type="text"
-            placeholder="Search herbs..."
-            value={searchTerm}
-            onChange={(e) => { setSearchTerm(e.target.value); setHighlightedIndex(-1); }}
-            onKeyDown={(e) => {
-              if (e.key === 'ArrowDown') {
-                e.preventDefault();
-                setHighlightedIndex((i) => Math.min(i + 1, filteredHerbs.length - 1));
-              } else if (e.key === 'ArrowUp') {
-                e.preventDefault();
-                setHighlightedIndex((i) => Math.max(i - 1, -1));
-              } else if (e.key === 'Enter' && highlightedIndex >= 0) {
-                const herb = filteredHerbs[highlightedIndex];
-                setSelectedHerb(herb);
-                setSelectedSupplement(null);
-                setAlternatesOpen(false);
-                setSectionsOpen({ primaryActions: true, secondaryActions: true, constituentProfile: true, constituents: true, disorders: true, duiYao: true, contraindications: true, mmMateriaMedica: true, herbContraindications: true });
-                onHerbIdChange?.(herb.id);
-                setSearchTerm('');
-                setHighlightedIndex(-1);
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              } else if (e.key === 'Escape') {
-                setHighlightedIndex(-1);
-              }
-            }}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-          />
-          {searchTerm && (
-            <button
-              onClick={() => setSearchTerm('')}
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 px-1"
-              aria-label="Clear search"
-            >
-              ×
-            </button>
-          )}
+        <div className="flex gap-2 items-center mb-4">
+          <div className="relative flex-1">
+            <input
+              type="text"
+              placeholder="Search herbs..."
+              value={searchTerm}
+              onChange={(e) => { setSearchTerm(e.target.value); setHighlightedIndex(-1); if (e.target.value) setMobileListOpen(true); }}
+              onFocus={() => setMobileListOpen(true)}
+              onKeyDown={(e) => {
+                if (e.key === 'ArrowDown') {
+                  e.preventDefault();
+                  setHighlightedIndex((i) => Math.min(i + 1, filteredHerbs.length - 1));
+                } else if (e.key === 'ArrowUp') {
+                  e.preventDefault();
+                  setHighlightedIndex((i) => Math.max(i - 1, -1));
+                } else if (e.key === 'Enter' && highlightedIndex >= 0) {
+                  const herb = filteredHerbs[highlightedIndex];
+                  setSelectedHerb(herb);
+                  setSelectedSupplement(null);
+                  setAlternatesOpen(false);
+                  setSectionsOpen({ primaryActions: true, secondaryActions: true, constituentProfile: true, constituents: true, disorders: true, duiYao: true, contraindications: true, mmMateriaMedica: true, herbContraindications: true });
+                  onHerbIdChange?.(herb.id);
+                  setSearchTerm('');
+                  setHighlightedIndex(-1);
+                  setMobileListOpen(false);
+                  if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+                    setTimeout(() => detailPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+                  } else {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }
+                } else if (e.key === 'Escape') {
+                  setHighlightedIndex(-1);
+                }
+              }}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+            />
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm('')}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 px-1"
+                aria-label="Clear search"
+              >
+                ×
+              </button>
+            )}
+          </div>
+          <button
+            className="lg:hidden flex-shrink-0 p-2 rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-all"
+            onClick={() => setMobileListOpen((prev) => !prev)}
+            aria-label="Toggle herb list"
+          >
+            <svg className={`w-5 h-5 transition-transform duration-200 ${mobileListOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
         </div>
 
+        <div className={`${mobileListOpen ? '' : 'hidden'} lg:block`}>
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mb-3">
           <label className="flex items-center gap-2 cursor-pointer select-none text-sm text-gray-600">
             <input
@@ -682,7 +720,12 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
                 onHerbIdChange?.(herb.id);
                 setSearchTerm('');
                 setHighlightedIndex(-1);
-                window.scrollTo({ top: 0, behavior: 'smooth' });
+                setMobileListOpen(false);
+                if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+                  setTimeout(() => detailPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+                } else {
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
               }}
               className={`w-full text-left p-3 rounded-lg border transition-all scroll-my-1 ${
                 selectedHerb?.id === herb.id ? 'ring-2 ring-green-500 ring-offset-1' :
@@ -730,12 +773,17 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
                       setSelectedHerb(null);
                       onSupplementClick?.(supplement.id);
                       setSearchTerm('');
-                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                      setMobileListOpen(false);
+                      if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+                        setTimeout(() => detailPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+                      } else {
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }
                     }}
                     className={`w-full text-left p-3 rounded-lg border transition-all ${
                       selectedSupplement?.id === supplement.id
-                        ? 'ring-2 ring-indigo-500 ring-offset-1 bg-indigo-50 border-indigo-200'
-                        : 'bg-indigo-50/40 border-indigo-100 hover:bg-indigo-50 hover:border-indigo-200'
+                        ? solubilityStyles(supplement.solubility).cardSelected
+                        : solubilityStyles(supplement.solubility).card
                     }`}
                   >
                     <div className="flex items-start justify-between gap-1">
@@ -744,8 +792,8 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
                         <div className="text-xs text-indigo-600 mt-0.5">{supplement.category}{supplement.subcategory ? ` · ${supplement.subcategory}` : ''}</div>
                       </div>
                       {supplement.solubility && (
-                        <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-indigo-100 border border-indigo-200 text-indigo-700 font-medium shrink-0">
-                          {supplement.solubility === 'fat-soluble' ? 'fat-sol' : supplement.solubility === 'water-soluble' ? 'water-sol' : supplement.solubility === 'water & fat-soluble' ? 'water+fat' : supplement.solubility}
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded-full border font-medium shrink-0 ${solubilityStyles(supplement.solubility).badge}`}>
+                          {solubilityLabel(supplement.solubility)}
                         </span>
                       )}
                     </div>
@@ -753,6 +801,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
                 ))}
             </>
           )}
+        </div>
         </div>
       </div>
 
@@ -984,13 +1033,13 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
                           >
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                           </svg>
-                          Ranked Alternates Based on Markers ({computedAlternates.length})
+                          <span className="hidden sm:inline">Ranked Alternates Based on Markers ({computedAlternates.length})</span>
+                          <span className="sm:hidden">Ranked Alternates ({computedAlternates.length})</span>
                         </button>
                         {alternatesOpen && (
                           <div className="mt-3 space-y-2">
                             {computedAlternates.map(({ herb, similarity, exactConstituents, sharedSubclasses, sharedClasses }) => {
                               if (!herb) return null;
-                              const m = herb.herb_menstruum;
                               const simColor = similarity >= 50
                                 ? 'bg-emerald-100 text-emerald-700 border-emerald-300'
                                 : similarity >= 25
@@ -1015,11 +1064,6 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
                                       <span className={`text-xs px-2 py-0.5 rounded-full border font-semibold ${simColor}`}>
                                         {similarity}%
                                       </span>
-                                      {m && (
-                                        <span className="text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 border border-purple-200">
-                                          {m.primary_label}
-                                        </span>
-                                      )}
                                     </div>
                                   </div>
                                   <div className="flex flex-wrap gap-1">

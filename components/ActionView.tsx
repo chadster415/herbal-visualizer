@@ -32,8 +32,10 @@ export function ActionView({ onHerbClick, selectedActionId, onActionIdChange }: 
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [agingHerbIds, setAgingHerbIds] = useState<Set<number>>(new Set());
+  const [mobileListOpen, setMobileListOpen] = useState(false);
   const actionRefs = useRef<Map<number, HTMLButtonElement>>(new Map());
   const systemRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+  const detailPanelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetchActions();
@@ -140,46 +142,64 @@ export function ActionView({ onHerbClick, selectedActionId, onActionIdChange }: 
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
       {/* Action List */}
       <div className="lg:col-span-1 bg-white rounded-lg shadow-lg p-6">
-        <input
-          type="text"
-          placeholder="Search actions..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg mb-4 focus:ring-2 focus:ring-green-500 focus:border-transparent"
-        />
+        <div className="flex gap-2 items-center mb-4">
+          <input
+            type="text"
+            placeholder="Search actions..."
+            value={searchTerm}
+            onChange={(e) => { setSearchTerm(e.target.value); if (e.target.value) setMobileListOpen(true); }}
+            onFocus={() => setMobileListOpen(true)}
+            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+          />
+          <button
+            className="lg:hidden flex-shrink-0 p-2 rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-all"
+            onClick={() => setMobileListOpen((prev) => !prev)}
+            aria-label="Toggle action list"
+          >
+            <svg className={`w-5 h-5 transition-transform duration-200 ${mobileListOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+        </div>
 
-        <div className="space-y-2 max-h-[70vh] overflow-y-auto">
-          {filteredActions.map((action) => (
-            <button
-              key={action.id}
-              ref={(el) => {
-                if (el) {
-                  actionRefs.current.set(action.id, el);
-                } else {
-                  actionRefs.current.delete(action.id);
-                }
-              }}
-              onClick={() => {
-                setSelectedAction(action);
-                onActionIdChange?.(action.id);
-              }}
-              className={`w-full text-left p-3 rounded-lg transition-all ${
-                selectedAction?.id === action.id
-                  ? 'bg-green-100 border-2 border-green-500'
-                  : 'bg-gray-50 hover:bg-gray-100'
-              }`}
-            >
-              <div className="font-semibold text-gray-900">{action.name}</div>
-              <div className="text-xs text-gray-500 mt-1">
-                {action.herb_primary_actions.length} herbs
-              </div>
-            </button>
-          ))}
+        <div className={`${mobileListOpen ? '' : 'hidden'} lg:block`}>
+          <div className="space-y-2 max-h-[70vh] overflow-y-auto">
+            {filteredActions.map((action) => (
+              <button
+                key={action.id}
+                ref={(el) => {
+                  if (el) {
+                    actionRefs.current.set(action.id, el);
+                  } else {
+                    actionRefs.current.delete(action.id);
+                  }
+                }}
+                onClick={() => {
+                  setSelectedAction(action);
+                  onActionIdChange?.(action.id);
+                  setMobileListOpen(false);
+                  if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+                    setTimeout(() => detailPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+                  }
+                }}
+                className={`w-full text-left p-3 rounded-lg transition-all ${
+                  selectedAction?.id === action.id
+                    ? 'bg-green-100 border-2 border-green-500'
+                    : 'bg-gray-50 hover:bg-gray-100'
+                }`}
+              >
+                <div className="font-semibold text-gray-900">{action.name}</div>
+                <div className="text-xs text-gray-500 mt-1">
+                  {action.herb_primary_actions.length} herbs
+                </div>
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
       {/* Action Details */}
-      <div className="lg:col-span-2 bg-white rounded-lg shadow-lg p-6">
+      <div ref={detailPanelRef} className="lg:col-span-2 bg-white rounded-lg shadow-lg p-6">
         {selectedAction ? (
           <div>
             <h2 className="text-3xl font-bold text-green-800 mb-4">
