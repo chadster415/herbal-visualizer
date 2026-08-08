@@ -257,7 +257,7 @@ export default function Home() {
             onClick={() => setHerbFilterOpen(true)}
             className="px-5 py-3 rounded-lg font-medium transition-all bg-white text-green-800 hover:bg-green-100 border-2 border-green-400 shadow-md flex items-center gap-2 whitespace-nowrap"
           >
-            <MagnifyingGlassIcon className="w-5 h-5" /> Filter Herbs
+            <MagnifyingGlassIcon className="w-5 h-5" /> <span className="hidden sm:inline">Filter Herbs</span>
           </button>
         </div>
       </header>
@@ -309,7 +309,7 @@ export default function Home() {
       <HerbFilterPanel
         isOpen={herbFilterOpen}
         onClose={() => setHerbFilterOpen(false)}
-        onHerbSelect={handleHerbClick}
+        onHerbSelect={(herbId) => { handleHerbClick(herbId); if (typeof window !== 'undefined' && window.innerWidth < 640) setHerbFilterOpen(false); }}
         onSystemSelect={(systemId) => {
           setHerbFilterOpen(false);
           pushAndNavigate({ viewMode: 'system', selectedHerbId: null, selectedActionId: null, selectedSystemId: systemId, selectedDisorderId: null });
