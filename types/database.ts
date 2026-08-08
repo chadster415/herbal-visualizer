@@ -243,3 +243,30 @@ export interface ConstituentWithHerbs extends Constituent {
     herbs: Pick<Herb, 'id' | 'common_name' | 'latin_name'>;
   }>;
 }
+
+export interface Supplement {
+  id: number;
+  name: string;
+  category: string;        // 'Vitamin' | 'Mineral' | 'Amino Acid' | 'Enzyme' | 'Other'
+  subcategory: string | null;
+  solubility: string | null;
+  description: string | null;
+  dose_range: string | null;
+  dose_notes: string | null;
+  deficiency_signs: string | null;
+  dietary_sources: string | null;
+  absorption_notes: string | null;
+  drug_depletors: string | null;
+  sort_order: number;
+  created_at: string;
+}
+
+export interface PrescriptionSupplement {
+  id: number;
+  prescription_id: number;
+  supplement_id: number;
+  dose: string | null;
+  note: string | null;
+  sort_order: number;
+  created_at: string;
+}

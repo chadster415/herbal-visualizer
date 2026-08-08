@@ -32,13 +32,14 @@ interface SystemData extends BodySystem {
 interface SystemViewProps {
   onHerbClick?: (herbId: number) => void;
   onActionClick?: (actionId: number) => void;
+  onSupplementClick?: (supplementId: number) => void;
   selectedSystemId?: number | null;
   onSystemChange?: (id: number | null) => void;
   selectedDisorderId?: number | null;
   onDisorderChange?: (id: number | null) => void;
 }
 
-export function SystemView({ onHerbClick, onActionClick, selectedSystemId, onSystemChange, selectedDisorderId, onDisorderChange }: SystemViewProps) {
+export function SystemView({ onHerbClick, onActionClick, onSupplementClick, selectedSystemId, onSystemChange, selectedDisorderId, onDisorderChange }: SystemViewProps) {
   const [systems, setSystems] = useState<SystemData[]>([]);
   const [selectedSystem, setSelectedSystem] = useState<SystemData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -234,6 +235,7 @@ export function SystemView({ onHerbClick, onActionClick, selectedSystemId, onSys
                   bodySystemId={selectedSystem.id}
                   onHerbClick={onHerbClick}
                   onActionClick={onActionClick}
+                  onSupplementClick={onSupplementClick}
                   selectedDisorderId={selectedDisorderId}
                   onDisorderChange={onDisorderChange}
                 />

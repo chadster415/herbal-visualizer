@@ -6,6 +6,7 @@ import { EnergeticEmojis } from './EnergeticEmojis';
 import { ContraindicationsModal } from './ContraindicationsModal';
 import { CONTRAINDICATIONS } from '@/lib/contraindications-manifest';
 import { MM_MATERIA_MEDICA } from '@/lib/mm-materia-medica';
+import { SupplementDetail } from './SupplementDetail';
 import type {
   Herb,
   PrimaryAction,
@@ -16,6 +17,7 @@ import type {
   ConcentrationLevel,
   Constituent,
   HerbMenstruum,
+  Supplement,
 } from '@/types/database';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -95,6 +97,8 @@ interface HerbViewProps {
   onActionClick?: (actionId: number) => void;
   onActionNameClick?: (name: string) => void;
   onDisorderClick?: (disorderId: number, systemId: number) => void;
+  selectedSupplementId?: number | null;
+  onSupplementClick?: (supplementId: number) => void;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -181,7 +185,7 @@ function SectionHeader({ title, open, onToggle }: { title: string; open: boolean
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onActionClick, onActionNameClick, onDisorderClick }: HerbViewProps) {
+export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onActionClick, onActionNameClick, onDisorderClick, selectedSupplementId, onSupplementClick }: HerbViewProps) {
   const [herbs, setHerbs] = useState<HerbData[]>([]);
   const [allProfiles, setAllProfiles] = useState<ConstituentProfile[]>([]);
   const [selectedHerb, setSelectedHerb] = useState<HerbData | null>(null);
@@ -189,6 +193,8 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const [loading, setLoading] = useState(true);
   const [includeTCM, setIncludeTCM] = useState(false);
+  const [supplements, setSupplements] = useState<Supplement[]>([]);
+  const [selectedSupplement, setSelectedSupplement] = useState<Supplement | null>(null);
   const [duiYaoPairs, setDuiYaoPairs] = useState<DuiYaoPair[]>([]);
   const [duiYaoLoading, setDuiYaoLoading] = useState(false);
 
@@ -216,6 +222,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
   const [addLinkSaving, setAddLinkSaving] = useState(false);
 
   const herbRefs = useRef<Map<number, HTMLButtonElement>>(new Map());
+  const vitaminsSectionRef = useRef<HTMLDivElement | null>(null);
   const detailPanelRef = useRef<HTMLDivElement>(null);
   const sectionRefs = useRef<Partial<Record<keyof typeof sectionsOpen, HTMLDivElement | null>>>({});
 
@@ -257,6 +264,38 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
   useEffect(() => { fetchHerbs(); }, []);
 
   useEffect(() => {
+    supabase
+      .from('supplements')
+      .select('*')
+      .order('name')
+      .then(({ data }) => { if (data) setSupplements(data as Supplement[]); });
+  }, []);
+
+  useEffect(() => {
+    if (selectedSupplementId == null) return;
+    const found = supplements.find((s) => s.id === selectedSupplementId);
+    if (found) {
+      setSelectedSupplement(found);
+      setSelectedHerb(null);
+      return;
+    }
+    supabase
+      .from('supplements')
+      .select('*')
+      .eq('id', selectedSupplementId)
+      .single()
+      .then(({ data }) => {
+        if (data) {
+          setSelectedSupplement(data as Supplement);
+          setSelectedHerb(null);
+          if (!supplements.find((s) => s.id === selectedSupplementId)) {
+            setSupplements((prev) => [...prev, data as Supplement]);
+          }
+        }
+      });
+  }, [selectedSupplementId]);
+
+  useEffect(() => {
     if (selectedHerb == null) { setDuiYaoPairs([]); return; }
     setDuiYaoPairs([]);
     setDuiYaoLoading(true);
@@ -282,6 +321,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
       const herb = herbs.find((h) => h.id === selectedHerbId);
       if (herb) {
         setSelectedHerb(herb);
+        setSelectedSupplement(null);
         setAlternatesOpen(false);
         setSectionsOpen({ primaryActions: true, secondaryActions: true, constituentProfile: true, constituents: true, disorders: true, duiYao: true, contraindications: true, mmMateriaMedica: true, herbContraindications: true });
         setTimeout(() => { scrollHerbInSidebar(selectedHerbId); }, 100);
@@ -387,6 +427,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
     const herb = herbs.find((h) => h.id === herbId);
     if (!herb) return;
     setSelectedHerb(herb);
+    setSelectedSupplement(null);
     setAlternatesOpen(false);
     setSectionsOpen({ primaryActions: true, secondaryActions: true, constituentProfile: true, constituents: true, disorders: true, duiYao: true, contraindications: true, mmMateriaMedica: true, herbContraindications: true });
     onHerbClick?.(herbId);
@@ -568,6 +609,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
               } else if (e.key === 'Enter' && highlightedIndex >= 0) {
                 const herb = filteredHerbs[highlightedIndex];
                 setSelectedHerb(herb);
+                setSelectedSupplement(null);
                 setAlternatesOpen(false);
                 setSectionsOpen({ primaryActions: true, secondaryActions: true, constituentProfile: true, constituents: true, disorders: true, duiYao: true, contraindications: true, mmMateriaMedica: true, herbContraindications: true });
                 onHerbIdChange?.(herb.id);
@@ -591,15 +633,38 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
           )}
         </div>
 
-        <label className="flex items-center gap-2 mb-3 cursor-pointer select-none text-sm text-gray-600">
-          <input
-            type="checkbox"
-            checked={includeTCM}
-            onChange={(e) => setIncludeTCM(e.target.checked)}
-            className="h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500"
-          />
-          Include TCM-only herbs
-        </label>
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mb-3">
+          <label className="flex items-center gap-2 cursor-pointer select-none text-sm text-gray-600">
+            <input
+              type="checkbox"
+              checked={includeTCM}
+              onChange={(e) => setIncludeTCM(e.target.checked)}
+              className="h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500"
+            />
+            Include TCM-only herbs
+          </label>
+          {supplements.length > 0 && (
+            <button
+              onClick={() => {
+                const el = vitaminsSectionRef.current;
+                if (!el) return;
+                let container: HTMLElement | null = el.parentElement;
+                while (container) {
+                  const { overflowY } = getComputedStyle(container);
+                  if (overflowY === 'auto' || overflowY === 'scroll') break;
+                  container = container.parentElement;
+                }
+                if (!container) return;
+                const cRect = container.getBoundingClientRect();
+                const eRect = el.getBoundingClientRect();
+                container.scrollTo({ top: eRect.top - cRect.top + container.scrollTop - 8, behavior: 'smooth' });
+              }}
+              className="ml-auto text-sm text-indigo-500 hover:text-indigo-700 hover:underline transition-colors"
+            >
+              Jump to vitamins &amp; supplements ↓
+            </button>
+          )}
+        </div>
 
         <div className="space-y-2 max-h-[70vh] overflow-y-auto px-1 py-1">
           {filteredHerbs.map((herb, idx) => (
@@ -611,6 +676,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
               }}
               onClick={() => {
                 setSelectedHerb(herb);
+                setSelectedSupplement(null);
                 setAlternatesOpen(false);
                 setSectionsOpen({ primaryActions: true, secondaryActions: true, constituentProfile: true, constituents: true, disorders: true, duiYao: true, contraindications: true, mmMateriaMedica: true, herbContraindications: true });
                 onHerbIdChange?.(herb.id);
@@ -644,12 +710,60 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
               </div>
             </button>
           ))}
+
+          {/* Supplements section */}
+          {supplements.length > 0 && (
+            <>
+              <div ref={vitaminsSectionRef} className="pt-3 pb-1 px-1">
+                <p className="text-xs font-semibold text-indigo-400 uppercase tracking-widest">Vitamins &amp; Supplements</p>
+              </div>
+              {supplements
+                .filter((s) => {
+                  const term = searchTerm.toLowerCase();
+                  return !term || s.name.toLowerCase().includes(term) || s.category.toLowerCase().includes(term);
+                })
+                .map((supplement) => (
+                  <button
+                    key={`supp-${supplement.id}`}
+                    onClick={() => {
+                      setSelectedSupplement(supplement);
+                      setSelectedHerb(null);
+                      onSupplementClick?.(supplement.id);
+                      setSearchTerm('');
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
+                    className={`w-full text-left p-3 rounded-lg border transition-all ${
+                      selectedSupplement?.id === supplement.id
+                        ? 'ring-2 ring-indigo-500 ring-offset-1 bg-indigo-50 border-indigo-200'
+                        : 'bg-indigo-50/40 border-indigo-100 hover:bg-indigo-50 hover:border-indigo-200'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-1">
+                      <div>
+                        <div className="font-semibold text-gray-900 text-sm">{supplement.name}</div>
+                        <div className="text-xs text-indigo-600 mt-0.5">{supplement.category}{supplement.subcategory ? ` · ${supplement.subcategory}` : ''}</div>
+                      </div>
+                      {supplement.solubility && (
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-indigo-100 border border-indigo-200 text-indigo-700 font-medium shrink-0">
+                          {supplement.solubility === 'fat-soluble' ? 'fat-sol' : supplement.solubility === 'water-soluble' ? 'water-sol' : supplement.solubility === 'water & fat-soluble' ? 'water+fat' : supplement.solubility}
+                        </span>
+                      )}
+                    </div>
+                  </button>
+                ))}
+            </>
+          )}
         </div>
       </div>
 
-      {/* Herb Details */}
+      {/* Herb / Supplement Details */}
       <div ref={detailPanelRef} className="lg:col-span-2 bg-white rounded-lg shadow-lg p-6">
-        {selectedHerb ? (
+        {selectedSupplement && !selectedHerb ? (
+          <SupplementDetail
+            supplement={selectedSupplement}
+            onDisorderClick={onDisorderClick}
+          />
+        ) : selectedHerb ? (
           <div>
             {/* Header */}
             <div className="flex items-start justify-between mb-3">
@@ -1260,7 +1374,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
           </div>
         ) : (
           <div className="flex items-center justify-center h-full text-gray-400">
-            <p className="text-lg">Select an herb to view details</p>
+            <p className="text-lg">Select an herb or supplement to view details</p>
           </div>
         )}
       </div>

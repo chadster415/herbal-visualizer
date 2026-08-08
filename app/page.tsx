@@ -29,6 +29,7 @@ interface NavEntry {
   selectedActionId: number | null;
   selectedSystemId: number | null;
   selectedDisorderId: number | null;
+  selectedSupplementId?: number | null;
 }
 
 export default function Home() {
@@ -45,6 +46,7 @@ export default function Home() {
   const [selectedActionId, setSelectedActionId] = useState<number | null>(null);
   const [selectedSystemId, setSelectedSystemId] = useState<number | null>(null);
   const [selectedDisorderId, setSelectedDisorderId] = useState<number | null>(null);
+  const [selectedSupplementId, setSelectedSupplementId] = useState<number | null>(null);
   const [history, setHistory] = useState<NavEntry[]>([]);
   const [flashcardsOpen, setFlashcardsOpen] = useState(false);
   const [energeticsQuizOpen, setEnergeticsQuizOpen] = useState(false);
@@ -55,12 +57,13 @@ export default function Home() {
   const [openDropdown, setOpenDropdown] = useState<'browse' | 'practice' | null>(null);
 
   const pushAndNavigate = (next: NavEntry) => {
-    setHistory((prev) => [...prev, { viewMode, selectedHerbId, selectedActionId, selectedSystemId, selectedDisorderId }]);
+    setHistory((prev) => [...prev, { viewMode, selectedHerbId, selectedActionId, selectedSystemId, selectedDisorderId, selectedSupplementId }]);
     setViewMode(next.viewMode);
     setSelectedHerbId(next.selectedHerbId);
     setSelectedActionId(next.selectedActionId);
     setSelectedSystemId(next.selectedSystemId);
     setSelectedDisorderId(next.selectedDisorderId);
+    setSelectedSupplementId(next.selectedSupplementId ?? null);
     setScrollTrigger((k) => k + 1);
   };
 
@@ -74,6 +77,7 @@ export default function Home() {
       setSelectedActionId(entry.selectedActionId);
       setSelectedSystemId(entry.selectedSystemId);
       setSelectedDisorderId(entry.selectedDisorderId);
+      setSelectedSupplementId(entry.selectedSupplementId ?? null);
       return next;
     });
   };
@@ -86,7 +90,11 @@ export default function Home() {
   };
 
   const handleHerbClick = (herbId: number) => {
-    pushAndNavigate({ viewMode: 'herb', selectedHerbId: herbId, selectedActionId, selectedSystemId: null, selectedDisorderId: null });
+    pushAndNavigate({ viewMode: 'herb', selectedHerbId: herbId, selectedActionId, selectedSystemId: null, selectedDisorderId: null, selectedSupplementId: null });
+  };
+
+  const handleSupplementClick = (supplementId: number) => {
+    pushAndNavigate({ viewMode: 'herb', selectedHerbId: null, selectedActionId, selectedSystemId: null, selectedDisorderId: null, selectedSupplementId: supplementId });
   };
 
   const handleActionClick = (actionId: number) => {
@@ -228,12 +236,13 @@ export default function Home() {
       </header>
 
       <main>
-        <div className={viewMode !== 'herb' ? 'hidden' : ''}><HerbView selectedHerbId={selectedHerbId} onHerbIdChange={setSelectedHerbId} onHerbClick={handleHerbClick} onActionClick={handleActionClick} onActionNameClick={handleActionNameClick} onDisorderClick={handleDisorderClick} /></div>
+        <div className={viewMode !== 'herb' ? 'hidden' : ''}><HerbView selectedHerbId={selectedHerbId} onHerbIdChange={setSelectedHerbId} onHerbClick={handleHerbClick} onActionClick={handleActionClick} onActionNameClick={handleActionNameClick} onDisorderClick={handleDisorderClick} selectedSupplementId={selectedSupplementId} onSupplementClick={handleSupplementClick} /></div>
         <div className={viewMode !== 'action' ? 'hidden' : ''}><ActionView selectedActionId={selectedActionId} onActionIdChange={setSelectedActionId} onHerbClick={handleHerbClick} /></div>
         {viewMode === 'system' && (
           <SystemView
             onHerbClick={handleHerbClick}
             onActionClick={handleActionClick}
+            onSupplementClick={handleSupplementClick}
             selectedSystemId={selectedSystemId}
             onSystemChange={setSelectedSystemId}
             selectedDisorderId={selectedDisorderId}

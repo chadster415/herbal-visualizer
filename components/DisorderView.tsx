@@ -10,7 +10,8 @@ import type {
   PrimaryAction,
   Herb,
   DisorderPrescription,
-  PrescriptionHerb
+  PrescriptionHerb,
+  Supplement,
 } from '@/types/database';
 
 interface DisorderData extends Disorder {
@@ -44,6 +45,14 @@ interface DisorderData extends Disorder {
           }>;
         }
       >;
+      prescription_supplements: Array<{
+        id: number;
+        supplement_id: number;
+        dose: string | null;
+        note: string | null;
+        sort_order: number;
+        supplements: Supplement;
+      }>;
     }
   >;
 }
@@ -52,11 +61,12 @@ interface DisorderViewProps {
   bodySystemId?: number;
   onHerbClick?: (herbId: number) => void;
   onActionClick?: (actionId: number) => void;
+  onSupplementClick?: (supplementId: number) => void;
   selectedDisorderId?: number | null;
   onDisorderChange?: (id: number | null) => void;
 }
 
-export function DisorderView({ bodySystemId, onHerbClick, onActionClick, selectedDisorderId, onDisorderChange }: DisorderViewProps) {
+export function DisorderView({ bodySystemId, onHerbClick, onActionClick, onSupplementClick, selectedDisorderId, onDisorderChange }: DisorderViewProps) {
   const [disorders, setDisorders] = useState<DisorderData[]>([]);
   const [selectedDisorder, setSelectedDisorder] = useState<DisorderData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -117,6 +127,10 @@ export function DisorderView({ bodySystemId, onHerbClick, onActionClick, selecte
                 prescription_herb_actions (
                   primary_actions (*)
                 )
+              ),
+              prescription_supplements (
+                *,
+                supplements (*)
               )
             )
           `)
@@ -148,6 +162,7 @@ export function DisorderView({ bodySystemId, onHerbClick, onActionClick, selecte
           .map((prescription: any) => ({
             ...prescription,
             prescription_herbs: prescription.prescription_herbs.sort((a: PrescriptionHerb, b: PrescriptionHerb) => a.sort_order - b.sort_order),
+            prescription_supplements: (prescription.prescription_supplements ?? []).sort((a: any, b: any) => a.sort_order - b.sort_order),
           })),
       }));
 
@@ -462,6 +477,24 @@ export function DisorderView({ bodySystemId, onHerbClick, onActionClick, selecte
                                 ))}
                               </div>
                             )}
+                          </button>
+                        ))}
+                        {prescription.prescription_supplements.map((ps) => (
+                          <button
+                            key={`supp-${ps.id}`}
+                            onClick={() => onSupplementClick?.(ps.supplements.id)}
+                            className="relative inline-flex flex-col items-start bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 hover:border-indigo-300 rounded-lg px-3 py-2 transition-all hover:shadow-md"
+                          >
+                            <div className="flex items-baseline gap-2 mb-1">
+                              <span className="font-medium text-indigo-900">{ps.supplements.name}</span>
+                            </div>
+                            {ps.dose && (
+                              <span className="text-xs text-indigo-600 font-medium">{ps.dose}</span>
+                            )}
+                            {ps.note && (
+                              <span className="text-[10px] text-indigo-500 italic">{ps.note}</span>
+                            )}
+                            <span className="text-[10px] text-indigo-400 mt-0.5">{ps.supplements.category}</span>
                           </button>
                         ))}
                       </div>
