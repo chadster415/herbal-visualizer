@@ -130,7 +130,7 @@ export default function Home() {
   const viewModeLabel = viewMode === 'herb' ? 'By Herb' : viewMode === 'action' ? 'By Action' : 'By Body System';
 
   return (
-    <div className="min-h-screen p-8 bg-gradient-to-br from-green-50 to-emerald-100 dark:from-gray-900 dark:to-gray-800">
+    <div className="min-h-screen p-4 sm:p-8 bg-gradient-to-br from-green-50 to-emerald-100 dark:from-gray-900 dark:to-gray-800">
       <header className="mb-8">
         <h1 className="text-4xl font-bold text-green-800 dark:text-green-300 mb-4">
           Herbal Medicine Visualizer
