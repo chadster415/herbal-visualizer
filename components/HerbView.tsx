@@ -205,7 +205,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
   const [sectionsOpen, setSectionsOpen] = useState({
     primaryActions: true, secondaryActions: true,
     constituentProfile: true, constituents: true, disorders: true, duiYao: true,
-    contraindications: true, mmMateriaMedica: true,
+    contraindications: true, mmMateriaMedica: true, herbContraindications: true,
   });
   const toggleSection = (key: keyof typeof sectionsOpen) =>
     setSectionsOpen((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -283,7 +283,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
       if (herb) {
         setSelectedHerb(herb);
         setAlternatesOpen(false);
-        setSectionsOpen({ primaryActions: true, secondaryActions: true, constituentProfile: true, constituents: true, disorders: true, duiYao: true, contraindications: true, mmMateriaMedica: true });
+        setSectionsOpen({ primaryActions: true, secondaryActions: true, constituentProfile: true, constituents: true, disorders: true, duiYao: true, contraindications: true, mmMateriaMedica: true, herbContraindications: true });
         setTimeout(() => { scrollHerbInSidebar(selectedHerbId); }, 100);
       }
     }
@@ -388,7 +388,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
     if (!herb) return;
     setSelectedHerb(herb);
     setAlternatesOpen(false);
-    setSectionsOpen({ primaryActions: true, secondaryActions: true, constituentProfile: true, constituents: true, disorders: true, duiYao: true, contraindications: true, mmMateriaMedica: true });
+    setSectionsOpen({ primaryActions: true, secondaryActions: true, constituentProfile: true, constituents: true, disorders: true, duiYao: true, contraindications: true, mmMateriaMedica: true, herbContraindications: true });
     onHerbClick?.(herbId);
     window.scrollTo({ top: 0, behavior: 'smooth' });
     scrollHerbInSidebar(herbId);
@@ -569,7 +569,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
                 const herb = filteredHerbs[highlightedIndex];
                 setSelectedHerb(herb);
                 setAlternatesOpen(false);
-                setSectionsOpen({ primaryActions: true, secondaryActions: true, constituentProfile: true, constituents: true, disorders: true, duiYao: true, contraindications: true, mmMateriaMedica: true });
+                setSectionsOpen({ primaryActions: true, secondaryActions: true, constituentProfile: true, constituents: true, disorders: true, duiYao: true, contraindications: true, mmMateriaMedica: true, herbContraindications: true });
                 onHerbIdChange?.(herb.id);
                 setSearchTerm('');
                 setHighlightedIndex(-1);
@@ -612,7 +612,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
               onClick={() => {
                 setSelectedHerb(herb);
                 setAlternatesOpen(false);
-                setSectionsOpen({ primaryActions: true, secondaryActions: true, constituentProfile: true, constituents: true, disorders: true, duiYao: true, contraindications: true, mmMateriaMedica: true });
+                setSectionsOpen({ primaryActions: true, secondaryActions: true, constituentProfile: true, constituents: true, disorders: true, duiYao: true, contraindications: true, mmMateriaMedica: true, herbContraindications: true });
                 onHerbIdChange?.(herb.id);
                 setSearchTerm('');
                 setHighlightedIndex(-1);
@@ -696,6 +696,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
                 ...(duiYaoPairs.length > 0 ? [{ key: 'duiYao' as const, label: 'Dui Yao Pairings', pink: false }] : []),
                 ...(MM_MATERIA_MEDICA[selectedHerb.id] ? [{ key: 'mmMateriaMedica' as const, label: 'MM Materia Medica', pink: false }] : []),
                 ...(CONTRAINDICATIONS[selectedHerb.id] ? [{ key: 'contraindications' as const, label: 'Drug Interactions', pink: true }] : []),
+                ...(selectedHerb.contraindications ? [{ key: 'herbContraindications' as const, label: 'Contraindications', pink: true }] : []),
               ].map(({ key, label, pink }) => (
                 <button
                   key={key}
@@ -712,7 +713,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
               <button
                 onClick={() => {
                   const allOpen = Object.values(sectionsOpen).every(Boolean);
-                  setSectionsOpen({ primaryActions: !allOpen, secondaryActions: !allOpen, constituentProfile: !allOpen, constituents: !allOpen, disorders: !allOpen, duiYao: !allOpen, contraindications: !allOpen, mmMateriaMedica: !allOpen });
+                  setSectionsOpen({ primaryActions: !allOpen, secondaryActions: !allOpen, constituentProfile: !allOpen, constituents: !allOpen, disorders: !allOpen, duiYao: !allOpen, contraindications: !allOpen, mmMateriaMedica: !allOpen, herbContraindications: !allOpen });
                 }}
                 className="flex items-center gap-1.5 px-3 py-1 rounded-full border border-gray-300 text-xs text-gray-500 hover:border-gray-400 hover:text-gray-700 transition-colors"
               >
@@ -1229,6 +1230,29 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                       </svg>
                     </button>
+                  </div>
+                )}
+              </div>
+            )}
+            {/* ── Contraindications (MM Materia Medica) ─────────────────── */}
+            {selectedHerb.contraindications && (
+              <div className="mt-6" ref={(el) => { sectionRefs.current.herbContraindications = el; }}>
+                <SectionHeader title="Contraindications" open={sectionsOpen.herbContraindications} onToggle={() => toggleSection('herbContraindications')} />
+                {sectionsOpen.herbContraindications && (
+                  <div className="pl-4 border-l-2 border-red-100">
+                    <div className="border border-red-200 rounded-lg px-4 py-3 bg-red-50">
+                      <div className="flex items-start gap-3">
+                        <svg className="w-5 h-5 text-red-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+                        </svg>
+                        <div>
+                          <p className="text-sm text-red-800">{selectedHerb.contraindications}</p>
+                          {selectedHerb.contraindications_source && (
+                            <p className="text-xs text-red-400 mt-1">Source: {selectedHerb.contraindications_source}</p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>

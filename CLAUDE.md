@@ -1,5 +1,8 @@
 # Herbal Visualizer — Claude Context
 
+## Guides
+- **[Adding herb data from books](docs/adding-herb-data-from-books.md)** — How to add contraindications, energetics, and body system actions from a printed materia medica source (Tilgner, Hoffmann, etc.). Covers all cases: herb already in DB, herb missing, batch imports, and terminology mapping.
+
 ## Project Overview
 A Next.js app backed by a local Supabase instance that visualizes herbal medicine data from BHC Apprenticeship class materials. Data is organized by body system → disorders → herbs → actions.
 

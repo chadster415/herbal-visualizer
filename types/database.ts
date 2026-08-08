@@ -16,6 +16,8 @@ export interface Herb {
   monograph_url?: string | null;
   pinyin_name?: string | null;
   is_tcm?: boolean;
+  contraindications?: string | null;
+  contraindications_source?: string | null;
 }
 
 export interface PrimaryAction {
