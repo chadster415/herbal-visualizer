@@ -531,7 +531,7 @@ export function IntakeFormModal({ isOpen, onClose, onHerbSelect }: Props) {
 
   return (
     <div
-      className={`fixed top-0 right-0 h-full w-[480px] z-40 bg-white dark:bg-gray-800 shadow-2xl border-l border-gray-200 dark:border-gray-700 flex flex-col transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}
+      className={`fixed top-0 right-0 h-full w-full sm:w-[480px] z-40 bg-white dark:bg-gray-800 shadow-2xl border-l border-gray-200 dark:border-gray-700 flex flex-col transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}
     >
       <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700 shrink-0">
         <h2 className="text-lg font-bold text-green-800 dark:text-green-300 flex items-center gap-2"><ClipboardDocumentListIcon className="w-5 h-5" /> Intake Assessment</h2>
@@ -851,7 +851,7 @@ function HerbCardList({ herbs, isExpanded, onToggle, onHerbSelect }: {
                 </span>
               )}
               {herb.actions.length > 0 && (
-                <div className="hidden group-hover:block mt-1.5 pt-1.5 border-t border-black/10 dark:border-white/10 text-[10px] text-gray-500 dark:text-gray-400 leading-relaxed">
+                <div className="mt-1.5 pt-1.5 border-t border-black/10 dark:border-white/10 text-[10px] text-gray-500 dark:text-gray-400 leading-relaxed">
                   {herb.actions.join(' · ')}
                 </div>
               )}

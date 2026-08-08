@@ -122,6 +122,7 @@ export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect 
   const [resultsScroll, setResultsScroll] = useState({ up: false, down: false });
 
   const [filterPaneHeight, setFilterPaneHeight] = useState(240);
+  const [filterPaneOpen, setFilterPaneOpen] = useState(true);
   const bodyRef         = useRef<HTMLDivElement>(null);
   const isDragging      = useRef(false);
   const dragStartY      = useRef(0);
@@ -229,7 +230,7 @@ export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect 
 
       {/* Slideover */}
       <div
-        className={`fixed top-0 right-0 h-full w-[500px] z-40 bg-gray-50 shadow-2xl border-l border-gray-200 flex flex-col transition-transform duration-300 ease-in-out ${
+        className={`fixed top-0 right-0 h-full w-full sm:w-[500px] z-40 bg-gray-50 shadow-2xl border-l border-gray-200 flex flex-col transition-transform duration-300 ease-in-out ${
           isOpen ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
@@ -309,18 +310,33 @@ export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect 
         </div>
 
         {/* Two-pane body */}
-        <div ref={bodyRef} className="flex flex-col flex-1 min-h-0 p-3 overflow-hidden">
+        <div ref={bodyRef} className="flex flex-col flex-1 min-h-0 p-3 gap-2 overflow-hidden">
 
           {/* Filter controls pane */}
           <div
-            className="relative border-2 border-gray-300 rounded-xl bg-white shadow-sm overflow-hidden shrink-0"
-            style={{ height: filterPaneHeight }}
+            className="relative border-2 border-gray-300 rounded-xl bg-white shadow-sm overflow-hidden shrink-0 transition-all duration-200"
+            style={{ height: filterPaneOpen ? filterPaneHeight : 44 }}
           >
-            <ScrollArrow direction="up" visible={filterScroll.up} />
+            {/* Pane header — always visible */}
+            <div className="flex items-center justify-between px-5 h-11 border-b border-gray-100">
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Filters</p>
+              <button
+                onClick={() => setFilterPaneOpen((prev) => !prev)}
+                className="p-1 rounded text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-all"
+                aria-label="Toggle filters"
+              >
+                <svg className={`w-4 h-4 transition-transform duration-200 ${filterPaneOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+            </div>
+            {filterPaneOpen && <ScrollArrow direction="up" visible={filterScroll.up} />}
+            {filterPaneOpen && (
             <div
               ref={filterPaneRef}
               onScroll={() => checkPaneScroll(filterPaneRef.current, setFilterScroll)}
-              className="px-5 py-4 space-y-5 overflow-y-auto h-full rounded-xl"
+              className="px-5 py-4 space-y-5 overflow-y-auto rounded-xl"
+              style={{ height: filterPaneHeight - 44 }}
             >
 
               {/* Temperature */}
@@ -424,12 +440,13 @@ export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect 
                 </div>
               )}
             </div>
-            <ScrollArrow direction="down" visible={filterScroll.down} />
+            )}
+            {filterPaneOpen && <ScrollArrow direction="down" visible={filterScroll.down} />}
           </div>
 
-          {/* Drag handle */}
+          {/* Drag handle — desktop only */}
           <div
-            className="flex items-center justify-center h-3 shrink-0 cursor-row-resize group"
+            className="hidden sm:flex items-center justify-center h-3 shrink-0 cursor-row-resize group"
             onPointerDown={(e) => {
               isDragging.current = true;
               dragStartY.current = e.clientY;

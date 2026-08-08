@@ -162,7 +162,7 @@ export function EnergeticsQuizModal({ isOpen, onClose, onHerbSelect }: Props) {
 
   return (
     <div
-      className={`fixed top-0 right-0 h-full w-[440px] z-40 bg-white dark:bg-gray-800 shadow-2xl border-l border-gray-200 dark:border-gray-700 flex flex-col transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}
+      className={`fixed top-0 right-0 h-full w-full sm:w-[440px] z-40 bg-white dark:bg-gray-800 shadow-2xl border-l border-gray-200 dark:border-gray-700 flex flex-col transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}
     >
       <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700 shrink-0">
         <h2 className="text-lg font-bold text-green-800 dark:text-green-300 flex items-center gap-2"><FireIcon className="w-5 h-5" /> Energetics Quiz</h2>
