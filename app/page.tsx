@@ -147,7 +147,7 @@ export default function Home() {
                 onClick={goBack}
                 className="px-4 py-3 rounded-lg font-medium transition-all bg-blue-500 hover:bg-blue-600 text-white shadow-md flex items-center gap-1"
               >
-                <ArrowLeftIcon className="w-4 h-4" /> Back
+                <ArrowLeftIcon className="w-4 h-4" /> <span className="hidden sm:inline">Back</span>
               </button>
             )}
 

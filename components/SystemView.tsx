@@ -46,7 +46,7 @@ export function SystemView({ onHerbClick, onActionClick, onSupplementClick, sele
   const [viewMode, setViewMode] = useState<'actions' | 'disorders'>('actions');
   const [disorderSearch, setDisorderSearch] = useState('');
   const [dropdownIndex, setDropdownIndex] = useState(-1);
-  const [mobileListOpen, setMobileListOpen] = useState(true);
+  const [mobileListOpen, setMobileListOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const detailPanelRef = useRef<HTMLDivElement>(null);
   const scrollSkipRef = useRef(true);
@@ -70,7 +70,6 @@ export function SystemView({ onHerbClick, onActionClick, onSupplementClick, sele
   useEffect(() => {
     if (selectedSystemId == null) {
       setSelectedSystem(null);
-      setMobileListOpen(true);
       return;
     }
     if (systems.length === 0) return;
