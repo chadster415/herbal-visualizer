@@ -834,7 +834,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
         ) : selectedHerb ? (
           <div>
             {/* Header */}
-            <div className="flex items-start justify-between mb-3">
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-3">
               <div>
                 <h2 className="text-3xl font-bold text-green-800">{selectedHerb.common_name}{selectedHerb.plant_part ? ` (${selectedHerb.plant_part})` : ''}</h2>
                 {selectedHerb.pinyin_name && (
@@ -842,7 +842,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
                 )}
                 <p className="text-xl italic text-gray-600">{selectedHerb.latin_name}</p>
               </div>
-              <div className="flex flex-col items-end gap-1 ml-4 shrink-0">
+              <div className="flex flex-row sm:flex-col items-center sm:items-end gap-1.5 mt-2 sm:mt-0 sm:ml-4 shrink-0">
                 {(selectedHerb.herb_monograph_links ?? [])
                   .slice()
                   .sort((a, b) => a.sort_order - b.sort_order)

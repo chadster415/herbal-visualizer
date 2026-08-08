@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 
 interface Props {
   isOpen: boolean;
@@ -12,12 +12,14 @@ interface Props {
 
 export function ContraindicationsModal({ isOpen, onClose, herbId, pageCount, herbName }: Props) {
   const [page, setPage] = useState(1);
+  const [lockedHeight, setLockedHeight] = useState<number | null>(null);
+  const imgRef = useRef<HTMLImageElement>(null);
 
   const prev = useCallback(() => setPage((p) => Math.max(1, p - 1)), []);
   const next = useCallback(() => setPage((p) => Math.min(pageCount, p + 1)), [pageCount]);
 
   useEffect(() => {
-    if (!isOpen) { setPage(1); return; }
+    if (!isOpen) { setPage(1); setLockedHeight(null); return; }
     const handler = (e: KeyboardEvent) => {
       if (e.key === 'ArrowLeft') prev();
       else if (e.key === 'ArrowRight') next();
@@ -56,13 +58,21 @@ export function ContraindicationsModal({ isOpen, onClose, herbId, pageCount, her
         </div>
 
         {/* Image */}
-        <div className="flex-1 overflow-y-auto flex items-start justify-center bg-gray-100 p-4">
+        <div
+          className="overflow-y-auto flex items-start justify-center bg-gray-100 p-4"
+          style={{ height: lockedHeight ?? 'auto', flexShrink: 0 }}
+        >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            key={src}
+            ref={imgRef}
             src={src}
             alt={`${herbName} contraindications page ${page}`}
             className="max-w-full shadow-md rounded"
+            onLoad={() => {
+              if (lockedHeight === null && imgRef.current) {
+                setLockedHeight(imgRef.current.offsetHeight + 32);
+              }
+            }}
           />
         </div>
 
