@@ -846,7 +846,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
                 )}
                 <p className="text-xl italic text-gray-600">{selectedHerb.latin_name}</p>
               </div>
-              <div className="flex flex-row sm:flex-col items-center sm:items-end gap-1.5 mt-2 sm:mt-0 sm:ml-4 shrink-0">
+              <div className="flex flex-col items-end gap-1.5 mt-2 sm:mt-0 sm:ml-4 shrink-0">
                 {(selectedHerb.herb_monograph_links ?? [])
                   .slice()
                   .sort((a, b) => a.sort_order - b.sort_order)
