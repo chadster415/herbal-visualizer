@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
+import Fuse from 'fuse.js';
 import { supabase } from '@/lib/supabase';
 import type { BodySystem, Herb, PrimaryAction, StrengthLevel } from '@/types/database';
 import { DisorderView } from './DisorderView';
@@ -16,6 +17,7 @@ interface DisorderListItem {
   id: number;
   name: string;
   sort_order: number;
+  search_keywords: string[];
 }
 
 interface SystemData extends BodySystem {
@@ -50,6 +52,21 @@ export function SystemView({ onHerbClick, onActionClick, onSupplementClick, sele
   const dropdownRef = useRef<HTMLDivElement>(null);
   const detailPanelRef = useRef<HTMLDivElement>(null);
   const scrollSkipRef = useRef(true);
+
+  const disorderFuse = useMemo(() => {
+    const entries = systems.flatMap((s) =>
+      (s.disorders ?? []).map((d) => ({ disorder: d, system: s }))
+    );
+    return new Fuse(entries, {
+      keys: [
+        { name: 'disorder.name', weight: 2 },
+        { name: 'disorder.search_keywords', weight: 1 },
+      ],
+      threshold: 0.4,
+      ignoreLocation: true,
+      minMatchCharLength: 2,
+    });
+  }, [systems]);
 
   useEffect(() => {
     fetchSystems();
@@ -88,7 +105,7 @@ export function SystemView({ onHerbClick, onActionClick, onSupplementClick, sele
           .from('body_systems')
           .select(`*, herb_primary_actions (herbs (*), primary_actions (*), relative_strength)`)
           .order('name'),
-        supabase.from('disorders').select('id, name, body_system_id, sort_order').order('sort_order'),
+        supabase.from('disorders').select('id, name, body_system_id, sort_order, search_keywords').order('sort_order'),
         supabase.from('body_system_notes').select('body_system_id, id, note_text, sort_order').order('sort_order'),
       ]);
 
@@ -97,7 +114,7 @@ export function SystemView({ onHerbClick, onActionClick, onSupplementClick, sele
       const disorderMap = new Map<number, DisorderListItem[]>();
       disorderData?.forEach((d) => {
         if (!disorderMap.has(d.body_system_id)) disorderMap.set(d.body_system_id, []);
-        disorderMap.get(d.body_system_id)!.push({ id: d.id, name: d.name, sort_order: d.sort_order });
+        disorderMap.get(d.body_system_id)!.push({ id: d.id, name: d.name, sort_order: d.sort_order, search_keywords: d.search_keywords ?? [] });
       });
 
       const notesMap = new Map<number, SystemNote[]>();
@@ -316,11 +333,7 @@ export function SystemView({ onHerbClick, onActionClick, onSupplementClick, sele
               <div className="relative">
                 {(() => {
                   const matches = disorderSearch.length >= 2
-                    ? systems.flatMap((system) =>
-                        (system.disorders ?? [])
-                          .filter((d) => d.name.toLowerCase().includes(disorderSearch.toLowerCase()))
-                          .map((disorder) => ({ disorder, system }))
-                      )
+                    ? disorderFuse.search(disorderSearch).map((r) => r.item)
                     : [];
                   const selectMatch = (idx: number) => {
                     const m = matches[idx];

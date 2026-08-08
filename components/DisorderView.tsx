@@ -243,7 +243,7 @@ export function DisorderView({ bodySystemId, onHerbClick, onActionClick, onSuppl
       {/* Disorder Selector */}
       <div>
         {selectedDisorder && (
-          <div className="flex items-center gap-2 mb-2">
+          <div className="flex items-center gap-2 mb-2 sm:hidden">
             <span className="px-3 py-1.5 rounded-lg border text-sm font-medium bg-green-600 text-white border-green-600">
               {selectedDisorder.name}
             </span>
@@ -258,8 +258,7 @@ export function DisorderView({ bodySystemId, onHerbClick, onActionClick, onSuppl
             </button>
           </div>
         )}
-        {(!selectedDisorder || disorderListOpen) && (
-          <div className="flex flex-wrap gap-2">
+        <div className={`flex-wrap gap-2 ${!selectedDisorder || disorderListOpen ? 'flex' : 'hidden sm:flex'}`}>
             {disorders
               .slice()
               .sort((a, b) => {
@@ -284,8 +283,7 @@ export function DisorderView({ bodySystemId, onHerbClick, onActionClick, onSuppl
                   {disorder.name}
                 </button>
               ))}
-          </div>
-        )}
+        </div>
       </div>
 
       {/* Disorder Details */}
