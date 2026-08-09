@@ -63,7 +63,7 @@ interface DisorderData extends Disorder {
     DisorderPrescription & {
       prescription_herbs: Array<
         PrescriptionHerb & {
-          herbs: Herb;
+          herbs: Herb & { herb_menstruum?: { primary_label: string } | null };
           prescription_herb_actions: Array<{
             primary_actions: PrimaryAction;
           }>;
@@ -151,7 +151,7 @@ export function DisorderView({ bodySystemId, onHerbClick, onActionClick, onSuppl
               *,
               prescription_herbs (
                 *,
-                herbs (*),
+                herbs (*, herb_menstruum(primary_label)),
                 prescription_herb_actions (
                   primary_actions (*)
                 )
@@ -600,6 +600,11 @@ export function DisorderView({ bodySystemId, onHerbClick, onActionClick, onSuppl
                                   </span>
                                 ))}
                               </div>
+                            )}
+                            {prescHerb.herbs.herb_menstruum?.primary_label && (
+                              <span className="text-xs mt-1 px-1.5 py-0.5 rounded border bg-purple-50 border-purple-200 text-purple-700">
+                                {prescHerb.herbs.herb_menstruum.primary_label}
+                              </span>
                             )}
                             {prescHerb.note && (
                               <span className="text-xs italic text-gray-500 mt-1 block">{prescHerb.note}</span>

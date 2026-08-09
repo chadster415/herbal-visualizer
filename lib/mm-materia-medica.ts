@@ -1114,11 +1114,6 @@ export const MM_MATERIA_MEDICA: Record<number, string> = {
   Decoction 2-4 ounces.
   STATUS : W/C`,
 
-  // Rosehips (Rosa canina)
-  849: `ROSA (Rose Buds, Rose Petals)
-  FLOWERS. Standard Infusion, 2-4 ounces.  Make w/isotonic water for eyes.
-  STATUS : W/C`,
-
   // Rose (Rosa gallica)
   850: `ROSA (Rose Buds, Rose Petals)
   FLOWERS. Standard Infusion, 2-4 ounces.  Make w/isotonic water for eyes.

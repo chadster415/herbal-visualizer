@@ -21,7 +21,6 @@ interface HerbRow {
   tone: ToneEnergetic;
   action_ids: Set<number>;
   system_ids: Set<number>;
-  menstruum_label: string | null;
 }
 
 export interface HerbFilterPanelProps {
@@ -151,7 +150,7 @@ export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect 
     const [herbsRes, systemsRes, actionsRes] = await Promise.all([
       supabase
         .from('herbs')
-        .select('id, common_name, latin_name, plant_part, temperature, moisture, tone, pinyin_name, herb_primary_actions(primary_action_id, body_system_id), herb_menstruum(primary_label)')
+        .select('id, common_name, latin_name, plant_part, temperature, moisture, tone, pinyin_name, herb_primary_actions(primary_action_id, body_system_id)')
         .eq('is_tcm', false)
         .order('common_name'),
       supabase.from('body_systems').select('id, name').order('name'),
@@ -162,7 +161,6 @@ export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect 
       setHerbs(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         herbsRes.data.map((h: any) => {
-          const menstruum = Array.isArray(h.herb_menstruum) ? h.herb_menstruum[0] : h.herb_menstruum;
           return {
             id: h.id,
             common_name: h.common_name,
@@ -175,7 +173,6 @@ export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect 
             action_ids: new Set<number>(h.herb_primary_actions.map((a: any) => a.primary_action_id).filter(Boolean)),
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             system_ids: new Set<number>(h.herb_primary_actions.map((a: any) => a.body_system_id).filter(Boolean)),
-            menstruum_label: menstruum?.primary_label ?? null,
             pinyin_name: h.pinyin_name ?? null,
           };
         })
@@ -511,7 +508,7 @@ export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect 
                             <div className="text-xs text-gray-500 mt-0.5">{herb.pinyin_name}</div>
                           )}
                           <div className="text-xs italic text-gray-500 mt-0.5">{herb.latin_name}</div>
-                          {(sortedSystemIds.length > 0 || herb.menstruum_label) && (
+                          {sortedSystemIds.length > 0 && (
                             <div className="flex items-center flex-wrap gap-1 mt-1.5">
                               {sortedSystemIds.map((sysId) => {
                                 const name = systemMap.get(sysId);
@@ -534,11 +531,7 @@ export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect 
                                   </span>
                                 );
                               })}
-                              {herb.menstruum_label && (
-                                <span className="text-xs px-2 py-0.5 rounded-full border bg-purple-50 border-purple-200 text-purple-700">
-                                  {herb.menstruum_label}
-                                </span>
-                              )}
+
                             </div>
                           )}
                         </button>
