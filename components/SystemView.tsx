@@ -17,6 +17,7 @@ interface DisorderListItem {
   id: number;
   name: string;
   sort_order: number;
+  is_case_study: boolean;
   search_keywords: string[];
 }
 
@@ -105,7 +106,7 @@ export function SystemView({ onHerbClick, onActionClick, onSupplementClick, sele
           .from('body_systems')
           .select(`*, herb_primary_actions (herbs (*), primary_actions (*), relative_strength)`)
           .order('name'),
-        supabase.from('disorders').select('id, name, body_system_id, sort_order, search_keywords').order('sort_order'),
+        supabase.from('disorders').select('id, name, body_system_id, sort_order, is_case_study, search_keywords').order('sort_order'),
         supabase.from('body_system_notes').select('body_system_id, id, note_text, sort_order').order('sort_order'),
       ]);
 
@@ -114,7 +115,7 @@ export function SystemView({ onHerbClick, onActionClick, onSupplementClick, sele
       const disorderMap = new Map<number, DisorderListItem[]>();
       disorderData?.forEach((d) => {
         if (!disorderMap.has(d.body_system_id)) disorderMap.set(d.body_system_id, []);
-        disorderMap.get(d.body_system_id)!.push({ id: d.id, name: d.name, sort_order: d.sort_order, search_keywords: d.search_keywords ?? [] });
+        disorderMap.get(d.body_system_id)!.push({ id: d.id, name: d.name, sort_order: d.sort_order, is_case_study: d.is_case_study ?? false, search_keywords: d.search_keywords ?? [] });
       });
 
       const notesMap = new Map<number, SystemNote[]>();
@@ -220,7 +221,14 @@ export function SystemView({ onHerbClick, onActionClick, onSupplementClick, sele
                   : 'bg-gray-50 hover:bg-gray-100'
               }`}
             >
-              <div className="font-semibold text-gray-900">{system.name}</div>
+              <div className="flex items-center justify-between gap-2">
+                <span className="font-semibold text-gray-900">{system.name}</span>
+                {system.disorders?.some((d) => d.is_case_study) && (
+                  <span className="text-[10px] font-medium bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded-full border border-purple-200 leading-tight shrink-0">
+                    Case Study
+                  </span>
+                )}
+              </div>
               <div className="text-xs text-gray-500 mt-1">
                 {(system.disorder_count ?? 0) > 0 && (
                   <div>{system.disorder_count} disorder{system.disorder_count !== 1 ? 's' : ''}</div>
@@ -403,16 +411,26 @@ export function SystemView({ onHerbClick, onActionClick, onSupplementClick, sele
                   </div>
                   {(system.disorders?.length ?? 0) > 0 ? (
                     <ul className="space-y-0.5 border-t border-gray-100 pt-1.5">
-                      {[...system.disorders!].sort((a, b) => a.name.localeCompare(b.name)).map((disorder) => (
-                        <li key={disorder.id}>
-                          <button
-                            onClick={() => navigateToDisorder(system, disorder.id)}
-                            className="text-sm text-left text-gray-500 hover:text-green-700 hover:underline w-full"
-                          >
-                            {disorder.name}
-                          </button>
-                        </li>
-                      ))}
+                      {[...system.disorders!]
+                        .sort((a, b) => {
+                          if (a.is_case_study && !b.is_case_study) return -1;
+                          if (!a.is_case_study && b.is_case_study) return 1;
+                          return a.name.localeCompare(b.name);
+                        })
+                        .map((disorder) => (
+                          <li key={disorder.id}>
+                            <button
+                              onClick={() => navigateToDisorder(system, disorder.id)}
+                              className={`text-sm text-left w-full hover:underline ${
+                                disorder.is_case_study
+                                  ? 'text-purple-600 hover:text-purple-800 font-medium'
+                                  : 'text-gray-500 hover:text-green-700'
+                              }`}
+                            >
+                              {disorder.name}
+                            </button>
+                          </li>
+                        ))}
                     </ul>
                   ) : (
                     <p className="text-xs text-gray-400 italic border-t border-gray-100 pt-1.5">No disorders recorded</p>

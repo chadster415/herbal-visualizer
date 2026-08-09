@@ -81,6 +81,7 @@ export interface Disorder {
   name: string;
   body_system_id: number;
   sort_order: number;
+  is_case_study: boolean;
   created_at: string;
 }
 
@@ -90,6 +91,7 @@ export interface DisorderNote {
   note_text: string;
   sort_order: number;
   section: string;
+  heading?: string | null;
   created_at: string;
 }
 
@@ -257,6 +259,7 @@ export interface Supplement {
   dietary_sources: string | null;
   absorption_notes: string | null;
   drug_depletors: string | null;
+  temperature: string | null;   // explicit override; null = use category default
   sort_order: number;
   created_at: string;
 }

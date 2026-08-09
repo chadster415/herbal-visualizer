@@ -347,6 +347,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
         setSelectedHerb(herb);
         setSelectedSupplement(null);
         setAlternatesOpen(false);
+        setMobileListOpen(false);
         setSectionsOpen({ primaryActions: true, secondaryActions: true, constituentProfile: true, constituents: true, disorders: true, duiYao: true, contraindications: true, mmMateriaMedica: true, herbContraindications: true });
         setTimeout(() => { scrollHerbInSidebar(selectedHerbId); }, 100);
       }
@@ -809,11 +810,14 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
                         : solubilityStyles(supplement.solubility).card
                     }`}
                   >
-                    <div className="flex items-start justify-between gap-1">
-                      <div>
-                        <div className="font-semibold text-gray-900 text-sm">{supplement.name}</div>
-                        <div className="text-xs text-indigo-600 mt-0.5">{supplement.category}{supplement.subcategory ? ` · ${supplement.subcategory}` : ''}</div>
-                      </div>
+                    <div className="flex items-center justify-between gap-2 min-w-0">
+                      <div className="font-semibold text-gray-900 text-sm truncate">{supplement.name}</div>
+                      {supplement.category === 'Mineral' && supplement.temperature !== 'warming' && (
+                        <EnergeticEmojis temperature="cooling" className="text-base leading-none shrink-0" />
+                      )}
+                    </div>
+                    <div className="flex items-center justify-between gap-2 mt-1.5">
+                      <div className="text-xs text-indigo-600 min-w-0 truncate">{supplement.category}{supplement.subcategory ? ` · ${supplement.subcategory}` : ''}</div>
                       {supplement.solubility && (
                         <span className={`text-[10px] px-1.5 py-0.5 rounded-full border font-medium shrink-0 ${solubilityStyles(supplement.solubility).badge}`}>
                           {solubilityLabel(supplement.solubility)}

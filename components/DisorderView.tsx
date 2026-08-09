@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 
+
 const SOLUBILITY_COLORS: Record<string, { bubble: string; name: string; dose: string; note: string; category: string }> = {
   'water-soluble':       { bubble: 'bg-blue-50 hover:bg-blue-100 border border-blue-200 hover:border-blue-300',     name: 'text-blue-900',   dose: 'text-blue-600',   note: 'text-blue-500',   category: 'text-blue-400' },
   'fat-soluble':         { bubble: 'bg-amber-50 hover:bg-amber-100 border border-amber-200 hover:border-amber-300', name: 'text-amber-900',  dose: 'text-amber-600',  note: 'text-amber-500',  category: 'text-amber-400' },
@@ -21,6 +22,21 @@ import type {
   PrescriptionHerb,
   Supplement,
 } from '@/types/database';
+
+type NoteGroup = { heading: string | null; notes: DisorderNote[] };
+function groupByHeading(notes: DisorderNote[]): NoteGroup[] {
+  const sorted = [...notes].sort((a, b) => a.sort_order - b.sort_order);
+  const groups: NoteGroup[] = [];
+  for (const note of sorted) {
+    const last = groups[groups.length - 1];
+    if (last && last.heading === (note.heading ?? null)) {
+      last.notes.push(note);
+    } else {
+      groups.push({ heading: note.heading ?? null, notes: [note] });
+    }
+  }
+  return groups;
+}
 
 interface DisorderData extends Disorder {
   disorder_notes: DisorderNote[];
@@ -81,6 +97,9 @@ export function DisorderView({ bodySystemId, onHerbClick, onActionClick, onSuppl
   const [disorderListOpen, setDisorderListOpen] = useState(true);
   const [imageManifest, setImageManifest] = useState<Record<string, number>>({});
   const [strengthMap, setStrengthMap] = useState<Map<number, string>>(new Map());
+  const subjectiveRef = useRef<HTMLDivElement | null>(null);
+  const objectiveRef = useRef<HTMLDivElement | null>(null);
+  const lifestyleRef = useRef<HTMLDivElement | null>(null);
   const actionsRef = useRef<HTMLDivElement | null>(null);
   const remediesRef = useRef<HTMLDivElement | null>(null);
   const prescriptionsRef = useRef<HTMLDivElement | null>(null);
@@ -244,7 +263,7 @@ export function DisorderView({ bodySystemId, onHerbClick, onActionClick, onSuppl
       <div>
         {selectedDisorder && (
           <div className="flex items-center gap-2 mb-2 sm:hidden">
-            <span className="px-3 py-1.5 rounded-lg border text-sm font-medium bg-green-600 text-white border-green-600">
+            <span className={`px-3 py-1.5 rounded-lg border text-sm font-medium ${selectedDisorder.is_case_study ? 'bg-purple-600 text-white border-purple-600' : 'bg-green-600 text-white border-green-600'}`}>
               {selectedDisorder.name}
             </span>
             <button
@@ -262,6 +281,8 @@ export function DisorderView({ bodySystemId, onHerbClick, onActionClick, onSuppl
             {disorders
               .slice()
               .sort((a, b) => {
+                if (a.is_case_study && !b.is_case_study) return -1;
+                if (!a.is_case_study && b.is_case_study) return 1;
                 if (a.name === 'Overall') return -1;
                 if (b.name === 'Overall') return 1;
                 return a.name.localeCompare(b.name);
@@ -276,8 +297,12 @@ export function DisorderView({ bodySystemId, onHerbClick, onActionClick, onSuppl
                   }}
                   className={`px-3 py-1.5 rounded-lg border text-sm font-medium transition-all ${
                     selectedDisorder?.id === disorder.id
-                      ? 'bg-green-600 text-white border-green-600'
-                      : 'bg-white text-gray-700 border-gray-300 hover:bg-green-50 hover:border-green-400'
+                      ? disorder.is_case_study
+                        ? 'bg-purple-600 text-white border-purple-600'
+                        : 'bg-green-600 text-white border-green-600'
+                      : disorder.is_case_study
+                        ? 'bg-white text-purple-700 border-purple-300 hover:bg-purple-50 hover:border-purple-400'
+                        : 'bg-white text-gray-700 border-gray-300 hover:bg-green-50 hover:border-green-400'
                   }`}
                 >
                   {disorder.name}
@@ -290,37 +315,25 @@ export function DisorderView({ bodySystemId, onHerbClick, onActionClick, onSuppl
       <div>
         {selectedDisorder ? (
           <div className="space-y-8">
-            <h2 className="text-3xl font-bold text-green-800 mb-2">
+            <h2 className="text-3xl font-bold text-green-800 mb-2 flex items-center gap-3 flex-wrap">
               {selectedDisorder.name}
+              {selectedDisorder.is_case_study && (
+                <span className="text-sm font-medium bg-purple-100 text-purple-700 px-2.5 py-1 rounded-full border border-purple-200">
+                  Case Study
+                </span>
+              )}
             </h2>
-            <TextPageLinks
-              disorderName={selectedDisorder.name}
-              pageCount={imageManifest[selectedDisorder.name] ?? 0}
-            />
-
-            {/* Notes */}
-            {selectedDisorder.disorder_notes.filter((n) => n.section === 'general').length > 0 && (
-              <div className="bg-green-50 border border-green-200 border-l-4 border-l-green-600 rounded-lg p-4">
-                <ul className="list-disc list-inside space-y-2">
-                  {selectedDisorder.disorder_notes
-                    .filter((n) => n.section === 'general')
-                    .map((note) => (
-                      <li key={note.id} className="text-gray-700">
-                        {note.note_text}
-                      </li>
-                    ))}
-                </ul>
-              </div>
-            )}
-
-            {/* Section nav */}
+            {/* Section nav — positioned under title */}
             {(() => {
               const pills = [
+                ...(selectedDisorder.disorder_notes.some((n) => n.section === 'subjective') ? [{ label: 'Subjective', ref: subjectiveRef }] : []),
+                ...(selectedDisorder.disorder_notes.some((n) => n.section === 'objective') ? [{ label: 'Objective', ref: objectiveRef }] : []),
+                ...(selectedDisorder.disorder_notes.some((n) => n.section === 'general') ? [{ label: 'Lifestyle', ref: lifestyleRef }] : []),
                 ...((selectedDisorder.disorder_actions_indicated.length > 0 || selectedDisorder.disorder_action_herbs.length > 0) ? [{ label: 'Actions Indicated', ref: actionsRef }] : []),
                 ...(selectedDisorder.disorder_specific_remedies.length > 0 ? [{ label: 'Specific Remedies', ref: remediesRef }] : []),
                 ...(selectedDisorder.disorder_prescriptions.length > 0 ? [{ label: 'Prescriptions', ref: prescriptionsRef }] : []),
               ];
-              if (pills.length < 2) return null;
+              if (pills.length === 0) return null;
               return (
                 <div className="flex flex-wrap gap-1.5 text-xs">
                   {pills.map(({ label, ref }) => (
@@ -335,6 +348,89 @@ export function DisorderView({ bodySystemId, onHerbClick, onActionClick, onSuppl
                 </div>
               );
             })()}
+
+            <TextPageLinks
+              disorderName={selectedDisorder.name}
+              pageCount={imageManifest[selectedDisorder.name] ?? 0}
+            />
+
+            {/* Subjective */}
+            {(() => {
+              const notes = selectedDisorder.disorder_notes.filter((n) => n.section === 'subjective');
+              if (notes.length === 0) return null;
+              return (
+                <div ref={subjectiveRef} className="bg-blue-50 border border-blue-200 border-l-4 border-l-blue-500 rounded-lg p-4">
+                  <h3 className="text-xs font-semibold text-blue-600 uppercase tracking-widest mb-3">Subjective</h3>
+                  <div className="space-y-3">
+                    {groupByHeading(notes).map((group, i) => (
+                      <div key={i}>
+                        {group.heading && (
+                          <p className="text-sm font-semibold text-blue-800 mb-1">{group.heading}</p>
+                        )}
+                        {!group.heading ? (
+                          group.notes.map((n) => (
+                            <p key={n.id} className="text-sm text-gray-700">{n.note_text}</p>
+                          ))
+                        ) : (
+                          <ul className="list-disc list-inside space-y-1">
+                            {group.notes.map((n) => (
+                              <li key={n.id} className="text-sm text-gray-700">{n.note_text}</li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Objective */}
+            {(() => {
+              const notes = selectedDisorder.disorder_notes.filter((n) => n.section === 'objective');
+              if (notes.length === 0) return null;
+              return (
+                <div ref={objectiveRef} className="bg-indigo-50 border border-indigo-200 border-l-4 border-l-indigo-500 rounded-lg p-4">
+                  <h3 className="text-xs font-semibold text-indigo-600 uppercase tracking-widest mb-3">Objective</h3>
+                  <div className="space-y-3">
+                    {groupByHeading(notes).map((group, i) => (
+                      <div key={i}>
+                        {group.heading && (
+                          <p className="text-sm font-semibold text-indigo-800 mb-1">{group.heading}</p>
+                        )}
+                        {!group.heading ? (
+                          group.notes.map((n) => (
+                            <p key={n.id} className="text-sm text-gray-700">{n.note_text}</p>
+                          ))
+                        ) : (
+                          <ul className="list-disc list-inside space-y-1">
+                            {group.notes.map((n) => (
+                              <li key={n.id} className="text-sm text-gray-700">{n.note_text}</li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Lifestyle Recommendations */}
+            {selectedDisorder.disorder_notes.filter((n) => n.section === 'general').length > 0 && (
+              <div ref={lifestyleRef} className="bg-green-50 border border-green-200 border-l-4 border-l-green-600 rounded-lg p-4">
+                <h3 className="text-xs font-semibold text-green-600 uppercase tracking-widest mb-3">Lifestyle Recommendations</h3>
+                <ul className="list-disc list-inside space-y-2">
+                  {selectedDisorder.disorder_notes
+                    .filter((n) => n.section === 'general')
+                    .map((note) => (
+                      <li key={note.id} className="text-gray-700">
+                        {note.note_text}
+                      </li>
+                    ))}
+                </ul>
+              </div>
+            )}
 
             {/* Actions Indicated + Action Herbs (combined) */}
             {(selectedDisorder.disorder_actions_indicated.length > 0 || selectedDisorder.disorder_action_herbs.length > 0) && (() => {
@@ -505,6 +601,9 @@ export function DisorderView({ bodySystemId, onHerbClick, onActionClick, onSuppl
                                 ))}
                               </div>
                             )}
+                            {prescHerb.note && (
+                              <span className="text-xs italic text-gray-500 mt-1 block">{prescHerb.note}</span>
+                            )}
                           </button>
                         ))}
                         {prescription.prescription_supplements.map((ps) => {
@@ -515,8 +614,11 @@ export function DisorderView({ bodySystemId, onHerbClick, onActionClick, onSuppl
                             onClick={() => onSupplementClick?.(ps.supplements.id)}
                             className={`relative inline-flex flex-col items-start ${sc.bubble} rounded-lg px-3 py-2 transition-all hover:shadow-md`}
                           >
-                            <div className="flex items-baseline gap-2 mb-1">
+                            <div className="flex items-center justify-between w-full gap-2 mb-1">
                               <span className={`font-medium ${sc.name}`}>{ps.supplements.name}</span>
+                              {ps.supplements.category === 'Mineral' && ps.supplements.temperature !== 'warming' && (
+                                <EnergeticEmojis temperature="cooling" className="text-base leading-none shrink-0" />
+                              )}
                             </div>
                             {ps.dose && (
                               <span className={`text-xs font-medium ${sc.dose}`}>{ps.dose}</span>

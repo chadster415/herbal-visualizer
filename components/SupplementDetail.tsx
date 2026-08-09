@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import type { Supplement } from '@/types/database';
+import { EnergeticEmojis } from './EnergeticEmojis';
 
 interface DisorderRef {
   prescriptionId: number;
@@ -81,7 +82,12 @@ export function SupplementDetail({ supplement, onDisorderClick }: SupplementDeta
     <div>
       {/* Header */}
       <div className="mb-4">
-        <h2 className="text-3xl font-bold text-indigo-800">{supplement.name}</h2>
+        <div className="flex items-start justify-between gap-3">
+          <h2 className="text-3xl font-bold text-indigo-800">{supplement.name}</h2>
+          {supplement.category === 'Mineral' && supplement.temperature !== 'warming' && (
+            <EnergeticEmojis temperature="cooling" className="text-2xl leading-none shrink-0 mt-1" />
+          )}
+        </div>
         {supplement.subcategory && (
           <p className="text-sm text-gray-500 mt-0.5">{supplement.subcategory}</p>
         )}
