@@ -588,6 +588,11 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
     );
   });
 
+  const filteredSupplements = supplements.filter((s) => {
+    const term = searchTerm.toLowerCase();
+    return !term || s.name.toLowerCase().includes(term) || s.category.toLowerCase().includes(term);
+  });
+
   function calcTooltipPos(el: HTMLElement) {
     const rect = el.getBoundingClientRect();
     const POPUP_W = 272;
@@ -705,7 +710,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
             />
             Include TCM-only herbs
           </label>
-          {supplements.length > 0 && (
+          {filteredSupplements.length > 0 && (
             <button
               onClick={() => {
                 const el = vitaminsSectionRef.current;
@@ -779,17 +784,12 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
           ))}
 
           {/* Supplements section */}
-          {supplements.length > 0 && (
+          {filteredSupplements.length > 0 && (
             <>
               <div ref={vitaminsSectionRef} className="pt-3 pb-1 px-1">
                 <p className="text-xs font-semibold text-indigo-400 uppercase tracking-widest">Vitamins &amp; Supplements</p>
               </div>
-              {supplements
-                .filter((s) => {
-                  const term = searchTerm.toLowerCase();
-                  return !term || s.name.toLowerCase().includes(term) || s.category.toLowerCase().includes(term);
-                })
-                .map((supplement) => (
+              {filteredSupplements.map((supplement) => (
                   <button
                     key={`supp-${supplement.id}`}
                     onClick={() => {
@@ -1166,7 +1166,26 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
                     </div>
                     {selectedHerb.herb_menstruum && (
                       <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                        <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2">Best Menstruum</p>
+                        <div className="flex items-center gap-1.5 mb-2">
+                          <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Best Menstruum</p>
+                          <span className="relative group cursor-help">
+                            <span className="w-3.5 h-3.5 rounded-full bg-gray-300 hover:bg-gray-400 text-gray-600 text-[9px] font-bold flex items-center justify-center leading-none transition-colors select-none">i</span>
+                            <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-64 bg-gray-900 text-white text-xs rounded-lg p-3 shadow-xl pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity z-50 text-left normal-case tracking-normal font-normal">
+                              <p className="font-semibold mb-2 text-gray-200">Constituent Solubility</p>
+                              <ul className="space-y-1 text-gray-300">
+                                <li><span className="text-white font-medium">Mucilage</span> — cold water only; alcohol destroys it</li>
+                                <li><span className="text-white font-medium">Polysaccharides</span> — hot water or very dilute alcohol</li>
+                                <li><span className="text-white font-medium">Tannins</span> — water or low alcohol + 5–10% glycerin</li>
+                                <li><span className="text-white font-medium">Volatile oils</span> — glycerite preserves best; degrade in alcohol over time</li>
+                                <li><span className="text-white font-medium">Resins</span> — high alcohol (70–90%) only; not water-soluble</li>
+                                <li><span className="text-white font-medium">Alkaloids</span> — min 45% alcohol + 5–10% vinegar</li>
+                                <li><span className="text-white font-medium">Saponins</span> — typically water-soluble</li>
+                                <li><span className="text-white font-medium">Flavonoids / Glycosides</span> — water and alcohol</li>
+                              </ul>
+                              <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-l-[5px] border-r-[5px] border-t-[5px] border-l-transparent border-r-transparent border-t-gray-900" />
+                            </div>
+                          </span>
+                        </div>
                         <div className="flex flex-wrap gap-2 mb-2">
                           {menstruumBadges(selectedHerb.herb_menstruum).map((b) => (
                             <span key={b.label} className={`px-3 py-1 rounded-full text-xs font-medium border ${b.color}`}>
