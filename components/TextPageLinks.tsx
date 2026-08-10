@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 interface Props {
   disorderName: string;
@@ -12,6 +12,16 @@ export function TextPageLinks({ disorderName, pageCount }: Props) {
   const [pinnedPage, setPinnedPage] = useState<number | null>(null);
   const [rect, setRect] = useState<DOMRect | null>(null);
   const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (pinnedPage === null || pageCount <= 1) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowLeft') setPinnedPage((p) => Math.max(1, (p ?? 1) - 1));
+      if (e.key === 'ArrowRight') setPinnedPage((p) => Math.min(pageCount, (p ?? 1) + 1));
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [pinnedPage, pageCount]);
 
   if (pageCount === 0) return null;
 
@@ -110,7 +120,15 @@ export function TextPageLinks({ disorderName, pageCount }: Props) {
 
             {/* Page switcher — only shown when there are multiple pages */}
             {pageCount > 1 && (
-              <div className="flex justify-center gap-2 py-3 bg-white border-t border-gray-100">
+              <div className="flex items-center justify-center gap-3 py-3 bg-white border-t border-gray-100">
+                <button
+                  onClick={() => setPinnedPage((p) => Math.max(1, (p ?? 1) - 1))}
+                  disabled={pinnedPage === 1}
+                  className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 text-gray-700 hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  aria-label="Previous page"
+                >
+                  ‹
+                </button>
                 {Array.from({ length: pageCount }, (_, i) => i + 1).map((page) => (
                   <button
                     key={page}
@@ -124,6 +142,14 @@ export function TextPageLinks({ disorderName, pageCount }: Props) {
                     Page {page}
                   </button>
                 ))}
+                <button
+                  onClick={() => setPinnedPage((p) => Math.min(pageCount, (p ?? 1) + 1))}
+                  disabled={pinnedPage === pageCount}
+                  className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 text-gray-700 hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  aria-label="Next page"
+                >
+                  ›
+                </button>
               </div>
             )}
           </div>

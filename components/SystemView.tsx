@@ -298,6 +298,7 @@ export function SystemView({ onHerbClick, onActionClick, onSupplementClick, sele
               <div className="space-y-6">
                 {(selectedSystem.system_notes?.length ?? 0) > 0 && (
                   <div className="bg-green-50 border border-green-200 border-l-4 border-l-green-600 rounded-lg p-4">
+                    <h3 className="text-xs font-semibold text-green-600 uppercase tracking-widest mb-3">Notes</h3>
                     <ul className="list-disc list-inside space-y-2">
                       {selectedSystem.system_notes!.map((note) => (
                         <li key={note.id} className="text-gray-700">{note.note_text}</li>
