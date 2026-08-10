@@ -321,7 +321,7 @@ export function SystemView({ onHerbClick, onActionClick, onSupplementClick, sele
                             >
                               <div className="flex items-center justify-between gap-1 mb-1">
                                 <span className="font-medium text-sm">{item.herb.common_name}{item.herb.plant_part ? ` (${item.herb.plant_part})` : ''}</span>
-                                <EnergeticEmojis temperature={item.herb.temperature} moisture={item.herb.moisture} tone={item.herb.tone} className="text-sm leading-none shrink-0" />
+                                <EnergeticEmojis temperature={item.herb.temperature} moisture={item.herb.moisture} tone={item.herb.tone} temperatureInferred={item.herb.temperature_inferred} moistureInferred={item.herb.moisture_inferred} toneInferred={item.herb.tone_inferred} className="text-sm leading-none shrink-0" />
                               </div>
                               <div className="flex items-center justify-between gap-1">
                                 <span className="text-xs italic text-gray-600">{item.herb.latin_name}</span>

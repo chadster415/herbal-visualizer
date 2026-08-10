@@ -196,15 +196,15 @@ export function FormulaBuilderModal({ isOpen, onClose, onHerbClick }: Props) {
     const [baseRes, synRes, specRes, prescIdRes, indicatedActionsRes] = await Promise.all([
       supabase
         .from('herb_primary_actions')
-        .select('herbs(id, latin_name, common_name, plant_part, temperature, moisture, tone), primary_actions(name)')
+        .select('herbs(id, latin_name, common_name, plant_part, temperature, moisture, tone, temperature_inferred, moisture_inferred, tone_inferred), primary_actions(name)')
         .eq('body_system_id', selectedSystem.id),
       supabase
         .from('disorder_action_herbs')
-        .select('herbs(id, latin_name, common_name, plant_part, temperature, moisture, tone), primary_actions(name)')
+        .select('herbs(id, latin_name, common_name, plant_part, temperature, moisture, tone, temperature_inferred, moisture_inferred, tone_inferred), primary_actions(name)')
         .eq('disorder_id', selectedDisorder.id),
       supabase
         .from('disorder_specific_remedies')
-        .select('herbs(id, latin_name, common_name, plant_part, temperature, moisture, tone), description')
+        .select('herbs(id, latin_name, common_name, plant_part, temperature, moisture, tone, temperature_inferred, moisture_inferred, tone_inferred), description')
         .eq('disorder_id', selectedDisorder.id),
       supabase
         .from('disorder_prescriptions')
@@ -226,13 +226,13 @@ export function FormulaBuilderModal({ isOpen, onClose, onHerbClick }: Props) {
       prescIds.length > 0
         ? supabase
             .from('prescription_herbs')
-            .select('herbs(id, latin_name, common_name, plant_part, temperature, moisture, tone), prescription_herb_actions(primary_actions(name))')
+            .select('herbs(id, latin_name, common_name, plant_part, temperature, moisture, tone, temperature_inferred, moisture_inferred, tone_inferred), prescription_herb_actions(primary_actions(name))')
             .in('prescription_id', prescIds)
         : Promise.resolve({ data: [] as unknown[], error: null }),
       indicatedActionIds.length > 0
         ? supabase
             .from('herb_primary_actions')
-            .select('herbs(id, latin_name, common_name, plant_part, temperature, moisture, tone), primary_actions(name)')
+            .select('herbs(id, latin_name, common_name, plant_part, temperature, moisture, tone, temperature_inferred, moisture_inferred, tone_inferred), primary_actions(name)')
             .in('primary_action_id', indicatedActionIds)
             .eq('body_system_id', selectedSystem.id)
         : Promise.resolve({ data: [] as unknown[], error: null }),

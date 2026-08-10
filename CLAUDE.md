@@ -3,6 +3,7 @@
 ## Guides
 - **[Adding herb data from books](docs/adding-herb-data-from-books.md)** — How to add contraindications, energetics, and body system actions from a printed materia medica source (Tilgner, Hoffmann, etc.). Covers all cases: herb already in DB, herb missing, batch imports, and terminology mapping.
 - **[Adding case studies](docs/adding-case-studies.md)** — Full walkthrough for creating a SOAP-structured case study entry: migration blocks for disorder, lifestyle notes, actions indicated, prescriptions, Subjective notes (with headed sub-sections), and Objective notes. Includes sort order ranges, herb conventions, and action inference guide.
+- **[Inferring energetics from constituents](docs/inferring-energetics-from-constituents.md)** — Rules for assigning first-pass temperature/moisture energetics to herbs based on constituent profile, with confidence levels and SQL patterns for marking values as inferred. Tone cannot be reliably inferred; do not attempt.
 
 ## Project Overview
 A Next.js app backed by a local Supabase instance that visualizes herbal medicine data from BHC Apprenticeship class materials. Data is organized by body system → disorders → herbs → actions.

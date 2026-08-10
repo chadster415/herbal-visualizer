@@ -777,7 +777,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
                   {herb.is_tcm && (
                     <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-red-50 border border-red-200 text-red-700 font-semibold">TCM</span>
                   )}
-                  <EnergeticEmojis temperature={herb.temperature} moisture={herb.moisture} tone={herb.tone} className="text-sm leading-none" />
+                  <EnergeticEmojis temperature={herb.temperature} moisture={herb.moisture} tone={herb.tone} temperatureInferred={herb.temperature_inferred} moistureInferred={herb.moisture_inferred} toneInferred={herb.tone_inferred} className="text-sm leading-none" />
                 </div>
               </div>
             </button>

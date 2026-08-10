@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { ArrowRightIcon, FireIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { supabase } from '@/lib/supabase';
 
 type Dimension = 'cold' | 'hot' | 'damp' | 'dry' | 'tense' | 'lax';
 
@@ -41,56 +42,48 @@ const QUESTIONS: Question[] = [
   { text: 'Do you have chronic infections, a leaky bladder, or muscle weakness?', dimensions: ['lax'] },
 ];
 
-const DIMENSION_INFO: Record<Dimension, {
+interface DimInfo {
   label: string;
   need: string;
   emoji: string;
   description: string;
-  herbs: string[];
-}> = {
-  cold: {
-    label: 'Cold',
-    need: 'Warming',
-    emoji: '🥶',
-    description: 'Your body needs stimulating, warming herbs to increase vitality, circulation, and metabolic fire.',
-    herbs: ['Ginger', 'Ashwagandha', 'Rosemary', 'Thyme', 'Cayenne', 'Garlic', 'Turmeric', 'Ginseng', 'Maca', 'Yerba Mansa'],
-  },
-  hot: {
-    label: 'Hot',
-    need: 'Cooling',
-    emoji: '🔥',
-    description: 'Your body needs cooling herbs to soothe inflammation, irritation, and excess heat.',
-    herbs: ['Lemon Balm', 'Violet', 'Rosehips', 'Licorice', 'Vervain', 'Peach'],
-  },
-  damp: {
-    label: 'Damp',
-    need: 'Drying',
-    emoji: '💧',
-    description: 'Your body needs drying herbs to remove excess fluid, reduce congestion, and restore healthy flow.',
-    herbs: ['Nettles', 'Ginger', 'Rosemary', 'Rhodiola', 'Rose', 'Yerba Santa', 'Chasteberry', 'Scots Pine'],
-  },
-  dry: {
-    label: 'Dry',
-    need: 'Moistening',
-    emoji: '🏜️',
-    description: 'Your body needs moistening herbs to lubricate and soothe dry, brittle tissues.',
-    herbs: ['Marshmallow', 'Violet', 'Licorice', 'Mullein', 'Plantain', 'Shatavari', 'Aloe', 'Oat'],
-  },
-  tense: {
-    label: 'Tense',
-    need: 'Relaxing',
-    emoji: '😬',
-    description: 'Your body needs relaxing herbs to release muscle tension, spasm, and constriction.',
-    herbs: ['Catnip', 'Kava', 'Silk Tassel'],
-  },
-  lax: {
-    label: 'Lax',
-    need: 'Toning',
-    emoji: '🫠',
-    description: 'Your body needs toning herbs to strengthen lax tissues and reduce excess secretion or discharge.',
-    herbs: ['Yarrow', 'Raspberry', 'Rose', 'Plantain', 'Oak', 'Witch Hazel', "Shepherd's Purse", 'Schizandra'],
-  },
+}
+
+const DIMENSION_INFO: Record<Dimension, DimInfo> = {
+  cold:  { label: 'Cold',  need: 'Warming',    emoji: '🥶',  description: 'Your body needs stimulating, warming herbs to increase vitality, circulation, and metabolic fire.' },
+  hot:   { label: 'Hot',   need: 'Cooling',    emoji: '🔥',  description: 'Your body needs cooling herbs to soothe inflammation, irritation, and excess heat.' },
+  damp:  { label: 'Damp',  need: 'Drying',     emoji: '💧',  description: 'Your body needs drying herbs to remove excess fluid, reduce congestion, and restore healthy flow.' },
+  dry:   { label: 'Dry',   need: 'Moistening', emoji: '🏜️', description: 'Your body needs moistening herbs to lubricate and soothe dry, brittle tissues.' },
+  tense: { label: 'Tense', need: 'Relaxing',   emoji: '😬',  description: 'Your body needs relaxing herbs to release muscle tension, spasm, and constriction.' },
+  lax:   { label: 'Lax',   need: 'Toning',     emoji: '🫠',  description: 'Your body needs toning herbs to strengthen lax tissues and reduce excess secretion or discharge.' },
 };
+
+interface HerbEntry { name: string; inferred: boolean; }
+type HerbsByDimension = Record<Dimension, HerbEntry[]>;
+
+const EMPTY_HERBS: HerbsByDimension = { cold: [], hot: [], damp: [], dry: [], tense: [], lax: [] };
+
+async function fetchHerbsByDimension(): Promise<HerbsByDimension> {
+  const { data } = await supabase
+    .from('herbs')
+    .select('common_name, plant_part, temperature, moisture, tone, temperature_inferred, moisture_inferred, tone_inferred')
+    .eq('is_tcm', false)
+    .order('common_name');
+
+  const result: HerbsByDimension = { cold: [], hot: [], damp: [], dry: [], tense: [], lax: [] };
+  if (!data) return result;
+
+  for (const h of data) {
+    const name = h.plant_part ? `${h.common_name} (${h.plant_part})` : h.common_name;
+    if (h.temperature === 'warming') result.cold.push({ name, inferred: h.temperature_inferred ?? false });
+    if (h.temperature === 'cooling') result.hot.push({ name, inferred: h.temperature_inferred ?? false });
+    if (h.moisture === 'drying')     result.damp.push({ name, inferred: h.moisture_inferred ?? false });
+    if (h.moisture === 'moistening') result.dry.push({ name, inferred: h.moisture_inferred ?? false });
+    if (h.tone === 'relaxing')       result.tense.push({ name, inferred: h.tone_inferred ?? false });
+    if (h.tone === 'toning')         result.lax.push({ name, inferred: h.tone_inferred ?? false });
+  }
+  return result;
+}
 
 interface Props {
   isOpen: boolean;
@@ -108,6 +101,11 @@ export function EnergeticsQuizModal({ isOpen, onClose, onHerbSelect }: Props) {
   const [scores, setScores] = useState<Record<Dimension, number>>({
     cold: 0, hot: 0, damp: 0, dry: 0, tense: 0, lax: 0,
   });
+  const [herbsByDim, setHerbsByDim] = useState<HerbsByDimension>(EMPTY_HERBS);
+
+  useEffect(() => {
+    fetchHerbsByDimension().then(setHerbsByDim);
+  }, []);
 
   useEffect(() => {
     try {
@@ -186,7 +184,7 @@ export function EnergeticsQuizModal({ isOpen, onClose, onHerbSelect }: Props) {
           />
         )}
         {stage === 'results' && (
-          <ResultsScreen top={topDimensions()} scores={scores} onRetake={reset} onHerbSelect={onHerbSelect} />
+          <ResultsScreen top={topDimensions()} scores={scores} herbsByDim={herbsByDim} onRetake={reset} onHerbSelect={onHerbSelect} />
         )}
       </div>
     </div>
@@ -265,11 +263,13 @@ function QuizScreen({
 function ResultsScreen({
   top,
   scores,
+  herbsByDim,
   onRetake,
   onHerbSelect,
 }: {
   top: Dimension[];
   scores: Record<Dimension, number>;
+  herbsByDim: HerbsByDimension;
   onRetake: () => void;
   onHerbSelect?: (herbName: string) => void;
 }) {
@@ -289,10 +289,9 @@ function ResultsScreen({
     );
   }
 
+  // Herbs that appear in multiple top dimensions are highlighted darker
   const herbCounts = top.reduce((acc, dim) => {
-    DIMENSION_INFO[dim].herbs.forEach((herb) => {
-      acc[herb] = (acc[herb] || 0) + 1;
-    });
+    herbsByDim[dim].forEach(({ name }) => { acc[name] = (acc[name] || 0) + 1; });
     return acc;
   }, {} as Record<string, number>);
 
@@ -305,6 +304,7 @@ function ResultsScreen({
       <div className="flex flex-col gap-3">
         {top.map((dim) => {
           const info = DIMENSION_INFO[dim];
+          const herbs = herbsByDim[dim];
           return (
             <div key={dim} className="rounded-xl border-2 border-green-200 dark:border-green-700 bg-green-50 dark:bg-green-900/20 p-4">
               <div className="flex items-center gap-2 mb-1">
@@ -316,25 +316,28 @@ function ResultsScreen({
               </div>
               <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">{info.description}</p>
               <div className="flex flex-wrap gap-1.5">
-                {info.herbs.map((herb) => {
-                  const multi = herbCounts[herb] > 1;
+                {herbs.map(({ name, inferred }) => {
+                  const multi = herbCounts[name] > 1;
                   const baseClass = multi
                     ? 'bg-green-300 dark:bg-green-600/70 text-green-900 dark:text-green-100'
                     : 'bg-green-100 dark:bg-green-800/40 text-green-800 dark:text-green-300';
+                  const inferredClass = inferred ? ' opacity-50 italic' : '';
                   return onHerbSelect ? (
                     <button
-                      key={herb}
-                      onClick={() => onHerbSelect(herb)}
-                      className={`px-2 py-1 ${baseClass} rounded-md text-xs font-medium hover:brightness-95 transition-colors underline-offset-2 hover:underline`}
+                      key={name}
+                      onClick={() => onHerbSelect(name)}
+                      title={inferred ? 'Energetics inferred from constituents' : undefined}
+                      className={`px-2 py-1 ${baseClass}${inferredClass} rounded-md text-xs font-medium hover:brightness-95 transition-colors underline-offset-2 hover:underline`}
                     >
-                      {herb}
+                      {name}
                     </button>
                   ) : (
                     <span
-                      key={herb}
-                      className={`px-2 py-1 ${baseClass} rounded-md text-xs font-medium`}
+                      key={name}
+                      title={inferred ? 'Energetics inferred from constituents' : undefined}
+                      className={`px-2 py-1 ${baseClass}${inferredClass} rounded-md text-xs font-medium`}
                     >
-                      {herb}
+                      {name}
                     </span>
                   );
                 })}

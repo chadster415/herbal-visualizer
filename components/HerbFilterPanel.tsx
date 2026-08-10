@@ -19,6 +19,9 @@ interface HerbRow {
   temperature: TemperatureEnergetic;
   moisture: MoistureEnergetic;
   tone: ToneEnergetic;
+  temperature_inferred: boolean;
+  moisture_inferred: boolean;
+  tone_inferred: boolean;
   action_ids: Set<number>;
   system_ids: Set<number>;
 }
@@ -150,7 +153,7 @@ export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect 
     const [herbsRes, systemsRes, actionsRes] = await Promise.all([
       supabase
         .from('herbs')
-        .select('id, common_name, latin_name, plant_part, temperature, moisture, tone, pinyin_name, herb_primary_actions(primary_action_id, body_system_id)')
+        .select('id, common_name, latin_name, plant_part, temperature, moisture, tone, temperature_inferred, moisture_inferred, tone_inferred, pinyin_name, herb_primary_actions(primary_action_id, body_system_id)')
         .eq('is_tcm', false)
         .order('common_name'),
       supabase.from('body_systems').select('id, name').order('name'),
@@ -169,6 +172,9 @@ export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect 
             temperature: (h.temperature ?? 'neutral') as TemperatureEnergetic,
             moisture:    (h.moisture    ?? 'neutral') as MoistureEnergetic,
             tone:        (h.tone        ?? 'neutral') as ToneEnergetic,
+            temperature_inferred: h.temperature_inferred ?? false,
+            moisture_inferred:    h.moisture_inferred    ?? false,
+            tone_inferred:        h.tone_inferred        ?? false,
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             action_ids: new Set<number>(h.herb_primary_actions.map((a: any) => a.primary_action_id).filter(Boolean)),
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -502,7 +508,7 @@ export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect 
                         >
                           <div className="flex items-center justify-between gap-2">
                             <span className="font-medium text-gray-900 text-sm">{herb.common_name}{herb.plant_part ? ` (${herb.plant_part})` : ''}</span>
-                            <EnergeticEmojis temperature={herb.temperature} moisture={herb.moisture} tone={herb.tone} className="text-base leading-none shrink-0" />
+                            <EnergeticEmojis temperature={herb.temperature} moisture={herb.moisture} tone={herb.tone} temperatureInferred={herb.temperature_inferred} moistureInferred={herb.moisture_inferred} toneInferred={herb.tone_inferred} className="text-base leading-none shrink-0" />
                           </div>
                           {herb.pinyin_name && (
                             <div className="text-xs text-gray-500 mt-0.5">{herb.pinyin_name}</div>

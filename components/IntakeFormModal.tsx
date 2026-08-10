@@ -265,6 +265,9 @@ type HerbSuggestion = {
   temperature?: string;
   moisture?: string;
   tone?: string;
+  temperature_inferred?: boolean;
+  moisture_inferred?: boolean;
+  tone_inferred?: boolean;
   strength?: string;
   actions: string[];
 };
@@ -440,7 +443,7 @@ export function IntakeFormModal({ isOpen, onClose, onHerbSelect }: Props) {
 
         const { data, error } = await supabase
           .from('herb_primary_actions')
-          .select('relative_strength, primary_actions(name), herbs(id, common_name, latin_name, plant_part, temperature, moisture, tone)')
+          .select('relative_strength, primary_actions(name), herbs(id, common_name, latin_name, plant_part, temperature, moisture, tone, temperature_inferred, moisture_inferred, tone_inferred)')
           .in('body_system_id', dbIds)
           .in('primary_action_id', actionIds);
 
@@ -842,7 +845,7 @@ function HerbCardList({ herbs, isExpanded, onToggle, onHerbSelect }: {
             >
               <div className="flex items-start justify-between gap-1">
                 <span className="font-semibold text-gray-900 dark:text-gray-100 text-xs leading-snug">{herb.common_name}{herb.plant_part ? ` (${herb.plant_part})` : ''}</span>
-                <EnergeticEmojis temperature={herb.temperature} moisture={herb.moisture} tone={herb.tone} className="text-xs leading-none shrink-0 mt-0.5" />
+                <EnergeticEmojis temperature={herb.temperature} moisture={herb.moisture} tone={herb.tone} temperatureInferred={herb.temperature_inferred} moistureInferred={herb.moisture_inferred} toneInferred={herb.tone_inferred} className="text-xs leading-none shrink-0 mt-0.5" />
               </div>
               <div className="text-xs italic text-gray-500 dark:text-gray-400 leading-snug">{herb.latin_name}</div>
               {strengthCls && (

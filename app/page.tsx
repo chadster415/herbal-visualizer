@@ -284,6 +284,9 @@ export default function Home() {
         onClose={() => setFormulaBuilderOpen(false)}
         onHerbClick={handleHerbClick}
       />
+      {(energeticsQuizOpen || intakeFormOpen) && (
+        <div className="fixed inset-0 z-[39]" onClick={() => { setEnergeticsQuizOpen(false); setIntakeFormOpen(false); }} aria-hidden="true" />
+      )}
       <EnergeticsQuizModal isOpen={energeticsQuizOpen} onClose={() => setEnergeticsQuizOpen(false)} onHerbSelect={(herbName) => { handleQuizHerbSelect(herbName); if (typeof window !== 'undefined' && window.innerWidth < 640) setEnergeticsQuizOpen(false); }} />
       <IntakeFormModal isOpen={intakeFormOpen} onClose={() => setIntakeFormOpen(false)} onHerbSelect={(herbId) => { handleHerbClick(herbId); if (typeof window !== 'undefined' && window.innerWidth < 640) setIntakeFormOpen(false); }} />
       <BodyDiagramModal

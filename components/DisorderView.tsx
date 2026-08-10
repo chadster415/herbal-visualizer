@@ -464,7 +464,7 @@ export function DisorderView({ bodySystemId, onHerbClick, onActionClick, onSuppl
                     >
                       <div className="flex items-center gap-2">
                         <span className="font-medium text-gray-900 text-sm">{h.herbs.common_name}{h.herbs.plant_part ? ` (${h.herbs.plant_part})` : ''}</span>
-                        <EnergeticEmojis temperature={h.herbs.temperature} moisture={h.herbs.moisture} tone={h.herbs.tone} className="text-sm leading-none shrink-0" />
+                        <EnergeticEmojis temperature={h.herbs.temperature} moisture={h.herbs.moisture} tone={h.herbs.tone} temperatureInferred={h.herbs.temperature_inferred} moistureInferred={h.herbs.moisture_inferred} toneInferred={h.herbs.tone_inferred} className="text-sm leading-none shrink-0" />
                       </div>
                       <span className="text-xs italic text-gray-600">{h.herbs.latin_name}</span>
                     </button>
@@ -535,7 +535,7 @@ export function DisorderView({ bodySystemId, onHerbClick, onActionClick, onSuppl
                     >
                       <div className="flex items-center justify-between gap-2 mb-1">
                         <div className="font-semibold text-gray-900">{item.herbs.common_name}{item.herbs.plant_part ? ` (${item.herbs.plant_part})` : ''}</div>
-                        <EnergeticEmojis temperature={item.herbs.temperature} moisture={item.herbs.moisture} tone={item.herbs.tone} className="text-sm leading-none shrink-0" />
+                        <EnergeticEmojis temperature={item.herbs.temperature} moisture={item.herbs.moisture} tone={item.herbs.tone} temperatureInferred={item.herbs.temperature_inferred} moistureInferred={item.herbs.moisture_inferred} toneInferred={item.herbs.tone_inferred} className="text-sm leading-none shrink-0" />
                       </div>
                       <div className="text-sm italic text-gray-600">{item.herbs.latin_name}</div>
                       {(() => {

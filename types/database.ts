@@ -13,6 +13,9 @@ export interface Herb {
   temperature?: TemperatureEnergetic;
   moisture?: MoistureEnergetic;
   tone?: ToneEnergetic;
+  temperature_inferred?: boolean;
+  moisture_inferred?: boolean;
+  tone_inferred?: boolean;
   monograph_url?: string | null;
   pinyin_name?: string | null;
   is_tcm?: boolean;
