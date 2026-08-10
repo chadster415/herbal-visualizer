@@ -223,11 +223,19 @@ export function SystemView({ onHerbClick, onActionClick, onSupplementClick, sele
             >
               <div className="flex items-center justify-between gap-2">
                 <span className="font-semibold text-gray-900">{system.name}</span>
-                {system.disorders?.some((d) => d.is_case_study) && (
-                  <span className="text-[10px] font-medium bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded-full border border-purple-200 leading-tight shrink-0">
-                    Case Study
-                  </span>
-                )}
+                {(() => {
+                  const caseStudy = system.disorders?.find((d) => d.is_case_study);
+                  if (!caseStudy) return null;
+                  return (
+                    <span
+                      role="button"
+                      onClick={(e) => { e.stopPropagation(); navigateToDisorder(system, caseStudy.id); }}
+                      className="text-[10px] font-medium bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded-full border border-purple-200 leading-tight shrink-0 hover:bg-purple-200 hover:border-purple-400 transition-colors cursor-pointer"
+                    >
+                      Case Study
+                    </span>
+                  );
+                })()}
               </div>
               <div className="text-xs text-gray-500 mt-1">
                 {(system.disorder_count ?? 0) > 0 && (

@@ -150,6 +150,7 @@ herbal-visualizer/
 - Wrap each logical unit in its own `DO $$ ... END $$;` block
 - Use `RAISE NOTICE` for progress feedback
 - **User runs migrations manually** in the Supabase SQL Editor — never automate this
+- **Assume every migration has already been run** — when the user asks a question after a migration was created, treat it as already applied to the DB. Never ask "once you run X…"; instead query the live DB or write a new migration to correct/extend the previous one
 - **Every migration that creates a new table must end with explicit grants AND RLS policies** — the `GRANT ALL ON ALL TABLES` in migration 001 only covers tables that existed at that moment; prod Supabase also auto-enables RLS on new tables, so both are required:
   ```sql
   GRANT ALL ON TABLE herbal.new_table TO postgres, anon, authenticated, service_role;

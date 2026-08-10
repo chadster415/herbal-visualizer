@@ -881,7 +881,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
                 { key: 'primaryActions' as const, label: 'Primary Actions', pink: false },
                 ...(selectedHerb.herb_secondary_actions.length > 0 ? [{ key: 'secondaryActions' as const, label: 'Secondary Actions', pink: false }] : []),
                 ...(selectedProfiles.length > 0 ? [{ key: 'constituentProfile' as const, label: 'Constituents', pink: false }] : []),
-                ...((selectedHerb.herb_constituents?.length ?? 0) > 0 ? [{ key: 'constituents' as const, label: 'General Constituents', pink: false }] : []),
+                ...(((selectedHerb.herb_constituents?.length ?? 0) > 0 || selectedHerb.herb_menstruum) ? [{ key: 'constituents' as const, label: 'General Constituents', pink: false }] : []),
                 ...((((selectedHerb.disorder_action_herbs?.length ?? 0) > 0) || ((selectedHerb.disorder_specific_remedies?.length ?? 0) > 0)) ? [{ key: 'disorders' as const, label: 'Disorders', pink: false }] : []),
                 ...(duiYaoPairs.length > 0 ? [{ key: 'duiYao' as const, label: 'Dui Yao Pairings', pink: false }] : []),
                 ...(MM_MATERIA_MEDICA[selectedHerb.id] ? [{ key: 'mmMateriaMedica' as const, label: 'MM Materia Medica', pink: false }] : []),
@@ -1131,7 +1131,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
             )}
 
             {/* ── Constituents ─────────────────────────────────────────────── */}
-            {(selectedHerb.herb_constituents?.length ?? 0) > 0 && (
+            {((selectedHerb.herb_constituents?.length ?? 0) > 0 || selectedHerb.herb_menstruum) && (
               <div className="mb-6" ref={(el) => { sectionRefs.current.constituents = el; }}>
                 <SectionHeader title="General Constituents" open={sectionsOpen.constituents} onToggle={() => toggleSection('constituents')} />
                 {sectionsOpen.constituents && (

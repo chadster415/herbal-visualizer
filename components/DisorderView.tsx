@@ -313,6 +313,11 @@ export function DisorderView({ bodySystemId, onHerbClick, onActionClick, onSuppl
 
       {/* Disorder Details */}
       <div>
+        {!selectedDisorder && (
+          <div className="flex items-center justify-center py-16 text-gray-400">
+            <p>Select a disorder to view details</p>
+          </div>
+        )}
         {selectedDisorder ? (
           <div className="space-y-8">
             <h2 className="text-3xl font-bold text-green-800 mb-2 flex items-center gap-3 flex-wrap">
@@ -328,7 +333,7 @@ export function DisorderView({ bodySystemId, onHerbClick, onActionClick, onSuppl
               const pills = [
                 ...(selectedDisorder.disorder_notes.some((n) => n.section === 'subjective') ? [{ label: 'Subjective', ref: subjectiveRef }] : []),
                 ...(selectedDisorder.disorder_notes.some((n) => n.section === 'objective') ? [{ label: 'Objective', ref: objectiveRef }] : []),
-                ...(selectedDisorder.disorder_notes.some((n) => n.section === 'general') ? [{ label: 'Lifestyle', ref: lifestyleRef }] : []),
+                ...(selectedDisorder.disorder_notes.some((n) => n.section === 'general') ? [{ label: selectedDisorder.is_case_study ? 'Lifestyle' : 'Notes', ref: lifestyleRef }] : []),
                 ...((selectedDisorder.disorder_actions_indicated.length > 0 || selectedDisorder.disorder_action_herbs.length > 0) ? [{ label: 'Actions Indicated', ref: actionsRef }] : []),
                 ...(selectedDisorder.disorder_specific_remedies.length > 0 ? [{ label: 'Specific Remedies', ref: remediesRef }] : []),
                 ...(selectedDisorder.disorder_prescriptions.length > 0 ? [{ label: 'Prescriptions', ref: prescriptionsRef }] : []),
@@ -416,10 +421,12 @@ export function DisorderView({ bodySystemId, onHerbClick, onActionClick, onSuppl
               );
             })()}
 
-            {/* Lifestyle Recommendations */}
+            {/* Notes / Lifestyle Recommendations */}
             {selectedDisorder.disorder_notes.filter((n) => n.section === 'general').length > 0 && (
               <div ref={lifestyleRef} className="bg-green-50 border border-green-200 border-l-4 border-l-green-600 rounded-lg p-4">
-                <h3 className="text-xs font-semibold text-green-600 uppercase tracking-widest mb-3">Lifestyle Recommendations</h3>
+                <h3 className="text-xs font-semibold text-green-600 uppercase tracking-widest mb-3">
+                  {selectedDisorder.is_case_study ? 'Lifestyle Recommendations' : 'Notes'}
+                </h3>
                 <ul className="list-disc list-inside space-y-2">
                   {selectedDisorder.disorder_notes
                     .filter((n) => n.section === 'general')
