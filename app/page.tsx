@@ -8,6 +8,7 @@ import { FlashcardModal } from '@/components/FlashcardModal';
 import { EnergeticsQuizModal } from '@/components/EnergeticsQuizModal';
 import { HerbFilterPanel } from '@/components/HerbFilterPanel';
 import { FormulaBuilderModal } from '@/components/FormulaBuilderModal';
+import { DosingCalculatorModal } from '@/components/DosingCalculatorModal';
 import { IntakeFormModal } from '@/components/IntakeFormModal';
 import { BodyDiagramModal } from '@/components/BodyDiagramModal';
 import {
@@ -19,6 +20,7 @@ import {
   MagnifyingGlassIcon,
   RectangleStackIcon,
   UserIcon,
+  CalculatorIcon,
 } from '@heroicons/react/24/outline';
 
 type ViewMode = 'herb' | 'action' | 'system';
@@ -52,9 +54,10 @@ export default function Home() {
   const [energeticsQuizOpen, setEnergeticsQuizOpen] = useState(false);
   const [herbFilterOpen, setHerbFilterOpen] = useState(false);
   const [formulaBuilderOpen, setFormulaBuilderOpen] = useState(false);
+  const [dosingCalculatorOpen, setDosingCalculatorOpen] = useState(false);
   const [intakeFormOpen, setIntakeFormOpen] = useState(false);
   const [bodyDiagramOpen, setBodyDiagramOpen] = useState(false);
-  const [openDropdown, setOpenDropdown] = useState<'browse' | 'practice' | null>(null);
+  const [openDropdown, setOpenDropdown] = useState<'browse' | 'practice' | 'formulation' | null>(null);
 
   const pushAndNavigate = (next: NavEntry) => {
     setHistory((prev) => [...prev, { viewMode, selectedHerbId, selectedActionId, selectedSystemId, selectedDisorderId, selectedSupplementId }]);
@@ -195,6 +198,12 @@ export default function Home() {
                       <BeakerIcon className="w-4 h-4 shrink-0" /> Formula Builder
                     </button>
                     <button
+                      onClick={() => { setDosingCalculatorOpen(true); setOpenDropdown(null); }}
+                      className="w-full text-left px-4 py-2.5 text-green-800 hover:bg-green-50 transition-all flex items-center gap-2"
+                    >
+                      <CalculatorIcon className="w-4 h-4 shrink-0" /> Dosing Calculator
+                    </button>
+                    <button
                       onClick={() => { setEnergeticsQuizOpen(true); setOpenDropdown(null); }}
                       className="w-full text-left px-4 py-2.5 text-green-800 hover:bg-green-50 transition-all flex items-center gap-2"
                     >
@@ -218,12 +227,31 @@ export default function Home() {
               <RectangleStackIcon className="w-5 h-5 shrink-0" /> Flashcards
             </button>
 
-            <button
-              onClick={() => setFormulaBuilderOpen(true)}
-              className="hidden md:flex px-6 py-3 rounded-lg font-medium transition-all bg-white text-green-800 hover:bg-green-100 border border-green-300 items-center gap-2"
-            >
-              <BeakerIcon className="w-5 h-5 shrink-0" /> Formula Builder
-            </button>
+            {/* Formulation dropdown */}
+            <div className="hidden md:block relative z-10">
+              <button
+                onClick={() => setOpenDropdown(openDropdown === 'formulation' ? null : 'formulation')}
+                className="px-6 py-3 rounded-lg font-medium transition-all bg-white text-green-800 hover:bg-green-100 border border-green-300 flex items-center gap-2"
+              >
+                <BeakerIcon className="w-5 h-5 shrink-0" /> Formulation <ChevronDownIcon className="w-4 h-4 opacity-60" />
+              </button>
+              {openDropdown === 'formulation' && (
+                <div className="absolute top-full mt-1 left-0 bg-white border border-green-200 rounded-lg shadow-lg overflow-hidden z-10">
+                  <button
+                    onClick={() => { setFormulaBuilderOpen(true); setOpenDropdown(null); }}
+                    className="w-full text-left px-4 py-2.5 text-green-800 hover:bg-green-50 transition-all whitespace-nowrap flex items-center gap-2"
+                  >
+                    <BeakerIcon className="w-5 h-5 shrink-0" /> Formula Builder
+                  </button>
+                  <button
+                    onClick={() => { setDosingCalculatorOpen(true); setOpenDropdown(null); }}
+                    className="w-full text-left px-4 py-2.5 text-green-800 hover:bg-green-50 transition-all whitespace-nowrap flex items-center gap-2"
+                  >
+                    <CalculatorIcon className="w-5 h-5 shrink-0" /> Dosing Calculator
+                  </button>
+                </div>
+              )}
+            </div>
 
             {/* Practice dropdown */}
             <div className="hidden md:block relative z-10">
@@ -283,6 +311,10 @@ export default function Home() {
         isOpen={formulaBuilderOpen}
         onClose={() => setFormulaBuilderOpen(false)}
         onHerbClick={handleHerbClick}
+      />
+      <DosingCalculatorModal
+        isOpen={dosingCalculatorOpen}
+        onClose={() => setDosingCalculatorOpen(false)}
       />
       {(energeticsQuizOpen || intakeFormOpen) && (
         <div className="fixed inset-0 z-[39]" onClick={() => { setEnergeticsQuizOpen(false); setIntakeFormOpen(false); }} aria-hidden="true" />
