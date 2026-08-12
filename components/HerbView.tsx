@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { EnergeticEmojis } from './EnergeticEmojis';
+import { InferredEnergeticsModal } from './InferredEnergeticsModal';
 import { ContraindicationsModal } from './ContraindicationsModal';
 import { CONTRAINDICATIONS } from '@/lib/contraindications-manifest';
 import { MM_MATERIA_MEDICA } from '@/lib/mm-materia-medica';
@@ -237,6 +238,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
     setSectionsOpen((prev) => ({ ...prev, [key]: !prev[key] }));
 
   const [contraindicationsOpen, setContraindicationsOpen] = useState(false);
+  const [inferredEnergeticsOpen, setInferredEnergeticsOpen] = useState(false);
   const [addLinkOpen, setAddLinkOpen] = useState(false);
   const [newLinkUrl, setNewLinkUrl] = useState('');
   const [addLinkSaving, setAddLinkSaving] = useState(false);
@@ -851,27 +853,73 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
                 <p className="text-xl italic text-gray-600">{selectedHerb.latin_name}</p>
               </div>
               <div className="flex flex-col items-end gap-1.5 mt-2 sm:mt-0 sm:ml-4 shrink-0">
-                {(selectedHerb.herb_monograph_links ?? [])
-                  .slice()
-                  .sort((a, b) => a.sort_order - b.sort_order)
-                  .map((link) => (
-                    <a
-                      key={link.id}
-                      href={link.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="px-4 py-2 bg-green-700 text-white text-sm font-bold rounded hover:bg-green-800 transition-colors"
+                {/* Monograph links — each row has an invisible + placeholder so all links share the same left edge */}
+                {(() => {
+                  const sorted = (selectedHerb.herb_monograph_links ?? []).slice().sort((a, b) => a.sort_order - b.sort_order);
+                  const addBtn = (visible: boolean) => (
+                    <button
+                      onClick={visible ? () => { setNewLinkUrl(''); setAddLinkOpen(true); } : undefined}
+                      className={`px-3 py-1 text-green-700 border border-green-300 rounded text-sm font-bold leading-none shrink-0 ${visible ? 'hover:bg-green-50 transition-colors' : 'invisible pointer-events-none'}`}
+                      title={visible ? 'Add monograph link' : undefined}
+                      tabIndex={visible ? undefined : -1}
+                      aria-hidden={!visible}
                     >
-                      {link.label || 'MONOGRAPH'}
-                    </a>
-                  ))}
-                <button
-                  onClick={() => { setNewLinkUrl(''); setAddLinkOpen(true); }}
-                  className="px-3 py-1 text-green-700 border border-green-300 rounded hover:bg-green-50 transition-colors text-sm font-bold leading-none"
-                  title="Add monograph link"
-                >
-                  +
-                </button>
+                      +
+                    </button>
+                  );
+                  if (sorted.length === 0) return addBtn(true);
+                  return sorted.map((link, i) => (
+                    <div key={link.id} className="flex items-center gap-1.5">
+                      <a
+                        href={link.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-4 py-2 bg-green-700 text-white text-sm font-bold rounded hover:bg-green-800 transition-colors"
+                      >
+                        {link.label || 'MONOGRAPH'}
+                      </a>
+                      {addBtn(i === sorted.length - 1)}
+                    </div>
+                  ));
+                })()}
+                {/* Energetics badges — all in one row, inferred ones get an inline i button */}
+                {(() => {
+                  const badges: { emoji: string; label: string; inferred: boolean }[] = [];
+                  if (selectedHerb.temperature === 'warming')  badges.push({ emoji: '🔥', label: 'Warming',    inferred: !!selectedHerb.temperature_inferred });
+                  if (selectedHerb.temperature === 'cooling')  badges.push({ emoji: '❄️', label: 'Cooling',    inferred: !!selectedHerb.temperature_inferred });
+                  if (selectedHerb.moisture === 'moistening')  badges.push({ emoji: '💧', label: 'Moistening', inferred: !!selectedHerb.moisture_inferred });
+                  if (selectedHerb.moisture === 'drying')      badges.push({ emoji: '🌵', label: 'Drying',     inferred: !!selectedHerb.moisture_inferred });
+                  if (selectedHerb.tone === 'toning')          badges.push({ emoji: '⚡', label: 'Toning',     inferred: !!selectedHerb.tone_inferred });
+                  if (selectedHerb.tone === 'relaxing')        badges.push({ emoji: '🌊', label: 'Relaxing',   inferred: !!selectedHerb.tone_inferred });
+                  if (badges.length === 0) return null;
+                  return (
+                    <div className="flex items-center gap-1.5 flex-wrap justify-end">
+                      {badges.map(({ emoji, label, inferred }) => (
+                        <span
+                          key={label}
+                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-sm font-medium ${
+                            inferred
+                              ? 'border-gray-200 bg-gray-50 text-gray-400'
+                              : 'border-green-200 bg-green-50 text-green-700'
+                          }`}
+                        >
+                          <span>{emoji}</span>
+                          <span>{label}</span>
+                          {inferred && <span className="text-xs opacity-60 italic">inferred</span>}
+                        </span>
+                      ))}
+                      {badges.some((b) => b.inferred) && (
+                        <button
+                          onClick={() => setInferredEnergeticsOpen(true)}
+                          className="w-5 h-5 rounded-full border border-gray-300 text-gray-400 text-xs flex items-center justify-center hover:border-gray-500 hover:text-gray-600 transition-colors font-serif italic leading-none shrink-0"
+                          title="How were these energetics inferred?"
+                        >
+                          i
+                        </button>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
             </div>
 
@@ -1477,6 +1525,19 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
           </div>
         )}
       </div>
+
+      {/* Inferred energetics explanation modal */}
+      {selectedHerb && (
+        <InferredEnergeticsModal
+          isOpen={inferredEnergeticsOpen}
+          onClose={() => setInferredEnergeticsOpen(false)}
+          herbName={`${selectedHerb.common_name}${selectedHerb.plant_part ? ` (${selectedHerb.plant_part})` : ''}`}
+          temperatureInferred={!!selectedHerb.temperature_inferred}
+          moistureInferred={!!selectedHerb.moisture_inferred}
+          herbConstituents={selectedHerb.herb_constituents}
+          profiles={selectedProfiles}
+        />
+      )}
 
       {/* Drug interactions modal */}
       {selectedHerb && CONTRAINDICATIONS[selectedHerb.id] && (
