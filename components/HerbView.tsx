@@ -239,6 +239,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
 
   const [contraindicationsOpen, setContraindicationsOpen] = useState(false);
   const [inferredEnergeticsOpen, setInferredEnergeticsOpen] = useState(false);
+  const [monographDropdownOpen, setMonographDropdownOpen] = useState(false);
   const [addLinkOpen, setAddLinkOpen] = useState(false);
   const [newLinkUrl, setNewLinkUrl] = useState('');
   const [addLinkSaving, setAddLinkSaving] = useState(false);
@@ -246,6 +247,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
   const herbRefs = useRef<Map<number, HTMLButtonElement>>(new Map());
   const vitaminsSectionRef = useRef<HTMLDivElement | null>(null);
   const detailPanelRef = useRef<HTMLDivElement>(null);
+  const monographDropdownRef = useRef<HTMLDivElement>(null);
   const sectionRefs = useRef<Partial<Record<keyof typeof sectionsOpen, HTMLDivElement | null>>>({});
 
   const scrollToSection = (key: keyof typeof sectionsOpen) => {
@@ -282,6 +284,17 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
     const herb = filtered[highlightedIndex];
     if (herb) scrollHerbInSidebar(herb.id);
   }, [highlightedIndex, herbs, searchTerm]);
+
+  useEffect(() => {
+    if (!monographDropdownOpen) return;
+    function handleClickOutside(e: MouseEvent) {
+      if (monographDropdownRef.current && !monographDropdownRef.current.contains(e.target as Node)) {
+        setMonographDropdownOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [monographDropdownOpen]);
 
   useEffect(() => { fetchHerbs(); }, []);
 
@@ -853,36 +866,65 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
                 <p className="text-xl italic text-gray-600">{selectedHerb.latin_name}</p>
               </div>
               <div className="flex flex-col items-end gap-1.5 mt-2 sm:mt-0 sm:ml-4 shrink-0">
-                {/* Monograph links — each row has an invisible + placeholder so all links share the same left edge */}
+                {/* Monograph links — single link shown directly; multiple collapse into a dropdown */}
                 {(() => {
                   const sorted = (selectedHerb.herb_monograph_links ?? []).slice().sort((a, b) => a.sort_order - b.sort_order);
-                  const addBtn = (visible: boolean) => (
+                  const addBtn = (
                     <button
-                      onClick={visible ? () => { setNewLinkUrl(''); setAddLinkOpen(true); } : undefined}
-                      className={`px-3 py-1 text-green-700 border border-green-300 rounded text-sm font-bold leading-none shrink-0 ${visible ? 'hover:bg-green-50 transition-colors' : 'invisible pointer-events-none'}`}
-                      title={visible ? 'Add monograph link' : undefined}
-                      tabIndex={visible ? undefined : -1}
-                      aria-hidden={!visible}
+                      onClick={() => { setNewLinkUrl(''); setAddLinkOpen(true); }}
+                      className="px-3 py-1 text-green-700 border border-green-300 rounded hover:bg-green-50 transition-colors text-sm font-bold leading-none shrink-0"
+                      title="Add monograph link"
                     >
                       +
                     </button>
                   );
-                  if (sorted.length === 0) return addBtn(true);
-                  return sorted.map((link, i) => (
-                    <div key={link.id} className="flex items-center gap-1.5">
-                      <a
-                        href={link.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="px-4 py-2 bg-green-700 text-white text-sm font-bold rounded hover:bg-green-800 transition-colors"
-                      >
-                        {link.label || 'MONOGRAPH'}
-                      </a>
-                      {addBtn(i === sorted.length - 1)}
+                  if (sorted.length === 0) return <div className="flex items-center gap-1.5">{addBtn}</div>;
+                  if (sorted.length === 1) {
+                    return (
+                      <div className="flex items-center gap-1.5">
+                        <a href={sorted[0].url} target="_blank" rel="noopener noreferrer"
+                          className="px-4 py-2 bg-green-700 text-white text-sm font-bold rounded hover:bg-green-800 transition-colors">
+                          {sorted[0].label || 'MONOGRAPH'}
+                        </a>
+                        {addBtn}
+                      </div>
+                    );
+                  }
+                  // Multiple links → dropdown
+                  return (
+                    <div ref={monographDropdownRef} className="flex items-center gap-1.5">
+                      <div className="relative">
+                        <button
+                          onClick={() => setMonographDropdownOpen((v) => !v)}
+                          className="flex items-center gap-2 px-4 py-2 bg-green-700 text-white text-sm font-bold rounded hover:bg-green-800 transition-colors"
+                        >
+                          MONOGRAPHS
+                          <svg className={`w-3 h-3 transition-transform ${monographDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                          </svg>
+                        </button>
+                        {monographDropdownOpen && (
+                          <div className="absolute top-full right-0 mt-1 bg-white rounded-lg shadow-lg border border-gray-200 z-50 min-w-full">
+                            {sorted.map((link) => (
+                              <a
+                                key={link.id}
+                                href={link.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={() => setMonographDropdownOpen(false)}
+                                className="block px-4 py-2 text-sm text-green-700 font-semibold hover:bg-green-50 first:rounded-t-lg last:rounded-b-lg whitespace-nowrap"
+                              >
+                                {link.label || 'MONOGRAPH'}
+                              </a>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      {addBtn}
                     </div>
-                  ));
+                  );
                 })()}
-                {/* Energetics badges — all in one row, inferred ones get an inline i button */}
+                {/* Energetics badges — all in one row, inferred ones get an inline i button; extra top spacing from monograph */}
                 {(() => {
                   const badges: { emoji: string; label: string; inferred: boolean }[] = [];
                   if (selectedHerb.temperature === 'warming')  badges.push({ emoji: '🔥', label: 'Warming',    inferred: !!selectedHerb.temperature_inferred });
@@ -893,7 +935,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
                   if (selectedHerb.tone === 'relaxing')        badges.push({ emoji: '🌊', label: 'Relaxing',   inferred: !!selectedHerb.tone_inferred });
                   if (badges.length === 0) return null;
                   return (
-                    <div className="flex items-center gap-1.5 flex-wrap justify-end">
+                    <div className="flex items-center gap-1.5 flex-wrap justify-end mt-2">
                       {badges.map(({ emoji, label, inferred }) => (
                         <span
                           key={label}
