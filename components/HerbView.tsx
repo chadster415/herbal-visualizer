@@ -588,7 +588,6 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
     return (constituentIndex.get(hoveredConstituentId) ?? [])
       .filter((r) => r.herb_id !== selectedHerb?.id && r.concentration_level !== 'trace')
       .sort((a, b) => LEVEL_WEIGHT[b.concentration_level] - LEVEL_WEIGHT[a.concentration_level])
-      .slice(0, 10)
       .map((r) => ({ herb: herbs.find((h) => h.id === r.herb_id), level: r.concentration_level }))
       .filter((x) => x.herb != null);
   })();
@@ -1640,7 +1639,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
             onMouseLeave={handleTooltipMouseLeave}
             onClick={(e) => e.stopPropagation()}
             style={{ position: 'fixed', left: tooltipPos.x, top: tooltipPos.y, zIndex: 9999 }}
-            className="bg-white border border-gray-200 rounded-lg shadow-xl p-3 w-64 max-h-72 overflow-y-auto"
+            className="bg-white border border-gray-200 rounded-lg shadow-xl p-3 w-64 max-h-96 overflow-y-auto"
           >
             <p className="text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wide">
               {con?.constituents.name}
