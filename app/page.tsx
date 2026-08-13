@@ -11,6 +11,7 @@ import { FormulaBuilderModal } from '@/components/FormulaBuilderModal';
 import { DosingCalculatorModal } from '@/components/DosingCalculatorModal';
 import { IntakeFormModal } from '@/components/IntakeFormModal';
 import { BodyDiagramModal } from '@/components/BodyDiagramModal';
+import { HelpModal } from '@/components/HelpModal';
 import {
   ArrowLeftIcon,
   BeakerIcon,
@@ -18,6 +19,7 @@ import {
   ClipboardDocumentListIcon,
   FireIcon,
   MagnifyingGlassIcon,
+  QuestionMarkCircleIcon,
   RectangleStackIcon,
   UserIcon,
   CalculatorIcon,
@@ -57,6 +59,7 @@ export default function Home() {
   const [dosingCalculatorOpen, setDosingCalculatorOpen] = useState(false);
   const [intakeFormOpen, setIntakeFormOpen] = useState(false);
   const [bodyDiagramOpen, setBodyDiagramOpen] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<'browse' | 'practice' | 'formulation' | null>(null);
 
   const pushAndNavigate = (next: NavEntry) => {
@@ -280,13 +283,24 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Filter Herbs — prominent search button */}
-          <button
-            onClick={() => setHerbFilterOpen(true)}
-            className="px-5 py-3 rounded-lg font-medium transition-all bg-white text-green-800 hover:bg-green-100 border-2 border-green-400 shadow-md flex items-center gap-2 whitespace-nowrap"
-          >
-            <MagnifyingGlassIcon className="w-5 h-5" /> <span className="hidden sm:inline">Filter Herbs</span>
-          </button>
+          <div className="relative">
+            <button
+              onClick={() => setHelpOpen(true)}
+              className="absolute right-0 text-green-600 hover:text-green-800 transition-colors"
+              style={{ bottom: 'calc(100% + 10px)' }}
+              aria-label="App guide"
+              title="App guide"
+            >
+              <QuestionMarkCircleIcon className="w-8 h-8" />
+            </button>
+            {/* Filter Herbs — prominent search button */}
+            <button
+              onClick={() => setHerbFilterOpen(true)}
+              className="px-5 py-3 rounded-lg font-medium transition-all bg-white text-green-800 hover:bg-green-100 border-2 border-green-400 shadow-md flex items-center gap-2 whitespace-nowrap"
+            >
+              <MagnifyingGlassIcon className="w-5 h-5" /> <span className="hidden sm:inline">Filter Herbs</span>
+            </button>
+          </div>
         </div>
       </header>
 
@@ -350,6 +364,7 @@ export default function Home() {
           pushAndNavigate({ viewMode: 'system', selectedHerbId: null, selectedActionId: null, selectedSystemId: systemId, selectedDisorderId: null });
         }}
       />
+      <HelpModal isOpen={helpOpen} onClose={() => setHelpOpen(false)} />
     </div>
   );
 }
