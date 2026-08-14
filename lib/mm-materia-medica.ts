@@ -109,7 +109,7 @@ export const MM_MATERIA_MEDICA: Record<number, string> = {
   10-30 drops, to 3X a day.  Cold Infusion, 1-2 ounces, also to 3X a day.
   STATUS : W/LA`,
 
-  // Poke (Phytolacca americana)
+  // Poke Root (Phytolacca americana)
   35: `*PHYTOLACCA (Poke)
   ROOT and BERRIES. Fresh Tincture, (Root or Berries), [1:2], 2-10 drops.
   Dry Root Tincture [1:5, 50% alcohol] 5-15 drops.
@@ -157,7 +157,7 @@ export const MM_MATERIA_MEDICA: Record<number, string> = {
   FLOWERING TOP. Standard Infusion or Strong Decoction, 4-6 ounces to 3X a day
   STATUS : W/C`,
 
-  // Nettles (Urtica dioica)
+  // Nettle (Urtica dioica)
   43: `URTICA  (Nettles)
   WHOLE HERB.  Cold or Standard infusion, as needed.
   STATUS : W/C`,
@@ -1114,7 +1114,12 @@ export const MM_MATERIA_MEDICA: Record<number, string> = {
   Decoction 2-4 ounces.
   STATUS : W/C`,
 
-  // Rose (Rosa gallica)
+  // Rose (Rosa spp.)
+  849: `ROSA (Rose Buds, Rose Petals)
+  FLOWERS. Standard Infusion, 2-4 ounces.  Make w/isotonic water for eyes.
+  STATUS : W/C`,
+
+  // Rose (Rosa spp.)
   850: `ROSA (Rose Buds, Rose Petals)
   FLOWERS. Standard Infusion, 2-4 ounces.  Make w/isotonic water for eyes.
   STATUS : W/C`,
@@ -1266,7 +1271,7 @@ export const MM_MATERIA_MEDICA: Record<number, string> = {
   ounces, to 4X a day.  Leaf as Standard Infusion, 3-6 ounces as needed.
   STATUS : W/C`,
 
-  // Nettles (Urtica dioica)
+  // Nettle (Urtica dioica)
   1649: `URTICA  (Nettles)
   WHOLE HERB.  Cold or Standard infusion, as needed.
   STATUS : W/C`,
@@ -1291,11 +1296,53 @@ export const MM_MATERIA_MEDICA: Record<number, string> = {
   Cold Infusion (berries) 1-2 ounces, to 2X a day.
   STATUS : W/C`,
 
-  // Poke Root (Phytolacca americana)
-  1785: `*PHYTOLACCA (Poke)
-  ROOT and BERRIES. Fresh Tincture, (Root or Berries), [1:2], 2-10 drops.
-  Dry Root Tincture [1:5, 50% alcohol] 5-15 drops.
-  USE WITH CARE.
+  // Pipsissewa (Chimaphila umbellata)
+  2239: `CHIMAPHILA  (Pipsissewa, Prince's Pine)
+  HERB. Tincture [Fresh Plant, 1:2, Dry plant, 1:5, 50% alcohol), 20-50 drops,
+  to 4X a day.  Standard Infusion 4-8 ounces.
+  STATUS : W/LA`,
+
+  // Psyllium (Plantago ovata)
+  2240: `PLANTAGO OVATA  (Psyllium Seed)
+  SEED.  Whole seeds, 2-3 tablespoons in 12 ounces warm water or fruit juice.
+  HUSKS. 1-2 tablespoons in same, both to 3X a day, usually only once.
+  STATUS : C`,
+
+  // White Pond Lily (Nymphaea odorata)
+  2242: `NYMPHAEA ODORATA  (White Pond Lily)
+  DRIED RHIZOME. Strong Decoction, 1-2 ounces to 4X a day (internally) or an
+  appropriate volume as a douche.
+  STATUS : W/LA`,
+
+  // Yucca (Yucca spp.)
+  2244: `YUCCA (Amole, Spanish Bayonet)
+  ROOT.  Capsules, #00, 2-3 , morning and evenings.
   STATUS : W/A`,
+
+  // Chinese Skullcap (Scutellaria baicalensis)
+  2274: `SCUTELLARIA  (Skullcap)
+  HERB. Tincture  [Fresh Plant, 1:2, Recent Dry Plant, 1:5, 50% alcohol] 20-60
+  drops.  Standard Infusion of recent herb, 2-6 ounces, all to 3X a day.
+  STATUS : W/C`,
+
+  // Oat (Avena sativa)
+  2287: `AVENA  (A. sativa,  A. fatua, Oats, Wild Oats.)
+  UNRIPE FRESH SEED, w/"Milky" center.  Fresh Tincture [1:2], 10-20 drops, to
+  4X a day.
+  STRAW (dry but green stems). Standard Infusion, 4-8 ounces.
+  STATUS : W/C`,
+
+  // Oat (Avena sativa)
+  2288: `AVENA  (A. sativa,  A. fatua, Oats, Wild Oats.)
+  UNRIPE FRESH SEED, w/"Milky" center.  Fresh Tincture [1:2], 10-20 drops, to
+  4X a day.
+  STRAW (dry but green stems). Standard Infusion, 4-8 ounces.
+  STATUS : W/C`,
+
+  // Peyote (Lophophora williamsii)
+  2350: `*LOPHOPHORA  (Peyote, Mescal Buttons)
+  FRESH PLANT. Tincture [1:2], 20-40 drops to 4X a day.
+  ILLEGAL TO POSSESS AT PRESENT.
+  STATUS : W/Rare`,
 
 };

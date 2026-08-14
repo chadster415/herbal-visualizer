@@ -1,0 +1,698 @@
+{
+  "Acidophilus": [
+    22,
+    23,
+    24
+  ],
+  "Agnus castus": [
+    25,
+    26,
+    27
+  ],
+  "Agrimony": [
+    28,
+    29
+  ],
+  "Alfalfa": [
+    30,
+    31,
+    32
+  ],
+  "Aloe vera": [
+    33,
+    34,
+    35
+  ],
+  "Aloes": [
+    36,
+    37,
+    38
+  ],
+  "Andrographis": [
+    39,
+    40,
+    41
+  ],
+  "Aniseed": [
+    42,
+    43
+  ],
+  "Aristolochia": [
+    44
+  ],
+  "Arjuna": [
+    45,
+    46
+  ],
+  "Artichoke": [
+    47
+  ],
+  "Asafoetida": [
+    48,
+    49
+  ],
+  "Ashwagandha": [
+    50,
+    51,
+    52
+  ],
+  "Asparagus": [
+    53,
+    54
+  ],
+  "Astragalus": [
+    55,
+    56,
+    57
+  ],
+  "Avens": [
+    58
+  ],
+  "Bacopa": [
+    59
+  ],
+  "Baical skullcap": [
+    60,
+    61
+  ],
+  "Balm of Gilead": [
+    62
+  ],
+  "Bayberry": [
+    63
+  ],
+  "Bearberry": [
+    64,
+    65
+  ],
+  "Bee pollen": [
+    66
+  ],
+  "Berberine": [
+    67,
+    68,
+    69
+  ],
+  "Berberis": [
+    70
+  ],
+  "Betacarotene": [
+    71,
+    72,
+    73,
+    74
+  ],
+  "Bilberry": [
+    75
+  ],
+  "Bistort": [
+    76
+  ],
+  "Bitter orange": [
+    77,
+    78,
+    79,
+    80
+  ],
+  "Black cohosh": [
+    81,
+    82,
+    83
+  ],
+  "Black haw": [
+    84
+  ],
+  "Bloodroot": [
+    85
+  ],
+  "Bogbean": [
+    86
+  ],
+  "Boldo": [
+    87,
+    88
+  ],
+  "Boneset": [
+    89
+  ],
+  "Boswellia": [
+    90,
+    91
+  ],
+  "Bromelain": [
+    92,
+    93
+  ],
+  "Broom": [
+    94
+  ],
+  "Buchu": [
+    95,
+    96
+  ],
+  "Bugleweed": [
+    97
+  ],
+  "Bupleurum": [
+    98,
+    99,
+    100
+  ],
+  "Burdock": [
+    101
+  ],
+  "Burnet": [
+    102,
+    103
+  ],
+  "Butcher’s broom": [
+    104
+  ],
+  "Butterbur": [
+    105
+  ],
+  "Caffeine": [
+    106,
+    107,
+    108,
+    109,
+    110,
+    111,
+    112,
+    113
+  ],
+  "Calamus": [
+    114
+  ],
+  "Calendula": [
+    115
+  ],
+  "Cannabis": [
+    116,
+    117,
+    118,
+    119,
+    120,
+    121,
+    122,
+    123
+  ],
+  "Capsicum": [
+    124,
+    125,
+    126,
+    127
+  ],
+  "Cascara": [
+    128
+  ],
+  "Cat’s claw": [
+    129,
+    130,
+    131
+  ],
+  "Celery": [
+    132
+  ],
+  "Centaury": [
+    133
+  ],
+  "Chamomile, German": [
+    134,
+    135
+  ],
+  "Chamomile, Roman": [
+    136
+  ],
+  "Chaparral": [
+    137
+  ],
+  "Chinese angelica": [
+    138,
+    139,
+    140
+  ],
+  "Chitosan": [
+    141,
+    142,
+    143
+  ],
+  "Chondroitin": [
+    144
+  ],
+  "Cinnamon": [
+    145,
+    146
+  ],
+  "Clivers": [
+    147
+  ],
+  "Cocoa": [
+    148,
+    149,
+    150
+  ],
+  "Coenzyme Q10": [
+    151,
+    152,
+    153
+  ],
+  "Coffee": [
+    154,
+    155,
+    156
+  ],
+  "Cola": [
+    157,
+    158
+  ],
+  "Coltsfoot": [
+    159
+  ],
+  "Coptis": [
+    160
+  ],
+  "Cranberry": [
+    161,
+    162,
+    163,
+    164
+  ],
+  "Creatine": [
+    165,
+    166
+  ],
+  "Damiana": [
+    167
+  ],
+  "Dandelion": [
+    168,
+    169
+  ],
+  "Danshen": [
+    170,
+    171,
+    172,
+    173
+  ],
+  "Devil’s claw": [
+    174,
+    175
+  ],
+  "Echinacea": [
+    176,
+    177,
+    178,
+    179
+  ],
+  "Eclipta": [
+    180
+  ],
+  "Elder": [
+    181,
+    182
+  ],
+  "Elecampane": [
+    183
+  ],
+  "Ephedra": [
+    184,
+    185
+  ],
+  "Epimedium": [
+    186,
+    187
+  ],
+  "Evening primrose oil": [
+    188,
+    189,
+    190
+  ],
+  "Fenugreek": [
+    191,
+    192
+  ],
+  "Feverfew": [
+    193,
+    194
+  ],
+  "Flavonoids": [
+    195,
+    196,
+    197,
+    198,
+    199,
+    200,
+    201,
+    202,
+    203
+  ],
+  "Flaxseed": [
+    204,
+    205
+  ],
+  "Frangula": [
+    206
+  ],
+  "Garlic": [
+    207,
+    208,
+    209,
+    210,
+    211,
+    212
+  ],
+  "Ginger": [
+    213,
+    214,
+    215
+  ],
+  "Ginkgo": [
+    216,
+    217,
+    218,
+    219,
+    220,
+    221,
+    222,
+    223,
+    224,
+    225,
+    226,
+    227
+  ],
+  "Ginseng": [
+    228,
+    229,
+    230,
+    231,
+    232,
+    233,
+    234
+  ],
+  "Glucosamine": [
+    235,
+    236,
+    237,
+    238
+  ],
+  "Goldenseal": [
+    239,
+    240,
+    241,
+    242
+  ],
+  "Gotu kola": [
+    243
+  ],
+  "Grapefruit": [
+    244,
+    245,
+    246,
+    247
+  ],
+  "Grapeseed": [
+    248,
+    249
+  ],
+  "Greater celandine": [
+    250
+  ],
+  "Ground ivy": [
+    251
+  ],
+  "Guarana": [
+    252,
+    253
+  ],
+  "Guggul": [
+    254,
+    255
+  ],
+  "Hawthorn": [
+    256,
+    257
+  ],
+  "Honeybush": [
+    258
+  ],
+  "Hoodia": [
+    259
+  ],
+  "Hops": [
+    260,
+    261,
+    262
+  ],
+  "Horse chestnut": [
+    263,
+    264
+  ],
+  "Horsetail": [
+    265,
+    266
+  ],
+  "Isoflavones": [
+    267
+  ],
+  "Isoﬂavones": [
+    268,
+    269,
+    270,
+    271,
+    272,
+    273
+  ],
+  "Kelp": [
+    274,
+    275
+  ],
+  "Kudzu": [
+    276,
+    277,
+    278
+  ],
+  "Lapacho": [
+    279,
+    280
+  ],
+  "Liquorice": [
+    281,
+    282,
+    283,
+    284,
+    285
+  ],
+  "Lycium": [
+    286,
+    287
+  ],
+  "Lycopene": [
+    288,
+    289,
+    290
+  ],
+  "Maté": [
+    291
+  ],
+  "Meadowsweet": [
+    292,
+    293
+  ],
+  "Melatonin": [
+    294,
+    295,
+    296,
+    297,
+    298
+  ],
+  "Melilot": [
+    299,
+    300
+  ],
+  "Milk thistle": [
+    301,
+    302,
+    303,
+    304,
+    305
+  ],
+  "Natural coumarins": [
+    306,
+    307,
+    308,
+    309,
+    310
+  ],
+  "Nettle": [
+    311
+  ],
+  "Oregon grape": [
+    312
+  ],
+  "Parsley": [
+    313,
+    314,
+    315
+  ],
+  "Passiflora": [
+    316,
+    317
+  ],
+  "Pelargonium": [
+    318,
+    319
+  ],
+  "Pennyroyal": [
+    320,
+    321
+  ],
+  "Pepper": [
+    322,
+    323,
+    324,
+    325,
+    326,
+    327,
+    328
+  ],
+  "Peppermint": [
+    329,
+    330,
+    331
+  ],
+  "Policosanol": [
+    332,
+    333,
+    334
+  ],
+  "Prickly ash": [
+    335
+  ],
+  "Pumpkin": [
+    336
+  ],
+  "Pycnogenol": [
+    337,
+    338
+  ],
+  "Pygeum": [
+    339,
+    340
+  ],
+  "Red clover": [
+    341,
+    342
+  ],
+  "Red vine leaf": [
+    343
+  ],
+  "Resveratrol": [
+    344,
+    345,
+    346
+  ],
+  "Rhodiola": [
+    347,
+    348
+  ],
+  "Rhubarb": [
+    349
+  ],
+  "Rooibos": [
+    350,
+    351
+  ],
+  "Sage": [
+    352
+  ],
+  "Saw palmetto": [
+    353,
+    354,
+    355
+  ],
+  "Schisandra": [
+    356,
+    357
+  ],
+  "Senna": [
+    358,
+    359,
+    360,
+    361
+  ],
+  "Shatavari": [
+    362,
+    363
+  ],
+  "Skullcap": [
+    364
+  ],
+  "Soya": [
+    365,
+    366,
+    367,
+    368
+  ],
+  "St John’s wort": [
+    369,
+    370,
+    371,
+    372,
+    373,
+    374,
+    375,
+    376,
+    377,
+    378,
+    379,
+    380,
+    381,
+    382,
+    383,
+    384,
+    385,
+    386,
+    387,
+    388,
+    389
+  ],
+  "Starflower oil": [
+    390
+  ],
+  "Tea": [
+    391,
+    392,
+    393,
+    394,
+    395,
+    396,
+    397
+  ],
+  "Thyme": [
+    398
+  ],
+  "Turmeric": [
+    399,
+    400,
+    401,
+    402
+  ],
+  "Valerian": [
+    403,
+    404,
+    405,
+    406
+  ],
+  "Wild yam": [
+    407
+  ],
+  "Willow": [
+    408,
+    409
+  ],
+  "Yarrow": [
+    410,
+    411
+  ]
+}

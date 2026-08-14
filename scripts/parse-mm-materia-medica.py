@@ -193,7 +193,9 @@ SYNONYM_MAP = {
     'salvia miltiorrhiza':   ['salvia miltiorrhiza'],
     'sambucus':              ['sambucus nigra'],
     'sanguinaria':           ['sanguinaria canadensis'],
+    'acmella':              [],  # Spilanthes / toothache plant — not in MM
     'santalum':              ['santalum album'],
+    'spilanthes':           [],  # now Acmella oleracea — not in MM
     'sassafras':             ['sassafras albidum'],
     'scrophularia':          ['scrophularia nodosa'],
     'scutellaria lateriflora':['scutellaria lateriflora'],
