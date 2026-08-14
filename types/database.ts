@@ -21,6 +21,7 @@ export interface Herb {
   is_tcm?: boolean;
   contraindications?: string | null;
   contraindications_source?: string | null;
+  image_url?: string | null;
 }
 
 export interface PrimaryAction {

@@ -6,6 +6,7 @@ import { EnergeticEmojis } from './EnergeticEmojis';
 import { InferredEnergeticsModal } from './InferredEnergeticsModal';
 import { ContraindicationsModal } from './ContraindicationsModal';
 import { CONTRAINDICATIONS } from '@/lib/contraindications-manifest';
+import { HerbImageUpload } from './HerbImageUpload';
 import { MM_MATERIA_MEDICA } from '@/lib/mm-materia-medica';
 import { SupplementDetail } from './SupplementDetail';
 import type {
@@ -988,6 +989,17 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
                 </button>
               ))}
             </div>
+
+            {/* Herb image — paste ⌘V to upload */}
+            <HerbImageUpload
+              herbId={selectedHerb.id}
+              imageUrl={selectedHerb.image_url}
+              onImageUpdate={(url) => {
+                setSelectedHerb((prev) => prev ? { ...prev, image_url: url } : prev);
+                setHerbs((prev) => prev.map((h) => h.id === selectedHerb.id ? { ...h, image_url: url } : h));
+              }}
+            />
+
             <div className="flex justify-end mb-5">
               <button
                 onClick={() => {

@@ -39,6 +39,10 @@ jobs:
           echo -n "${{ secrets.NEXT_PUBLIC_TURNSTILE_SITE_KEY }}" | npx vercel env add NEXT_PUBLIC_TURNSTILE_SITE_KEY production --token=${{ secrets.VERCEL_TOKEN }} || echo "NEXT_PUBLIC_TURNSTILE_SITE_KEY already exists"
           echo -n "${{ secrets.TURNSTILE_SECRET_KEY }}" | npx vercel env add TURNSTILE_SECRET_KEY production --token=${{ secrets.VERCEL_TOKEN }} || echo "TURNSTILE_SECRET_KEY already exists"
           echo -n "${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" | npx vercel env add SUPABASE_SERVICE_ROLE_KEY production --token=${{ secrets.VERCEL_TOKEN }} || echo "SUPABASE_SERVICE_ROLE_KEY already exists"
+          echo -n "${{ secrets.AWS_REGION }}" | npx vercel env add AWS_REGION production --token=${{ secrets.VERCEL_TOKEN }} || echo "AWS_REGION already exists"
+          echo -n "${{ secrets.AWS_ACCESS_KEY_ID }}" | npx vercel env add AWS_ACCESS_KEY_ID production --token=${{ secrets.VERCEL_TOKEN }} || echo "AWS_ACCESS_KEY_ID already exists"
+          echo -n "${{ secrets.AWS_SECRET_ACCESS_KEY }}" | npx vercel env add AWS_SECRET_ACCESS_KEY production --token=${{ secrets.VERCEL_TOKEN }} || echo "AWS_SECRET_ACCESS_KEY already exists"
+          echo -n "${{ secrets.AWS_S3_BUCKET }}" | npx vercel env add AWS_S3_BUCKET production --token=${{ secrets.VERCEL_TOKEN }} || echo "AWS_S3_BUCKET already exists"
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_HERBAL_PROJECT_ID }}

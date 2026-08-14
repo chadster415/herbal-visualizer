@@ -43,3 +43,11 @@ next-env.d.ts
 .temp
 supabase/.branches
 supabase/.temp
+
+# Terraform
+terraform/.terraform/
+terraform/*.tfstate
+terraform/*.tfstate.backup
+terraform/crash.log
+terraform/*.tfvars
+terraform/*.tfvars.json
