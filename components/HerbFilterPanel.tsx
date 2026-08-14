@@ -213,6 +213,16 @@ export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect 
     [bodySystems]
   );
 
+  // Only show actions that appear in at least one loaded (non-TCM) herb
+  const usedActionIds = useMemo(
+    () => new Set(herbs.flatMap((h) => [...h.action_ids])),
+    [herbs]
+  );
+  const availableActions = useMemo(
+    () => actions.filter((a) => usedActionIds.has(a.id)),
+    [actions, usedActionIds]
+  );
+
   function clearAll() {
     setTempFilter(new Set());
     setMoistureFilter(new Set());
@@ -295,7 +305,7 @@ export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect 
                 {sys.name}
               </button>
             ))}
-            {actions.filter((action) => actionFilter.has(action.id)).map((action) => (
+            {availableActions.filter((action) => actionFilter.has(action.id)).map((action) => (
               <button
                 key={action.id}
                 onClick={() => setActionFilter((prev) => toggle(prev, action.id))}
@@ -422,11 +432,11 @@ export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect 
               )}
 
               {/* Action */}
-              {actions.length > 0 && (
+              {availableActions.length > 0 && (
                 <div>
                   <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2">Action</p>
                   <div className="flex flex-wrap gap-2">
-                    {actions.map((action) => (
+                    {availableActions.map((action) => (
                       <button
                         key={action.id}
                         onClick={() => setActionFilter((prev) => toggle(prev, action.id))}

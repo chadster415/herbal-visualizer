@@ -193,6 +193,9 @@ export function ActionView({ onHerbClick, selectedActionId, onActionIdChange }: 
                 }`}
               >
                 <div className="font-semibold text-gray-900">{action.name}</div>
+                {action.description && (
+                  <div className="text-xs text-gray-400 mt-0.5 leading-snug">{action.description}</div>
+                )}
                 <div className="text-xs text-gray-500 mt-1">
                   {action.herb_primary_actions.length} herbs
                 </div>
