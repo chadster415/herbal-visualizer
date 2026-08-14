@@ -23,18 +23,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
-  const { herbId, contentType } = await req.json();
+  const { herbId } = await req.json();
   if (!herbId) return NextResponse.json({ error: 'herbId required' }, { status: 400 });
 
-  const bucket = process.env.AWS_S3_BUCKET ?? 'herbal-herb-images-dev';
-  const region = process.env.AWS_REGION ?? 'us-west-1';
-  const mime = contentType ?? 'image/png';
-  const ext = mime === 'image/jpeg' ? 'jpg' : mime === 'image/gif' ? 'gif' : mime === 'image/webp' ? 'webp' : 'png';
-  const key = `herb-images/${herbId}.${ext}`;
+  const bucket = process.env.AWS_S3_BUCKET ?? 'herbal-herb-images';
+  const key = `herb-images/${herbId}.png`;
 
-  const command = new PutObjectCommand({ Bucket: bucket, Key: key, ContentType: mime });
+  const command = new PutObjectCommand({ Bucket: bucket, Key: key, ContentType: 'image/png' });
   const uploadUrl = await getSignedUrl(s3, command, { expiresIn: 120 });
-  const publicUrl = `https://${bucket}.s3.${region}.amazonaws.com/${key}`;
 
-  return NextResponse.json({ uploadUrl, publicUrl });
+  return NextResponse.json({ uploadUrl });
 }

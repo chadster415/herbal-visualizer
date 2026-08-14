@@ -2,13 +2,16 @@
 
 import { useState, useEffect, useCallback } from 'react';
 
+const BASE_URL = process.env.NEXT_PUBLIC_HERB_IMAGES_BASE_URL ?? '';
+
 interface Props {
   herbId: number;
-  imageUrl: string | null | undefined;
-  onImageUpdate: (url: string | null) => void;
 }
 
-export function HerbImageUpload({ herbId, imageUrl, onImageUpdate }: Props) {
+export function HerbImageUpload({ herbId }: Props) {
+  const imageUrl = `${BASE_URL}/herb-images/${herbId}.png`;
+  // null = still probing, true = exists, false = missing
+  const [exists, setExists] = useState<boolean | null>(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -19,47 +22,36 @@ export function HerbImageUpload({ herbId, imageUrl, onImageUpdate }: Props) {
       const presignRes = await fetch('/api/herb-image/presign', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ herbId, contentType: blob.type || 'image/png' }),
+        body: JSON.stringify({ herbId }),
       });
       if (!presignRes.ok) throw new Error('Failed to get upload URL');
-      const { uploadUrl, publicUrl } = await presignRes.json();
+      const { uploadUrl } = await presignRes.json();
 
       const putRes = await fetch(uploadUrl, {
         method: 'PUT',
         body: blob,
-        headers: { 'Content-Type': blob.type || 'image/png' },
+        headers: { 'Content-Type': 'image/png' },
       });
       if (!putRes.ok) throw new Error('S3 upload failed');
 
-      const patchRes = await fetch(`/api/herb-image/${herbId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ imageUrl: publicUrl }),
-      });
-      if (!patchRes.ok) throw new Error('Failed to save image');
-
-      onImageUpdate(publicUrl);
+      setExists(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Upload failed');
     } finally {
       setUploading(false);
     }
-  }, [herbId, onImageUpdate]);
+  }, [herbId]);
 
   const handleRemove = useCallback(async () => {
     setError(null);
     try {
-      const res = await fetch(`/api/herb-image/${herbId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ imageUrl: null }),
-      });
+      const res = await fetch(`/api/herb-image/${herbId}`, { method: 'DELETE' });
       if (!res.ok) throw new Error('Failed to remove image');
-      onImageUpdate(null);
+      setExists(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Remove failed');
     }
-  }, [herbId, onImageUpdate]);
+  }, [herbId]);
 
   useEffect(() => {
     function handlePaste(e: ClipboardEvent) {
@@ -80,12 +72,15 @@ export function HerbImageUpload({ herbId, imageUrl, onImageUpdate }: Props) {
     return () => document.removeEventListener('paste', handlePaste);
   }, [upload]);
 
-  if (imageUrl) {
+  // Reset probe when switching herbs
+  useEffect(() => { setExists(null); setError(null); }, [herbId]);
+
+  if (exists === true) {
     return (
       <div className="relative mb-4 group">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={imageUrl}
+          src={`${imageUrl}?v=${herbId}`}
           alt="Herb reference"
           className="w-full max-h-72 object-contain rounded-lg border border-gray-200 bg-gray-50"
         />
@@ -106,30 +101,38 @@ export function HerbImageUpload({ herbId, imageUrl, onImageUpdate }: Props) {
   }
 
   return (
-    <div className="mb-4">
-      <div
-        className={`border-2 border-dashed rounded-lg py-5 flex flex-col items-center justify-center gap-1.5 transition-colors ${
-          uploading
-            ? 'border-green-300 bg-green-50'
-            : 'border-gray-200 hover:border-green-300 hover:bg-green-50/40'
-        }`}
-      >
-        {uploading ? (
-          <div className="flex items-center gap-2 text-green-600 text-sm">
-            <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-            </svg>
-            Uploading…
+    <>
+      {/* Hidden probe image — sets exists based on whether S3 object is there */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={imageUrl} alt="" className="hidden" onLoad={() => setExists(true)} onError={() => setExists(false)} />
+
+      {exists === false && (
+        <div className="mb-4">
+          <div
+            className={`border-2 border-dashed rounded-lg py-5 flex flex-col items-center justify-center gap-1.5 transition-colors ${
+              uploading
+                ? 'border-green-300 bg-green-50'
+                : 'border-gray-200 hover:border-green-300 hover:bg-green-50/40'
+            }`}
+          >
+            {uploading ? (
+              <div className="flex items-center gap-2 text-green-600 text-sm">
+                <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+                Uploading…
+              </div>
+            ) : (
+              <>
+                <span className="text-4xl font-thin text-gray-300 leading-none">+</span>
+                <span className="text-xs text-gray-400">⌘V to add herb image</span>
+              </>
+            )}
+            {error && <span className="text-xs text-red-400 mt-1">{error}</span>}
           </div>
-        ) : (
-          <>
-            <span className="text-4xl font-thin text-gray-300 leading-none">+</span>
-            <span className="text-xs text-gray-400">⌘V to add herb image</span>
-          </>
-        )}
-        {error && <span className="text-xs text-red-400 mt-1">{error}</span>}
-      </div>
-    </div>
+        </div>
+      )}
+    </>
   );
 }

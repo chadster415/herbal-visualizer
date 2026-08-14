@@ -991,14 +991,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
             </div>
 
             {/* Herb image — paste ⌘V to upload */}
-            <HerbImageUpload
-              herbId={selectedHerb.id}
-              imageUrl={selectedHerb.image_url}
-              onImageUpdate={(url) => {
-                setSelectedHerb((prev) => prev ? { ...prev, image_url: url } : prev);
-                setHerbs((prev) => prev.map((h) => h.id === selectedHerb.id ? { ...h, image_url: url } : h));
-              }}
-            />
+            <HerbImageUpload herbId={selectedHerb.id} />
 
             <div className="flex justify-end mb-5">
               <button
