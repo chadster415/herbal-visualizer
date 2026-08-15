@@ -828,13 +828,13 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
                     }`}
                   >
                     <div className="flex items-center justify-between gap-2 min-w-0">
-                      <div className="font-semibold text-gray-900 text-sm truncate">{supplement.name}</div>
+                      <div className="font-semibold text-gray-900 truncate">{supplement.name}</div>
                       {supplement.category === 'Mineral' && supplement.temperature !== 'warming' && (
                         <EnergeticEmojis temperature="cooling" className="text-base leading-none shrink-0" />
                       )}
                     </div>
                     <div className="flex items-center justify-between gap-2 mt-1.5">
-                      <div className="text-xs text-indigo-600 min-w-0 truncate">{supplement.category}{supplement.subcategory ? ` · ${supplement.subcategory}` : ''}</div>
+                      <div className="text-sm text-indigo-600 min-w-0 truncate">{supplement.category}{supplement.subcategory ? ` · ${supplement.subcategory}` : ''}</div>
                       {supplement.solubility && (
                         <span className={`text-[10px] px-1.5 py-0.5 rounded-full border font-medium shrink-0 ${solubilityStyles(supplement.solubility).badge}`}>
                           {solubilityLabel(supplement.solubility)}
