@@ -14,6 +14,7 @@ export function HerbImageUpload({ herbId }: Props) {
   const [exists, setExists] = useState<boolean | null>(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
 
   const upload = useCallback(async (blob: Blob) => {
     setUploading(true);
@@ -76,27 +77,55 @@ export function HerbImageUpload({ herbId }: Props) {
   useEffect(() => { setExists(null); setError(null); }, [herbId]);
 
   if (exists === true) {
+    const src = `${imageUrl}?v=${herbId}`;
     return (
-      <div className="relative mb-4 group">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={`${imageUrl}?v=${herbId}`}
-          alt="Herb reference"
-          className="w-full max-h-72 object-contain rounded-lg border border-gray-200 bg-gray-50"
-        />
-        <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-          <span className="text-xs text-gray-400 bg-white/90 px-2 py-1 rounded-full border border-gray-200">
-            ⌘V to replace
-          </span>
-          <button
-            onClick={handleRemove}
-            className="text-xs text-red-400 bg-white/90 px-2 py-1 rounded-full border border-red-200 hover:text-red-600 hover:border-red-400 transition-colors"
-          >
-            Remove
-          </button>
+      <>
+        <div className="relative mb-4 group">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={src}
+            alt="Herb reference"
+            onClick={() => setLightboxOpen(true)}
+            className="w-full max-h-72 object-contain rounded-lg border border-gray-200 bg-gray-50 cursor-zoom-in"
+          />
+          <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+            <span className="text-xs text-gray-400 bg-white/90 px-2 py-1 rounded-full border border-gray-200">
+              ⌘V to replace
+            </span>
+            <button
+              onClick={handleRemove}
+              className="text-xs text-red-400 bg-white/90 px-2 py-1 rounded-full border border-red-200 hover:text-red-600 hover:border-red-400 transition-colors"
+            >
+              Remove
+            </button>
+          </div>
+          {error && <p className="mt-1 text-xs text-red-400">{error}</p>}
         </div>
-        {error && <p className="mt-1 text-xs text-red-400">{error}</p>}
-      </div>
+
+        {lightboxOpen && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
+            onClick={() => setLightboxOpen(false)}
+          >
+            <button
+              onClick={() => setLightboxOpen(false)}
+              className="absolute top-4 right-4 text-white/80 hover:text-white bg-black/30 hover:bg-black/50 rounded-full w-9 h-9 flex items-center justify-center transition-colors"
+              aria-label="Close"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={src}
+              alt="Herb reference"
+              onClick={(e) => e.stopPropagation()}
+              className="max-w-[90vw] max-h-[90vh] object-contain rounded-lg shadow-2xl"
+            />
+          </div>
+        )}
+      </>
     );
   }
 
