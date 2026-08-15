@@ -326,6 +326,28 @@ See [inferring-energetics-from-constituents.md](inferring-energetics-from-consti
 
 ---
 
+## Case 8 — Inferring taste from constituents
+
+After `herb_constituents` is populated, apply the rules in [inferring-taste-from-constituents.md](inferring-taste-from-constituents.md) to assign a first-pass `taste`. Always mark inferred values with `taste_inferred = true` — they render at reduced opacity in the UI.
+
+**Do this even if a source book provides a confirmed taste** — set the confirmed value first, then skip inference for that herb. Inference only fills herbs where `taste IS NULL`.
+
+```sql
+-- Inferred taste
+UPDATE herbal.herbs
+SET taste = 'bitter', taste_inferred = true
+WHERE latin_name = 'Gentiana lutea'
+  AND taste IS NULL;
+```
+
+**Do not infer sour or salty** — no reliable constituent-level rules exist for them. Only assign those values from a clinical source.
+
+**Do not infer when** the constituent data is sparse (fewer than 3 compounds in `herb_constituents`), or when bitter and pungent signals are present at comparable concentration levels — leave `taste` unset rather than guessing.
+
+See [inferring-taste-from-constituents.md](inferring-taste-from-constituents.md) for the full bitter/pungent/sweet rule tables, confidence levels, and conflict-resolution hierarchy.
+
+---
+
 ## Checking external references when adding a new herb
 
 **Do this automatically** — when a new herb is added to the DB (with or without constituent data), check both external reference books without waiting to be asked. The checks are fast; the omission is hard to notice later.
@@ -434,6 +456,7 @@ Files go in `supabase/migrations/`. The user runs them manually in the Supabase 
 - [ ] After inserting a new herb + its profiles in separate steps, run the re-link UPDATE to set `herb_id` on any NULL-linked profile rows.
 - [ ] General constituents data provided? Before writing `ensure_constituent` calls, query `herbal.constituents` to find compounds that already exist — re-use them rather than duplicating. Then insert into `herb_constituents` via `link_constituent` or direct INSERT (see Case 6).
 - [ ] Energetics inferred from `herb_constituents`? Apply rules from `inferring-energetics-from-constituents.md` after constituents are added. Set `temperature_inferred = true` / `moisture_inferred = true` for any inferred dimension. Do not infer tone. Skip inference if fewer than 3 constituents or conflicting signals (see Case 7).
+- [ ] Taste inferred from `herb_constituents`? Apply rules from `inferring-taste-from-constituents.md` after constituents are added. Set `taste_inferred = true` for inferred values. Do not infer sour or salty. Skip if fewer than 3 constituents or signals conflict (see Case 8).
 - [ ] All INSERTs use `ON CONFLICT ... DO NOTHING` (migrations must be re-runnable).
 - [ ] MM Materia Medica checked — grep the MM text file, update `SYNONYM_MAP` in `parse-mm-materia-medica.py`, re-run the parser (see "Checking external references").
 - [ ] Stockley's checked — search `scripts/stockleys_herb_pages.json`; if found, extract images and add to `lib/contraindications-manifest.ts`.

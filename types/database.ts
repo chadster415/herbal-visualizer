@@ -3,6 +3,7 @@ export type StrengthLevel = 'mild' | 'strong' | 'very_strong';
 export type TemperatureEnergetic = 'warming' | 'cooling' | 'neutral';
 export type MoistureEnergetic = 'moistening' | 'drying' | 'neutral';
 export type ToneEnergetic = 'toning' | 'relaxing' | 'neutral';
+export type TasteEnergetic = 'sweet' | 'bitter' | 'pungent' | 'salty' | 'sour';
 
 export interface Herb {
   id: number;
@@ -13,9 +14,11 @@ export interface Herb {
   temperature?: TemperatureEnergetic;
   moisture?: MoistureEnergetic;
   tone?: ToneEnergetic;
+  taste?: TasteEnergetic | null;
   temperature_inferred?: boolean;
   moisture_inferred?: boolean;
   tone_inferred?: boolean;
+  taste_inferred?: boolean;
   monograph_url?: string | null;
   pinyin_name?: string | null;
   is_tcm?: boolean;

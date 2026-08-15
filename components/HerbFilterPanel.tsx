@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
 import { EnergeticEmojis } from './EnergeticEmojis';
-import type { TemperatureEnergetic, MoistureEnergetic, ToneEnergetic } from '@/types/database';
+import type { TemperatureEnergetic, MoistureEnergetic, ToneEnergetic, TasteEnergetic } from '@/types/database';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -19,9 +19,11 @@ interface HerbRow {
   temperature: TemperatureEnergetic;
   moisture: MoistureEnergetic;
   tone: ToneEnergetic;
+  taste: TasteEnergetic | null;
   temperature_inferred: boolean;
   moisture_inferred: boolean;
   tone_inferred: boolean;
+  taste_inferred: boolean;
   action_ids: Set<number>;
   system_ids: Set<number>;
 }
@@ -51,6 +53,14 @@ const TONE_OPTIONS: { value: ToneEnergetic; label: string; emoji: string; on: st
   { value: 'toning',   label: 'Toning',   emoji: '⚡', on: 'bg-purple-200 border-purple-400 text-purple-900', off: 'bg-purple-50 border-purple-200 text-purple-700 hover:bg-purple-100' },
   { value: 'relaxing', label: 'Relaxing', emoji: '🌊', on: 'bg-teal-200 border-teal-400 text-teal-900',       off: 'bg-teal-50 border-teal-200 text-teal-700 hover:bg-teal-100' },
   { value: 'neutral',  label: 'Neutral',  emoji: '',   on: 'bg-gray-200 border-gray-400 text-gray-900',       off: 'bg-gray-100 border-gray-300 text-gray-600 hover:bg-gray-200' },
+];
+
+const TASTE_OPTIONS: { value: TasteEnergetic; label: string; emoji: string; on: string; off: string }[] = [
+  { value: 'sweet',   label: 'Sweet',   emoji: '🍯', on: 'bg-yellow-200 border-yellow-400 text-yellow-900', off: 'bg-yellow-50 border-yellow-200 text-yellow-700 hover:bg-yellow-100' },
+  { value: 'bitter',  label: 'Bitter',  emoji: '☕', on: 'bg-stone-200 border-stone-400 text-stone-900',   off: 'bg-stone-50 border-stone-200 text-stone-700 hover:bg-stone-100' },
+  { value: 'pungent', label: 'Pungent', emoji: '🌶️', on: 'bg-red-200 border-red-400 text-red-900',         off: 'bg-red-50 border-red-200 text-red-700 hover:bg-red-100' },
+  { value: 'salty',   label: 'Salty',   emoji: '🧂', on: 'bg-cyan-200 border-cyan-400 text-cyan-900',       off: 'bg-cyan-50 border-cyan-200 text-cyan-700 hover:bg-cyan-100' },
+  { value: 'sour',    label: 'Sour',    emoji: '🍋', on: 'bg-lime-200 border-lime-400 text-lime-900',        off: 'bg-lime-50 border-lime-200 text-lime-700 hover:bg-lime-100' },
 ];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -115,6 +125,7 @@ export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect 
   const [tempFilter, setTempFilter]         = useState<Set<TemperatureEnergetic>>(new Set());
   const [moistureFilter, setMoistureFilter] = useState<Set<MoistureEnergetic>>(new Set());
   const [toneFilter, setToneFilter]         = useState<Set<ToneEnergetic>>(new Set());
+  const [tasteFilter, setTasteFilter]       = useState<Set<TasteEnergetic>>(new Set());
   const [systemFilter, setSystemFilter]     = useState<Set<number>>(new Set());
   const [actionFilter, setActionFilter]     = useState<Set<number>>(new Set());
 
@@ -153,7 +164,7 @@ export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect 
     const [herbsRes, systemsRes, actionsRes] = await Promise.all([
       supabase
         .from('herbs')
-        .select('id, common_name, latin_name, plant_part, temperature, moisture, tone, temperature_inferred, moisture_inferred, tone_inferred, pinyin_name, herb_primary_actions(primary_action_id, body_system_id)')
+        .select('id, common_name, latin_name, plant_part, temperature, moisture, tone, taste, temperature_inferred, moisture_inferred, tone_inferred, taste_inferred, pinyin_name, herb_primary_actions(primary_action_id, body_system_id)')
         .eq('is_tcm', false)
         .order('common_name'),
       supabase.from('body_systems').select('id, name').order('name'),
@@ -172,9 +183,11 @@ export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect 
             temperature: (h.temperature ?? 'neutral') as TemperatureEnergetic,
             moisture:    (h.moisture    ?? 'neutral') as MoistureEnergetic,
             tone:        (h.tone        ?? 'neutral') as ToneEnergetic,
+            taste:       (h.taste ?? null) as TasteEnergetic | null,
             temperature_inferred: h.temperature_inferred ?? false,
             moisture_inferred:    h.moisture_inferred    ?? false,
             tone_inferred:        h.tone_inferred        ?? false,
+            taste_inferred:       h.taste_inferred       ?? false,
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             action_ids: new Set<number>(h.herb_primary_actions.map((a: any) => a.primary_action_id).filter(Boolean)),
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -190,19 +203,20 @@ export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect 
   }
 
   const hasFilters =
-    tempFilter.size + moistureFilter.size + toneFilter.size +
+    tempFilter.size + moistureFilter.size + toneFilter.size + tasteFilter.size +
     systemFilter.size + actionFilter.size > 0;
 
   const filteredHerbs = useMemo(() => {
     return herbs.filter((h) => {
-      if (tempFilter.size > 0    && !tempFilter.has(h.temperature))                        return false;
-      if (moistureFilter.size > 0 && !moistureFilter.has(h.moisture))                      return false;
-      if (toneFilter.size > 0    && !toneFilter.has(h.tone))                                return false;
-      if (systemFilter.size > 0  && ![...systemFilter].some((id) => h.system_ids.has(id))) return false;
-      if (actionFilter.size > 0  && ![...actionFilter].some((id) => h.action_ids.has(id))) return false;
+      if (tempFilter.size > 0     && !tempFilter.has(h.temperature))                        return false;
+      if (moistureFilter.size > 0 && !moistureFilter.has(h.moisture))                       return false;
+      if (toneFilter.size > 0     && !toneFilter.has(h.tone))                               return false;
+      if (tasteFilter.size > 0    && (!h.taste || !tasteFilter.has(h.taste)))               return false;
+      if (systemFilter.size > 0   && ![...systemFilter].some((id) => h.system_ids.has(id))) return false;
+      if (actionFilter.size > 0   && ![...actionFilter].some((id) => h.action_ids.has(id))) return false;
       return true;
     });
-  }, [herbs, tempFilter, moistureFilter, toneFilter, systemFilter, actionFilter]);
+  }, [herbs, tempFilter, moistureFilter, toneFilter, tasteFilter, systemFilter, actionFilter]);
 
   useEffect(() => {
     requestAnimationFrame(() => checkPaneScroll(resultsPaneRef.current, setResultsScroll));
@@ -227,6 +241,7 @@ export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect 
     setTempFilter(new Set());
     setMoistureFilter(new Set());
     setToneFilter(new Set());
+    setTasteFilter(new Set());
     setSystemFilter(new Set());
     setActionFilter(new Set());
   }
@@ -294,6 +309,15 @@ export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect 
                 className={`border rounded-full px-3 py-1 text-sm font-medium transition-all ${opt.on}`}
               >
                 {opt.emoji && <span className="mr-1">{opt.emoji}</span>}{opt.label}
+              </button>
+            ))}
+            {TASTE_OPTIONS.filter((opt) => tasteFilter.has(opt.value)).map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => setTasteFilter((prev) => toggle(prev, opt.value))}
+                className={`border rounded-full px-3 py-1 text-sm font-medium transition-all ${opt.on}`}
+              >
+                <span className="mr-1">{opt.emoji}</span>{opt.label}
               </button>
             ))}
             {bodySystems.filter((sys) => systemFilter.has(sys.id)).map((sys) => (
@@ -409,6 +433,25 @@ export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect 
                 </div>
               </div>
 
+              {/* Taste */}
+              <div>
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2">Taste</p>
+                <div className="flex flex-wrap gap-2">
+                  {TASTE_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.value}
+                      onClick={() => setTasteFilter((prev) => toggle(prev, opt.value))}
+                      className={`border rounded-full px-3 py-1 text-sm font-medium transition-all ${
+                        tasteFilter.has(opt.value) ? opt.on : opt.off
+                      }`}
+                    >
+                      <span className="mr-1">{opt.emoji}</span>
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               {/* Body System */}
               {bodySystems.length > 0 && (
                 <div>
@@ -518,7 +561,7 @@ export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect 
                         >
                           <div className="flex items-center justify-between gap-2">
                             <span className="font-medium text-gray-900 text-sm">{herb.common_name}{herb.plant_part ? ` (${herb.plant_part})` : ''}</span>
-                            <EnergeticEmojis temperature={herb.temperature} moisture={herb.moisture} tone={herb.tone} temperatureInferred={herb.temperature_inferred} moistureInferred={herb.moisture_inferred} toneInferred={herb.tone_inferred} className="text-base leading-none shrink-0" />
+                            <EnergeticEmojis temperature={herb.temperature} moisture={herb.moisture} tone={herb.tone} taste={herb.taste} temperatureInferred={herb.temperature_inferred} moistureInferred={herb.moisture_inferred} toneInferred={herb.tone_inferred} tasteInferred={herb.taste_inferred} className="text-base leading-none shrink-0" />
                           </div>
                           {herb.pinyin_name && (
                             <div className="text-xs text-gray-500 mt-0.5">{herb.pinyin_name}</div>

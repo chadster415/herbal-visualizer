@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { EnergeticEmojis } from './EnergeticEmojis';
 import { InferredEnergeticsModal } from './InferredEnergeticsModal';
+import { InferredTasteModal } from './InferredTasteModal';
 import { ContraindicationsModal } from './ContraindicationsModal';
 import { CONTRAINDICATIONS } from '@/lib/contraindications-manifest';
 import { HerbImageUpload } from './HerbImageUpload';
@@ -240,6 +241,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
 
   const [contraindicationsOpen, setContraindicationsOpen] = useState(false);
   const [inferredEnergeticsOpen, setInferredEnergeticsOpen] = useState(false);
+  const [inferredTasteOpen, setInferredTasteOpen] = useState(false);
   const [monographDropdownOpen, setMonographDropdownOpen] = useState(false);
   const [addLinkOpen, setAddLinkOpen] = useState(false);
   const [newLinkUrl, setNewLinkUrl] = useState('');
@@ -792,7 +794,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
                   {herb.is_tcm && (
                     <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-red-50 border border-red-200 text-red-700 font-semibold">TCM</span>
                   )}
-                  <EnergeticEmojis temperature={herb.temperature} moisture={herb.moisture} tone={herb.tone} temperatureInferred={herb.temperature_inferred} moistureInferred={herb.moisture_inferred} toneInferred={herb.tone_inferred} className="text-sm leading-none" />
+                  <EnergeticEmojis temperature={herb.temperature} moisture={herb.moisture} tone={herb.tone} taste={herb.taste} temperatureInferred={herb.temperature_inferred} moistureInferred={herb.moisture_inferred} toneInferred={herb.tone_inferred} tasteInferred={herb.taste_inferred} className="text-sm leading-none" />
                 </div>
               </div>
             </button>
@@ -924,16 +926,23 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
                     </div>
                   );
                 })()}
-                {/* Energetics badges — all in one row, inferred ones get an inline i button; extra top spacing from monograph */}
+                {/* Energetics badges — all in one row, inferred ones get inline i buttons; extra top spacing from monograph */}
                 {(() => {
-                  const badges: { emoji: string; label: string; inferred: boolean }[] = [];
-                  if (selectedHerb.temperature === 'warming')  badges.push({ emoji: '🔥', label: 'Warming',    inferred: !!selectedHerb.temperature_inferred });
-                  if (selectedHerb.temperature === 'cooling')  badges.push({ emoji: '❄️', label: 'Cooling',    inferred: !!selectedHerb.temperature_inferred });
-                  if (selectedHerb.moisture === 'moistening')  badges.push({ emoji: '💧', label: 'Moistening', inferred: !!selectedHerb.moisture_inferred });
-                  if (selectedHerb.moisture === 'drying')      badges.push({ emoji: '🌵', label: 'Drying',     inferred: !!selectedHerb.moisture_inferred });
-                  if (selectedHerb.tone === 'toning')          badges.push({ emoji: '⚡', label: 'Toning',     inferred: !!selectedHerb.tone_inferred });
-                  if (selectedHerb.tone === 'relaxing')        badges.push({ emoji: '🌊', label: 'Relaxing',   inferred: !!selectedHerb.tone_inferred });
+                  const badges: { emoji: string; label: string; inferred: boolean; isTaste: boolean }[] = [];
+                  if (selectedHerb.temperature === 'warming')  badges.push({ emoji: '🔥', label: 'Warming',      inferred: !!selectedHerb.temperature_inferred, isTaste: false });
+                  if (selectedHerb.temperature === 'cooling')  badges.push({ emoji: '❄️', label: 'Cooling',      inferred: !!selectedHerb.temperature_inferred, isTaste: false });
+                  if (selectedHerb.moisture === 'moistening')  badges.push({ emoji: '💧', label: 'Moistening',   inferred: !!selectedHerb.moisture_inferred,     isTaste: false });
+                  if (selectedHerb.moisture === 'drying')      badges.push({ emoji: '🌵', label: 'Drying',       inferred: !!selectedHerb.moisture_inferred,     isTaste: false });
+                  if (selectedHerb.tone === 'toning')          badges.push({ emoji: '⚡', label: 'Toning',       inferred: !!selectedHerb.tone_inferred,         isTaste: false });
+                  if (selectedHerb.tone === 'relaxing')        badges.push({ emoji: '🌊', label: 'Relaxing',     inferred: !!selectedHerb.tone_inferred,         isTaste: false });
+                  if (selectedHerb.taste === 'sweet')          badges.push({ emoji: '🍯', label: 'Sweet taste',  inferred: !!selectedHerb.taste_inferred,        isTaste: true });
+                  if (selectedHerb.taste === 'bitter')         badges.push({ emoji: '☕', label: 'Bitter taste', inferred: !!selectedHerb.taste_inferred,        isTaste: true });
+                  if (selectedHerb.taste === 'pungent')        badges.push({ emoji: '🌶️', label: 'Pungent taste', inferred: !!selectedHerb.taste_inferred,      isTaste: true });
+                  if (selectedHerb.taste === 'salty')          badges.push({ emoji: '🧂', label: 'Salty taste',  inferred: !!selectedHerb.taste_inferred,        isTaste: true });
+                  if (selectedHerb.taste === 'sour')           badges.push({ emoji: '🍋', label: 'Sour taste',   inferred: !!selectedHerb.taste_inferred,        isTaste: true });
                   if (badges.length === 0) return null;
+                  const anyEnergeticsInferred = badges.some((b) => b.inferred && !b.isTaste);
+                  const tasteInferred = badges.some((b) => b.inferred && b.isTaste);
                   return (
                     <div className="flex items-center gap-1.5 flex-wrap justify-end mt-2">
                       {badges.map(({ emoji, label, inferred }) => (
@@ -950,11 +959,20 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
                           {inferred && <span className="text-xs opacity-60 italic">inferred</span>}
                         </span>
                       ))}
-                      {badges.some((b) => b.inferred) && (
+                      {anyEnergeticsInferred && (
                         <button
                           onClick={() => setInferredEnergeticsOpen(true)}
                           className="w-5 h-5 rounded-full border border-gray-300 text-gray-400 text-xs flex items-center justify-center hover:border-gray-500 hover:text-gray-600 transition-colors font-serif italic leading-none shrink-0"
                           title="How were these energetics inferred?"
+                        >
+                          i
+                        </button>
+                      )}
+                      {tasteInferred && (
+                        <button
+                          onClick={() => setInferredTasteOpen(true)}
+                          className="w-5 h-5 rounded-full border border-amber-300 text-amber-500 text-xs flex items-center justify-center hover:border-amber-500 hover:text-amber-700 transition-colors font-serif italic leading-none shrink-0"
+                          title="How was this taste inferred?"
                         >
                           i
                         </button>
@@ -1580,6 +1598,17 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
           herbName={`${selectedHerb.common_name}${selectedHerb.plant_part ? ` (${selectedHerb.plant_part})` : ''}`}
           temperatureInferred={!!selectedHerb.temperature_inferred}
           moistureInferred={!!selectedHerb.moisture_inferred}
+          herbConstituents={selectedHerb.herb_constituents}
+          profiles={selectedProfiles}
+        />
+      )}
+
+      {/* Inferred taste explanation modal */}
+      {selectedHerb && selectedHerb.taste_inferred && (
+        <InferredTasteModal
+          isOpen={inferredTasteOpen}
+          onClose={() => setInferredTasteOpen(false)}
+          herbName={`${selectedHerb.common_name}${selectedHerb.plant_part ? ` (${selectedHerb.plant_part})` : ''}`}
           herbConstituents={selectedHerb.herb_constituents}
           profiles={selectedProfiles}
         />
