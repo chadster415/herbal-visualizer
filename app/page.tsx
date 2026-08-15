@@ -138,7 +138,8 @@ export default function Home() {
   return (
     <div className="min-h-screen p-4 sm:p-8 bg-gradient-to-br from-green-50 to-emerald-100 dark:from-gray-900 dark:to-gray-800">
       <header className="mb-8">
-        <h1 className="text-4xl font-bold text-green-800 dark:text-green-300 mb-4">
+        <h1 className="text-4xl font-bold text-green-800 dark:text-green-300 mb-4 flex items-center gap-3">
+          <img src="/icon-mark.svg" alt="" className="w-10 h-10" />
           Herbal Medicine Visualizer
         </h1>
 
