@@ -628,7 +628,8 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
     return (
       h.common_name.toLowerCase().includes(term) ||
       h.latin_name.toLowerCase().includes(term) ||
-      (h.pinyin_name ?? '').toLowerCase().includes(term)
+      (h.pinyin_name ?? '').toLowerCase().includes(term) ||
+      (h.synonyms ?? []).some((s) => s.toLowerCase().includes(term))
     );
   });
 

@@ -24,6 +24,7 @@ export interface Herb {
   is_tcm?: boolean;
   contraindications?: string | null;
   contraindications_source?: string | null;
+  synonyms?: string[];
 }
 
 export interface PrimaryAction {
