@@ -10,7 +10,8 @@ Taste is the most subjective of the herbal properties and the most dependent on 
 |---|---|---|
 | 171 | 17 | 10 bitter, 5 pungent, 2 sweet |
 | 172 | 100 | 62 bitter, 31 pungent, 7 sweet |
-| **Total** | **117** | **72 bitter, 36 pungent, 9 sweet** |
+| 191 | 3 | 3 bitter (cardiac glycoside rule — new rule added August 2026) |
+| **Total** | **120** | **75 bitter, 36 pungent, 9 sweet** |
 
 ---
 
@@ -111,6 +112,20 @@ High-molecular-weight tannins (ellagitannins, gallotannins, proanthocyanidins) p
 Marrubiin is the established bitter principle of Horehound (*Marrubium vulgare*) and has been formally assessed in bitter tonic pharmacology. This is a **named-compound exception**, not a general rule for labdane diterpenes (e.g., forskolin from Coleus does not produce bitter taste).
 
 **Herbs (confirmed):** Horehound
+
+---
+
+#### Cardenolide / bufadienolide cardiac glycoside — High confidence (mechanism-based)
+
+Cardenolides (e.g., convallatoxin, evobioside, digitoxin) and bufadienolides (e.g., scillaren A, proscillardin A) are intensely bitter by direct TAS2R bitter taste receptor activation — the same mechanism responsible for the well-documented bitterness of Digitalis glycosides. This rule is established from pharmacological mechanism rather than dataset correlation, which is why it is classified High confidence despite having fewer than 5 confirmed examples in the current herb dataset. All three cardiac-glycoside-dominant herbs in this DB are confirmed bitter in primary literature.
+
+**Threshold:** cardenolide glycoside, cardenolide cardiac glycoside, cardiac glycoside, or bufadienolide glycoside at **major or primary** in `herb_constituents`. Generic "cardiac glycosides" category entries at major also fire the rule. The threshold excludes trace/minor cardiac glycoside contamination (e.g., some Digitalis leaves at negligible cardenolide content).
+
+**Covers:** Cardenolide aglycone categories (bufadienolide aglycone, cardenolide aglycone) at major+ also qualify.
+
+**Herbs (confirmed in DB):** Lily of the Valley, Wahoo, Squill
+
+**Confounders:** None identified. The class is universally bitter in herbal tradition and TAS2R pharmacology. No sweet polysaccharide counter-signal has been observed for cardiac-glycoside-dominant herbs.
 
 ---
 
