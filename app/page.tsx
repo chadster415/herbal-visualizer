@@ -13,6 +13,7 @@ import { DosingCalculatorModal } from '@/components/DosingCalculatorModal';
 import { IntakeFormModal } from '@/components/IntakeFormModal';
 import { BodyDiagramModal } from '@/components/BodyDiagramModal';
 import { HelpModal } from '@/components/HelpModal';
+import { FlowerEssenceQuizModal } from '@/components/FlowerEssenceQuizModal';
 import {
   ArrowLeftIcon,
   BeakerIcon,
@@ -22,6 +23,7 @@ import {
   MagnifyingGlassIcon,
   QuestionMarkCircleIcon,
   RectangleStackIcon,
+  SparklesIcon,
   UserIcon,
   CalculatorIcon,
 } from '@heroicons/react/24/outline';
@@ -65,6 +67,7 @@ export default function Home() {
   const [intakeFormOpen, setIntakeFormOpen] = useState(false);
   const [bodyDiagramOpen, setBodyDiagramOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
+  const [flowerEssenceQuizOpen, setFlowerEssenceQuizOpen] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<'browse' | 'practice' | 'formulation' | null>(null);
 
   const pushAndNavigate = (next: NavEntry) => {
@@ -135,6 +138,15 @@ export default function Home() {
     );
     if (data) {
       pushAndNavigate({ viewMode: 'action', selectedHerbId, selectedActionId: data.id, selectedSystemId: null, selectedDisorderId: null });
+    }
+  };
+
+  const handleQuizEssenceSelect = async (essenceName: string) => {
+    const { supabase } = await import('@/lib/supabase');
+    const { data } = await supabase.from('flower_essence_plants').select('id').eq('name', essenceName).single();
+    if (data) {
+      handleEssenceClick(data.id);
+      if (typeof window !== 'undefined' && window.innerWidth < 640) setFlowerEssenceQuizOpen(false);
     }
   };
 
@@ -241,6 +253,12 @@ export default function Home() {
                     >
                       <ClipboardDocumentListIcon className="w-4 h-4 shrink-0" /> Intake Assessment
                     </button>
+                    <button
+                      onClick={() => { setFlowerEssenceQuizOpen(true); setOpenDropdown(null); }}
+                      className="w-full text-left px-4 py-2.5 text-green-800 hover:bg-green-50 transition-all flex items-center gap-2"
+                    >
+                      <SparklesIcon className="w-4 h-4 shrink-0" /> Flower Essence Quiz
+                    </button>
                   </div>
                 </div>
               )}
@@ -300,6 +318,12 @@ export default function Home() {
                     className="w-full text-left px-4 py-2.5 text-green-800 hover:bg-green-50 transition-all whitespace-nowrap flex items-center gap-2"
                   >
                     <ClipboardDocumentListIcon className="w-5 h-5 shrink-0" /> Intake Assessment
+                  </button>
+                  <button
+                    onClick={() => { setFlowerEssenceQuizOpen(true); setOpenDropdown(null); }}
+                    className="w-full text-left px-4 py-2.5 text-green-800 hover:bg-green-50 transition-all whitespace-nowrap flex items-center gap-2"
+                  >
+                    <SparklesIcon className="w-5 h-5 shrink-0" /> Flower Essence Quiz
                   </button>
                 </div>
               )}
@@ -380,11 +404,12 @@ export default function Home() {
         isOpen={dosingCalculatorOpen}
         onClose={() => setDosingCalculatorOpen(false)}
       />
-      {(energeticsQuizOpen || intakeFormOpen) && (
-        <div className="fixed inset-0 z-[39]" onClick={() => { setEnergeticsQuizOpen(false); setIntakeFormOpen(false); }} aria-hidden="true" />
+      {(energeticsQuizOpen || intakeFormOpen || flowerEssenceQuizOpen) && (
+        <div className="fixed inset-0 z-[39]" onClick={() => { setEnergeticsQuizOpen(false); setIntakeFormOpen(false); setFlowerEssenceQuizOpen(false); }} aria-hidden="true" />
       )}
       <EnergeticsQuizModal isOpen={energeticsQuizOpen} onClose={() => setEnergeticsQuizOpen(false)} onHerbSelect={(herbName) => { handleQuizHerbSelect(herbName); if (typeof window !== 'undefined' && window.innerWidth < 640) setEnergeticsQuizOpen(false); }} />
       <IntakeFormModal isOpen={intakeFormOpen} onClose={() => setIntakeFormOpen(false)} onHerbSelect={(herbId) => { handleHerbClick(herbId); if (typeof window !== 'undefined' && window.innerWidth < 640) setIntakeFormOpen(false); }} />
+      <FlowerEssenceQuizModal isOpen={flowerEssenceQuizOpen} onClose={() => setFlowerEssenceQuizOpen(false)} onEssenceSelect={handleQuizEssenceSelect} />
       <BodyDiagramModal
         open={bodyDiagramOpen}
         onClose={() => setBodyDiagramOpen(false)}
