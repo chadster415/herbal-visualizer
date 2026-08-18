@@ -1,4 +1,4 @@
--- Migration 182: Add general constituents to Gymnema, Shatavari, Khella,
+`-- Migration 182: Add general constituents to Gymnema, Shatavari, Khella,
 -- Usnea, Yohimbe, and Poke Root.
 
 SET search_path TO herbal, public;
@@ -192,3 +192,4 @@ BEGIN
 
   RAISE NOTICE 'Added constituents to Poke Root (Phytolacca americana)';
 END $$;
+`

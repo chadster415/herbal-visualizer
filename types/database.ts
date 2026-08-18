@@ -280,3 +280,42 @@ export interface PrescriptionSupplement {
   sort_order: number;
   created_at: string;
 }
+
+// Flower Essence tables (Part One = soul conditions, Part Two = plant profiles)
+
+export interface FlowerEssencePlant {
+  id: number;
+  name: string;
+  latin_name: string | null;
+  color: string | null;
+  kit: string | null;
+  positive_qualities: string | null;
+  patterns_of_imbalance: string | null;
+  description: string | null;
+  cross_references: string[] | null;
+  created_at: string;
+}
+
+export interface FlowerEssenceConditionEntry {
+  id: number;
+  category: string;
+  plant_name: string;
+  plant_id: number | null;
+  description: string | null;
+}
+
+export interface FlowerEssenceSeeAlso {
+  from_category: string;
+  to_category: string;
+}
+
+export interface FlowerEssenceCategory {
+  category: string;
+  search_keywords: string[];
+}
+
+export interface FlowerEssenceCategoryWithEntries extends FlowerEssenceCategory {
+  entries: FlowerEssenceConditionEntry[];
+  see_also_from: string[];
+  see_also_to: string[];
+}

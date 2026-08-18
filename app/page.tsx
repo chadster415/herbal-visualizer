@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { HerbView } from '@/components/HerbView';
 import { ActionView } from '@/components/ActionView';
 import { SystemView } from '@/components/SystemView';
+import { SoulConditionView } from '@/components/SoulConditionView';
 import { FlashcardModal } from '@/components/FlashcardModal';
 import { EnergeticsQuizModal } from '@/components/EnergeticsQuizModal';
 import { HerbFilterPanel } from '@/components/HerbFilterPanel';
@@ -25,7 +26,7 @@ import {
   CalculatorIcon,
 } from '@heroicons/react/24/outline';
 
-type ViewMode = 'herb' | 'action' | 'system';
+type ViewMode = 'herb' | 'action' | 'system' | 'soul_condition';
 
 interface NavEntry {
   viewMode: ViewMode;
@@ -34,6 +35,8 @@ interface NavEntry {
   selectedSystemId: number | null;
   selectedDisorderId: number | null;
   selectedSupplementId?: number | null;
+  selectedEssenceId?: number | null;
+  selectedSoulConditionCategory?: string | null;
 }
 
 export default function Home() {
@@ -51,6 +54,8 @@ export default function Home() {
   const [selectedSystemId, setSelectedSystemId] = useState<number | null>(null);
   const [selectedDisorderId, setSelectedDisorderId] = useState<number | null>(null);
   const [selectedSupplementId, setSelectedSupplementId] = useState<number | null>(null);
+  const [selectedEssenceId, setSelectedEssenceId] = useState<number | null>(null);
+  const [selectedSoulConditionCategory, setSelectedSoulConditionCategory] = useState<string | null>(null);
   const [history, setHistory] = useState<NavEntry[]>([]);
   const [flashcardsOpen, setFlashcardsOpen] = useState(false);
   const [energeticsQuizOpen, setEnergeticsQuizOpen] = useState(false);
@@ -63,13 +68,15 @@ export default function Home() {
   const [openDropdown, setOpenDropdown] = useState<'browse' | 'practice' | 'formulation' | null>(null);
 
   const pushAndNavigate = (next: NavEntry) => {
-    setHistory((prev) => [...prev, { viewMode, selectedHerbId, selectedActionId, selectedSystemId, selectedDisorderId, selectedSupplementId }]);
+    setHistory((prev) => [...prev, { viewMode, selectedHerbId, selectedActionId, selectedSystemId, selectedDisorderId, selectedSupplementId, selectedEssenceId, selectedSoulConditionCategory }]);
     setViewMode(next.viewMode);
     setSelectedHerbId(next.selectedHerbId);
     setSelectedActionId(next.selectedActionId);
     setSelectedSystemId(next.selectedSystemId);
     setSelectedDisorderId(next.selectedDisorderId);
     setSelectedSupplementId(next.selectedSupplementId ?? null);
+    setSelectedEssenceId(next.selectedEssenceId ?? null);
+    setSelectedSoulConditionCategory(next.selectedSoulConditionCategory ?? null);
     setScrollTrigger((k) => k + 1);
   };
 
@@ -84,6 +91,8 @@ export default function Home() {
       setSelectedSystemId(entry.selectedSystemId);
       setSelectedDisorderId(entry.selectedDisorderId);
       setSelectedSupplementId(entry.selectedSupplementId ?? null);
+      setSelectedEssenceId(entry.selectedEssenceId ?? null);
+      setSelectedSoulConditionCategory(entry.selectedSoulConditionCategory ?? null);
       return next;
     });
   };
@@ -93,6 +102,7 @@ export default function Home() {
     setViewMode(mode);
     setSelectedSystemId(null);
     setSelectedDisorderId(null);
+    setSelectedSoulConditionCategory(null);
   };
 
   const handleHerbClick = (herbId: number) => {
@@ -101,6 +111,14 @@ export default function Home() {
 
   const handleSupplementClick = (supplementId: number) => {
     pushAndNavigate({ viewMode: 'herb', selectedHerbId: null, selectedActionId, selectedSystemId: null, selectedDisorderId: null, selectedSupplementId: supplementId });
+  };
+
+  const handleEssenceClick = (essenceId: number) => {
+    pushAndNavigate({ viewMode: 'herb', selectedHerbId: null, selectedActionId, selectedSystemId: null, selectedDisorderId: null, selectedEssenceId: essenceId, selectedSoulConditionCategory });
+  };
+
+  const handleSoulConditionClick = (category: string) => {
+    pushAndNavigate({ viewMode: 'soul_condition', selectedHerbId: null, selectedActionId, selectedSystemId: null, selectedDisorderId: null, selectedSoulConditionCategory: category });
   };
 
   const handleActionClick = (actionId: number) => {
@@ -133,7 +151,11 @@ export default function Home() {
     }
   };
 
-  const viewModeLabel = viewMode === 'herb' ? 'By Herb' : viewMode === 'action' ? 'By Action' : 'By Body System';
+  const viewModeLabel =
+    viewMode === 'herb' ? 'By Herb' :
+    viewMode === 'action' ? 'By Action' :
+    viewMode === 'soul_condition' ? 'By Soul Condition' :
+    'By Body System';
 
   return (
     <div className="min-h-screen p-4 sm:p-8 bg-gradient-to-br from-green-50 to-emerald-100 dark:from-gray-900 dark:to-gray-800">
@@ -168,13 +190,13 @@ export default function Home() {
               </button>
               {openDropdown === 'browse' && (
                 <div className="absolute top-full mt-1 left-0 bg-white border border-green-200 rounded-lg shadow-lg min-w-[190px] overflow-hidden z-10">
-                  {(['herb', 'action', 'system'] as const).map((mode) => (
+                  {(['herb', 'action', 'system', 'soul_condition'] as const).map((mode) => (
                     <div key={mode} className={`flex items-center ${viewMode === mode ? 'bg-green-100' : ''}`}>
                       <button
                         onClick={() => { switchTab(mode); setOpenDropdown(null); }}
                         className={`flex-1 text-left px-4 py-2.5 text-green-800 hover:bg-green-50 transition-all ${viewMode === mode ? 'font-semibold' : ''}`}
                       >
-                        {mode === 'herb' ? 'By Herb' : mode === 'action' ? 'By Action' : 'By Body System'}
+                        {mode === 'herb' ? 'By Herb' : mode === 'action' ? 'By Action' : mode === 'soul_condition' ? 'By Soul Condition' : 'By Body System'}
                       </button>
                       {mode === 'system' && (
                         <button
@@ -306,7 +328,21 @@ export default function Home() {
       </header>
 
       <main>
-        <div className={viewMode !== 'herb' ? 'hidden' : ''}><HerbView selectedHerbId={selectedHerbId} onHerbIdChange={setSelectedHerbId} onHerbClick={handleHerbClick} onActionClick={handleActionClick} onActionNameClick={handleActionNameClick} onDisorderClick={handleDisorderClick} selectedSupplementId={selectedSupplementId} onSupplementClick={handleSupplementClick} /></div>
+        <div className={viewMode !== 'herb' ? 'hidden' : ''}>
+          <HerbView
+            selectedHerbId={selectedHerbId}
+            onHerbIdChange={setSelectedHerbId}
+            onHerbClick={handleHerbClick}
+            onActionClick={handleActionClick}
+            onActionNameClick={handleActionNameClick}
+            onDisorderClick={handleDisorderClick}
+            selectedSupplementId={selectedSupplementId}
+            onSupplementClick={handleSupplementClick}
+            selectedEssenceId={selectedEssenceId}
+            onEssenceClick={handleEssenceClick}
+            onSoulConditionClick={handleSoulConditionClick}
+          />
+        </div>
         <div className={viewMode !== 'action' ? 'hidden' : ''}><ActionView selectedActionId={selectedActionId} onActionIdChange={setSelectedActionId} onHerbClick={handleHerbClick} /></div>
         {viewMode === 'system' && (
           <SystemView
@@ -317,6 +353,19 @@ export default function Home() {
             onSystemChange={setSelectedSystemId}
             selectedDisorderId={selectedDisorderId}
             onDisorderChange={setSelectedDisorderId}
+          />
+        )}
+        {viewMode === 'soul_condition' && (
+          <SoulConditionView
+            selectedCategory={selectedSoulConditionCategory}
+            onCategoryChange={setSelectedSoulConditionCategory}
+            onEssenceClick={(name) => {
+              import('@/lib/supabase').then(({ supabase }) =>
+                supabase.from('flower_essence_plants').select('id').eq('name', name).single()
+              ).then(({ data }) => {
+                if (data) handleEssenceClick(data.id);
+              });
+            }}
           />
         )}
       </main>

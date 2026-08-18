@@ -10,6 +10,7 @@ import { CONTRAINDICATIONS } from '@/lib/contraindications-manifest';
 import { HerbImageUpload } from './HerbImageUpload';
 import { MM_MATERIA_MEDICA } from '@/lib/mm-materia-medica';
 import { SupplementDetail } from './SupplementDetail';
+import { FlowerEssenceDetail } from './FlowerEssenceDetail';
 import type {
   Herb,
   PrimaryAction,
@@ -21,6 +22,7 @@ import type {
   Constituent,
   HerbMenstruum,
   Supplement,
+  FlowerEssencePlant,
 } from '@/types/database';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -102,6 +104,9 @@ interface HerbViewProps {
   onDisorderClick?: (disorderId: number, systemId: number) => void;
   selectedSupplementId?: number | null;
   onSupplementClick?: (supplementId: number) => void;
+  selectedEssenceId?: number | null;
+  onEssenceClick?: (essenceId: number) => void;
+  onSoulConditionClick?: (category: string) => void;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -207,7 +212,7 @@ function SectionHeader({ title, open, onToggle }: { title: string; open: boolean
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onActionClick, onActionNameClick, onDisorderClick, selectedSupplementId, onSupplementClick }: HerbViewProps) {
+export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onActionClick, onActionNameClick, onDisorderClick, selectedSupplementId, onSupplementClick, selectedEssenceId, onEssenceClick, onSoulConditionClick }: HerbViewProps) {
   const [herbs, setHerbs] = useState<HerbData[]>([]);
   const [allProfiles, setAllProfiles] = useState<ConstituentProfile[]>([]);
   const [selectedHerb, setSelectedHerb] = useState<HerbData | null>(null);
@@ -217,6 +222,8 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
   const [includeTCM, setIncludeTCM] = useState(false);
   const [supplements, setSupplements] = useState<Supplement[]>([]);
   const [selectedSupplement, setSelectedSupplement] = useState<Supplement | null>(null);
+  const [essences, setEssences] = useState<FlowerEssencePlant[]>([]);
+  const [selectedEssence, setSelectedEssence] = useState<FlowerEssencePlant | null>(null);
   const [duiYaoPairs, setDuiYaoPairs] = useState<DuiYaoPair[]>([]);
   const [duiYaoLoading, setDuiYaoLoading] = useState(false);
   const [mobileListOpen, setMobileListOpen] = useState(true);
@@ -257,6 +264,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
 
   const herbRefs = useRef<Map<number, HTMLButtonElement>>(new Map());
   const vitaminsSectionRef = useRef<HTMLDivElement | null>(null);
+  const essenceSectionRef = useRef<HTMLDivElement | null>(null);
   const detailPanelRef = useRef<HTMLDivElement>(null);
   const monographDropdownRef = useRef<HTMLDivElement>(null);
   const sectionRefs = useRef<Partial<Record<keyof typeof sectionsOpen, HTMLDivElement | null>>>({});
@@ -316,6 +324,50 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
       .order('name')
       .then(({ data }) => { if (data) setSupplements(data as Supplement[]); });
   }, []);
+
+  useEffect(() => {
+    supabase
+      .from('flower_essence_plants')
+      .select('*')
+      .order('name')
+      .then(({ data }) => { if (data) setEssences(data as FlowerEssencePlant[]); });
+  }, []);
+
+  useEffect(() => {
+    if (selectedEssenceId == null) return;
+    const scrollToDetail = () => {
+      if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+        setMobileListOpen(false);
+        setTimeout(() => detailPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+      } else {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    };
+    const found = essences.find((e) => e.id === selectedEssenceId);
+    if (found) {
+      setSelectedEssence(found);
+      setSelectedHerb(null);
+      setSelectedSupplement(null);
+      scrollToDetail();
+      return;
+    }
+    supabase
+      .from('flower_essence_plants')
+      .select('*')
+      .eq('id', selectedEssenceId)
+      .single()
+      .then(({ data }) => {
+        if (data) {
+          setSelectedEssence(data as FlowerEssencePlant);
+          setSelectedHerb(null);
+          setSelectedSupplement(null);
+          if (!essences.find((e) => e.id === selectedEssenceId)) {
+            setEssences((prev) => [...prev, data as FlowerEssencePlant]);
+          }
+          scrollToDetail();
+        }
+      });
+  }, [selectedEssenceId, essences]);
 
   useEffect(() => {
     if (selectedSupplementId == null) return;
@@ -638,6 +690,11 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
     return !term || s.name.toLowerCase().includes(term) || s.category.toLowerCase().includes(term);
   });
 
+  const filteredEssences = essences.filter((e) => {
+    const term = searchTerm.toLowerCase();
+    return !term || e.name.toLowerCase().includes(term) || (e.latin_name ?? '').toLowerCase().includes(term);
+  });
+
   function calcTooltipPos(el: HTMLElement) {
     const rect = el.getBoundingClientRect();
     const POPUP_W = 272;
@@ -755,27 +812,50 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
             />
             Include TCM-only herbs
           </label>
-          {filteredSupplements.length > 0 && (
-            <button
-              onClick={() => {
-                const el = vitaminsSectionRef.current;
-                if (!el) return;
-                let container: HTMLElement | null = el.parentElement;
-                while (container) {
-                  const { overflowY } = getComputedStyle(container);
-                  if (overflowY === 'auto' || overflowY === 'scroll') break;
-                  container = container.parentElement;
-                }
-                if (!container) return;
-                const cRect = container.getBoundingClientRect();
-                const eRect = el.getBoundingClientRect();
-                container.scrollTo({ top: eRect.top - cRect.top + container.scrollTop - 8, behavior: 'smooth' });
-              }}
-              className="ml-auto text-sm text-indigo-500 hover:text-indigo-700 hover:underline transition-colors"
-            >
-              Jump to vitamins &amp; supplements ↓
-            </button>
-          )}
+          <div className="ml-auto flex flex-col items-end gap-1">
+            {filteredSupplements.length > 0 && (
+              <button
+                onClick={() => {
+                  const el = vitaminsSectionRef.current;
+                  if (!el) return;
+                  let container: HTMLElement | null = el.parentElement;
+                  while (container) {
+                    const { overflowY } = getComputedStyle(container);
+                    if (overflowY === 'auto' || overflowY === 'scroll') break;
+                    container = container.parentElement;
+                  }
+                  if (!container) return;
+                  const cRect = container.getBoundingClientRect();
+                  const eRect = el.getBoundingClientRect();
+                  container.scrollTo({ top: eRect.top - cRect.top + container.scrollTop - 8, behavior: 'smooth' });
+                }}
+                className="text-sm text-indigo-500 hover:text-indigo-700 hover:underline transition-colors"
+              >
+                Jump to vitamins &amp; supplements ↓
+              </button>
+            )}
+            {filteredEssences.length > 0 && (
+              <button
+                onClick={() => {
+                  const el = essenceSectionRef.current;
+                  if (!el) return;
+                  let container: HTMLElement | null = el.parentElement;
+                  while (container) {
+                    const { overflowY } = getComputedStyle(container);
+                    if (overflowY === 'auto' || overflowY === 'scroll') break;
+                    container = container.parentElement;
+                  }
+                  if (!container) return;
+                  const cRect = container.getBoundingClientRect();
+                  const eRect = el.getBoundingClientRect();
+                  container.scrollTo({ top: eRect.top - cRect.top + container.scrollTop - 8, behavior: 'smooth' });
+                }}
+                className="text-sm text-purple-500 hover:text-purple-700 hover:underline transition-colors"
+              >
+                Jump to flower essences ↓
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="space-y-2 max-h-[70vh] overflow-y-auto px-1 py-1">
@@ -873,16 +953,60 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
                 ))}
             </>
           )}
+
+          {/* Flower Essences section */}
+          {filteredEssences.length > 0 && (
+            <>
+              <div ref={essenceSectionRef} className="pt-3 pb-1 px-1">
+                <p className="text-xs font-semibold text-purple-400 uppercase tracking-widest">Flower Essences</p>
+              </div>
+              {filteredEssences.map((essence) => (
+                <button
+                  key={`ess-${essence.id}`}
+                  onClick={() => {
+                    setSelectedEssence(essence);
+                    setSelectedHerb(null);
+                    setSelectedSupplement(null);
+                    onEssenceClick?.(essence.id);
+                    setSearchTerm('');
+                    setMobileListOpen(false);
+                    if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+                      setTimeout(() => detailPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+                    } else {
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }
+                  }}
+                  className={`w-full text-left p-3 rounded-lg border transition-all ${
+                    selectedEssence?.id === essence.id
+                      ? 'ring-2 ring-purple-400 ring-offset-1 bg-purple-50 border-purple-200'
+                      : 'bg-purple-50/40 border-purple-100 hover:bg-purple-50 hover:border-purple-200'
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-2 min-w-0">
+                    <div className="font-semibold text-gray-900 truncate">{essence.name} <span className="font-normal text-purple-400">(essence)</span></div>
+                  </div>
+                  {essence.latin_name && (
+                    <div className="text-sm italic text-gray-500 mt-0.5 truncate">{essence.latin_name}</div>
+                  )}
+                </button>
+              ))}
+            </>
+          )}
         </div>
         </div>
       </div>
 
-      {/* Herb / Supplement Details */}
+      {/* Herb / Supplement / Essence Details */}
       <div ref={detailPanelRef} className="lg:col-span-2 bg-white rounded-lg shadow-lg p-6">
-        {selectedSupplement && !selectedHerb ? (
+        {selectedSupplement && !selectedHerb && !selectedEssence ? (
           <SupplementDetail
             supplement={selectedSupplement}
             onDisorderClick={onDisorderClick}
+          />
+        ) : selectedEssence && !selectedHerb && !selectedSupplement ? (
+          <FlowerEssenceDetail
+            essence={selectedEssence}
+            onSoulConditionClick={onSoulConditionClick}
           />
         ) : selectedHerb ? (
           <div>
@@ -1618,7 +1742,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
           </div>
         ) : (
           <div className="flex items-center justify-center h-full text-gray-400">
-            <p className="text-lg">Select an herb or supplement to view details</p>
+            <p className="text-lg">Select an herb, supplement, or flower essence to view details</p>
           </div>
         )}
       </div>
