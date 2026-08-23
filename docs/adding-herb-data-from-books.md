@@ -348,6 +348,80 @@ See [inferring-taste-from-constituents.md](inferring-taste-from-constituents.md)
 
 ---
 
+## Case 9 — Adding `herb_menstruum` (best menstruum from constituents)
+
+The `herb_menstruum` table stores the recommended extraction solvent for each herb. One row per herb, upserted via the `set_menstruum` helper.
+
+### Constituent-to-menstruum rules
+
+Use these rules to derive the alcohol range and water/vinegar/glycerin flags from the herb's constituent profile:
+
+| Constituent class | Extraction | Notes |
+|---|---|---|
+| Volatile oils (monoterpenes, sesquiterpenes, eugenol, etc.) | 50–70% alcohol | Evaporate with heat; don't rely on hot water alone |
+| Resins | 70–95% alcohol | Highly lipophilic; water is ineffective |
+| Triterpenes / sterols | 60–75% alcohol | Lipophilic; require high alcohol |
+| Isoquinoline alkaloids (berberine, sanguinarine, etc.) | 40–65% + 5–10% vinegar | Vinegar forms soluble salt; low pH improves extraction |
+| Other alkaloids (tropane, quinolizidine, indole, etc.) | 40–65% + 5–10% vinegar | Same principle |
+| Polysaccharides / beta-glucans | water decoction | Insoluble in alcohol; hot water required |
+| Mucilage | cold or warm water | Heat-stable but avoid high alcohol |
+| Cardiac / anthraquinone glycosides | 25–50% alcohol or water | Moderate alcohol or water decoction |
+| Flavonoids / phenylpropanoids (caffeic acid, rosmarinic acid) | 25–60% alcohol or water | Broad solubility |
+| Iridoid glycosides | 25–50% alcohol or cold water | Some are heat-labile — prefer cold |
+| Saponins (steroidal, triterpenoid) | 40–60% alcohol | Moderate alcohol; add 5–10% vinegar for steroidal saponins |
+| Tannins | water or 25–40% alcohol | Precipitate in high alcohol |
+
+**Vinegar** (5–10%) is indicated only when alkaloid salt formation is needed — not as a default.
+
+**`water_effective = true`** when water extraction produces meaningful therapeutic activity, not just a trace. Set for polysaccharide-dominant herbs, herbs used traditionally as tea/decoction, and flavonoid/rosmarinic-acid-dominant herbs.
+
+**`primary_label`** is the short string shown in the UI — format as `'50–70% alcohol'`, `'water decoction'`, `'50–70% alcohol or water infusion'`, `'45–60% alcohol + 5–10% vinegar'`, etc. Use an en-dash (–) not a hyphen (-) for ranges.
+
+### Migration pattern
+
+Use the `set_menstruum` helper (upserts — safe to re-run):
+
+```sql
+SET search_path TO herbal, public;
+
+DO $$
+BEGIN
+  PERFORM herbal.set_menstruum(
+    'Ocimum sanctum',                       -- latin_name
+    50::SMALLINT,                           -- alcohol_pct_min
+    70::SMALLINT,                           -- alcohol_pct_max
+    NULL,                                   -- glycerin_pct
+    NULL,                                   -- vinegar_pct
+    true,                                   -- water_effective
+    '50–70% alcohol or water infusion',     -- primary_label
+    'Volatile oils (eugenol, linalool, β-caryophyllene) and triterpenes (ursolic acid) extract in moderate-high alcohol; flavonoids and rosmarinic acid extract in both alcohol and water. Traditional Ayurvedic use as leaf infusion.',
+    false                                   -- needs_review
+  );
+  RAISE NOTICE 'Holy Basil menstruum: done.';
+END $$;
+```
+
+Or direct INSERT (for a herb with no existing record):
+```sql
+INSERT INTO herbal.herb_menstruum
+  (herb_id, alcohol_pct_min, alcohol_pct_max, water_effective, primary_label, notes)
+VALUES (
+  (SELECT id FROM herbal.herbs WHERE latin_name = 'Ocimum sanctum'),
+  50, 70, true,
+  '50–70% alcohol or water infusion',
+  'Volatile oils and triterpenes require moderate-high alcohol; flavonoids and rosmarinic acid are effective in water.'
+)
+ON CONFLICT (herb_id) DO NOTHING;
+```
+
+### When to set `needs_review = true`
+
+- The herb has conflicting phytochemical signals (e.g., both polysaccharides and resins)
+- Clinical literature specifies a preparation that differs from the phytochemical inference
+- Fewer than 3 meaningful constituents in `herb_constituents` — inference is low-confidence
+
+---
+
 ## Checking external references when adding a new herb
 
 **Do this automatically** — when a new herb is added to the DB (with or without constituent data), check both external reference books without waiting to be asked. The checks are fast; the omission is hard to notice later.
@@ -457,6 +531,7 @@ Files go in `supabase/migrations/`. The user runs them manually in the Supabase 
 - [ ] General constituents data provided? Before writing `ensure_constituent` calls, query `herbal.constituents` to find compounds that already exist — re-use them rather than duplicating. Then insert into `herb_constituents` via `link_constituent` or direct INSERT (see Case 6).
 - [ ] Energetics inferred from `herb_constituents`? Apply rules from `inferring-energetics-from-constituents.md` after constituents are added. Set `temperature_inferred = true` / `moisture_inferred = true` for any inferred dimension. Do not infer tone. Skip inference if fewer than 3 constituents or conflicting signals (see Case 7).
 - [ ] Taste inferred from `herb_constituents`? Apply rules from `inferring-taste-from-constituents.md` after constituents are added. Set `taste_inferred = true` for inferred values. Do not infer sour or salty. Skip if fewer than 3 constituents or signals conflict (see Case 8).
+- [ ] Best menstruum recorded? Check `SELECT * FROM herbal.herb_menstruum WHERE herb_id = v_herb_id`. If missing, apply the constituent-to-menstruum rules to set alcohol range, `water_effective`, and `primary_label` via `set_menstruum` (see Case 9).
 - [ ] All INSERTs use `ON CONFLICT ... DO NOTHING` (migrations must be re-runnable).
 - [ ] MM Materia Medica checked — grep the MM text file, update `SYNONYM_MAP` in `parse-mm-materia-medica.py`, re-run the parser (see "Checking external references").
 - [ ] Stockley's checked — search `scripts/stockleys_herb_pages.json`; if found, extract images and add to `lib/contraindications-manifest.ts`.

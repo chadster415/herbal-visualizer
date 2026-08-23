@@ -50,6 +50,17 @@ export default function Home() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [scrollTrigger]);
 
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'f') {
+        e.preventDefault();
+        setHerbFilterOpen(true);
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   const [viewMode, setViewMode] = useState<ViewMode>('herb');
   const [selectedHerbId, setSelectedHerbId] = useState<number | null>(null);
   const [selectedActionId, setSelectedActionId] = useState<number | null>(null);
@@ -64,6 +75,7 @@ export default function Home() {
   const [herbFilterOpen, setHerbFilterOpen] = useState(false);
   const [formulaBuilderOpen, setFormulaBuilderOpen] = useState(false);
   const [dosingCalculatorOpen, setDosingCalculatorOpen] = useState(false);
+  const [dosingInitialHerbs, setDosingInitialHerbs] = useState<{ id: number; common_name: string; latin_name: string; plant_part: string | null }[]>([]);
   const [intakeFormOpen, setIntakeFormOpen] = useState(false);
   const [bodyDiagramOpen, setBodyDiagramOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
@@ -399,10 +411,15 @@ export default function Home() {
         isOpen={formulaBuilderOpen}
         onClose={() => setFormulaBuilderOpen(false)}
         onHerbClick={handleHerbClick}
+        onTransferToDosing={(herbs) => {
+          setDosingInitialHerbs(herbs);
+          setDosingCalculatorOpen(true);
+        }}
       />
       <DosingCalculatorModal
         isOpen={dosingCalculatorOpen}
         onClose={() => setDosingCalculatorOpen(false)}
+        initialHerbs={dosingInitialHerbs}
       />
       {(energeticsQuizOpen || intakeFormOpen || flowerEssenceQuizOpen) && (
         <div className="fixed inset-0 z-[39]" onClick={() => { setEnergeticsQuizOpen(false); setIntakeFormOpen(false); setFlowerEssenceQuizOpen(false); }} aria-hidden="true" />

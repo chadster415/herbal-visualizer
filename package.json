@@ -6,6 +6,7 @@
     "dev": "./node_modules/.bin/next dev",
     "dev-db": "supabase start",
     "stop-db": "supabase stop",
+    "restart-colima": "bash scripts/restart-colima.sh",
     "reset-db": "supabase db reset",
     "snapshot-db": "supabase db dump --local --data-only --schema herbal -f supabase/migrations/008_current_data_snapshot.sql",
     "ingest": "ts-node scripts/ingest-secondary-actions.ts",

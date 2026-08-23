@@ -33,6 +33,7 @@ interface Props {
   isOpen: boolean;
   onClose: () => void;
   onHerbClick?: (herbId: number) => void;
+  onTransferToDosing?: (herbs: { id: number; common_name: string; latin_name: string; plant_part: string | null }[]) => void;
 }
 
 const ENERGETIC_BADGE: Record<string, string> = {
@@ -139,7 +140,7 @@ const ROLES: Role[] = ['base', 'synergist', 'specific'];
 const EMPTY_CANDIDATES: Record<Role, Candidate[]> = { base: [], synergist: [], specific: [] };
 const EMPTY_SELECTED: Record<Role, Herb | null> = { base: null, synergist: null, specific: null };
 
-export function FormulaBuilderModal({ isOpen, onClose, onHerbClick }: Props) {
+export function FormulaBuilderModal({ isOpen, onClose, onHerbClick, onTransferToDosing }: Props) {
   const [stage, setStage] = useState<Stage>('context');
   const [loading, setLoading] = useState(false);
   const [activeRole, setActiveRole] = useState<Role>('base');
@@ -160,6 +161,10 @@ export function FormulaBuilderModal({ isOpen, onClose, onHerbClick }: Props) {
   // Stage 2
   const [candidates, setCandidates] = useState<Record<Role, Candidate[]>>(EMPTY_CANDIDATES);
   const [selected, setSelected] = useState<Record<Role, Herb | null>>(EMPTY_SELECTED);
+  const [specificIsFallback, setSpecificIsFallback] = useState(false);
+
+  // Stage 3 — menstruum data for selected herbs
+  const [reviewMenstruum, setReviewMenstruum] = useState<Record<number, string>>({});
 
   useEffect(() => {
     if (!isOpen) return;
@@ -187,6 +192,22 @@ export function FormulaBuilderModal({ isOpen, onClose, onHerbClick }: Props) {
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   }, [isOpen, onClose]);
+
+  useEffect(() => {
+    if (stage !== 'review') return;
+    const ids = [selected.base?.id, selected.synergist?.id, selected.specific?.id].filter(Boolean) as number[];
+    if (!ids.length) return;
+    supabase
+      .from('herb_menstruum')
+      .select('herb_id, primary_label')
+      .in('herb_id', ids)
+      .then(({ data }) => {
+        if (!data) return;
+        const map: Record<number, string> = {};
+        data.forEach((row) => { map[row.herb_id] = row.primary_label; });
+        setReviewMenstruum(map);
+      });
+  }, [stage, selected]);
 
   const fetchCandidates = async () => {
     if (!selectedSystem || !selectedDisorder) return;
@@ -278,11 +299,16 @@ export function FormulaBuilderModal({ isOpen, onClose, onHerbClick }: Props) {
       ? specList.map((c) => ({ ...c, context: c.context ? `${c.context} · from specific remedies` : 'from specific remedies' }))
       : synCandidates;
 
+    // Fallback: if no specific remedies, reuse synergist candidates so the column is never empty
+    const usingSpecFallback = specList.length === 0 && synFallback.length > 0;
+    const specFallback: Candidate[] = usingSpecFallback ? synFallback : specList;
+    setSpecificIsFallback(usingSpecFallback);
+
     setCandidates({
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       base: buildCandidates((baseRes.data ?? []) as any[], constitution, true),
       synergist: synFallback,
-      specific: specList,
+      specific: specFallback,
     });
     setLoading(false);
   };
@@ -666,6 +692,11 @@ export function FormulaBuilderModal({ isOpen, onClose, onHerbClick }: Props) {
                     </button>
                   </div>
                   <div className="text-xs text-gray-500 dark:text-gray-400">{cfg.sub}</div>
+                  {role === 'specific' && specificIsFallback && (
+                    <div className="text-xs text-amber-600 dark:text-amber-400 mt-1 italic">
+                      No specific remedies recorded — showing synergist list instead.
+                    </div>
+                  )}
                   {sel && (
                     <div className="text-xs text-gray-600 dark:text-gray-300 font-medium mt-1 italic truncate">
                       <CheckIcon className="w-3 h-3 inline mr-0.5" /> {sel.latin_name}
@@ -739,6 +770,13 @@ export function FormulaBuilderModal({ isOpen, onClose, onHerbClick }: Props) {
           </div>
           <div className="text-xs text-gray-500 dark:text-gray-400 mb-2">{herb.common_name}{herb.plant_part ? ` (${herb.plant_part})` : ''}</div>
           <div className="flex flex-wrap gap-1">{energeticBadges(herb)}</div>
+          {reviewMenstruum[herb.id] && (
+            <div className="mt-2">
+              <span className="px-2.5 py-0.5 rounded-full text-xs font-medium border bg-purple-50 text-purple-800 border-purple-200">
+                {reviewMenstruum[herb.id]}
+              </span>
+            </div>
+          )}
           {onHerbClick && (
             <button
               onClick={() => { onHerbClick(herb.id); onClose(); }}
@@ -813,6 +851,17 @@ export function FormulaBuilderModal({ isOpen, onClose, onHerbClick }: Props) {
           </div>
         )}
 
+        {onTransferToDosing && (
+          <button
+            onClick={() => {
+              onTransferToDosing([herbs.base, herbs.synergist, herbs.specific]);
+              onClose();
+            }}
+            className="w-full py-2 rounded-lg border border-emerald-400 text-sm text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors flex items-center justify-center gap-2"
+          >
+            <ArrowRightIcon className="w-4 h-4" /> Transfer to Dosing Calculator
+          </button>
+        )}
         <div className="flex gap-3">
           <button
             onClick={reset}

@@ -10,6 +10,18 @@ import type { TemperatureEnergetic, MoistureEnergetic, ToneEnergetic, TasteEnerg
 interface BodySystem { id: number; name: string; }
 interface Action { id: number; name: string; }
 
+type MenstruumType = 'water' | 'glycerin' | 'vinegar' | 'low_alcohol' | 'high_alcohol' | 'powder' | 'oil';
+
+interface HerbMenstruumData {
+  water_effective: boolean;
+  glycerin_pct: number | null;
+  vinegar_pct: number | null;
+  alcohol_pct_min: number | null;
+  alcohol_pct_max: number | null;
+  powder_effective: boolean;
+  oil_effective: boolean;
+}
+
 interface HerbRow {
   id: number;
   common_name: string;
@@ -26,6 +38,7 @@ interface HerbRow {
   taste_inferred: boolean;
   action_ids: Set<number>;
   system_ids: Set<number>;
+  menstruum: HerbMenstruumData | null;
 }
 
 export interface HerbFilterPanelProps {
@@ -61,6 +74,16 @@ const TASTE_OPTIONS: { value: TasteEnergetic; label: string; emoji: string; on: 
   { value: 'pungent', label: 'Pungent', emoji: '🌶️', on: 'bg-red-200 border-red-400 text-red-900',         off: 'bg-red-50 border-red-200 text-red-700 hover:bg-red-100' },
   { value: 'salty',   label: 'Salty',   emoji: '🧂', on: 'bg-cyan-200 border-cyan-400 text-cyan-900',       off: 'bg-cyan-50 border-cyan-200 text-cyan-700 hover:bg-cyan-100' },
   { value: 'sour',    label: 'Sour',    emoji: '🍋', on: 'bg-lime-200 border-lime-400 text-lime-900',        off: 'bg-lime-50 border-lime-200 text-lime-700 hover:bg-lime-100' },
+];
+
+const MENSTRUUM_OPTIONS: { value: MenstruumType; label: string; emoji: string; on: string; off: string }[] = [
+  { value: 'water',        label: 'Water',            emoji: '💧', on: 'bg-blue-200 border-blue-400 text-blue-900',        off: 'bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100' },
+  { value: 'glycerin',     label: 'Glycerin',         emoji: '🍬', on: 'bg-pink-200 border-pink-400 text-pink-900',        off: 'bg-pink-50 border-pink-200 text-pink-700 hover:bg-pink-100' },
+  { value: 'vinegar',      label: 'Vinegar',          emoji: '🍶', on: 'bg-amber-200 border-amber-400 text-amber-900',     off: 'bg-amber-50 border-amber-200 text-amber-700 hover:bg-amber-100' },
+  { value: 'low_alcohol',  label: 'Low Alcohol ≤45%', emoji: '🍷', on: 'bg-emerald-200 border-emerald-400 text-emerald-900', off: 'bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100' },
+  { value: 'high_alcohol', label: 'High Alcohol ≥60%', emoji: '⚗️', on: 'bg-indigo-200 border-indigo-400 text-indigo-900', off: 'bg-indigo-50 border-indigo-200 text-indigo-700 hover:bg-indigo-100' },
+  { value: 'powder',       label: 'Powder',           emoji: '💊', on: 'bg-yellow-200 border-yellow-400 text-yellow-900',  off: 'bg-yellow-50 border-yellow-200 text-yellow-700 hover:bg-yellow-100' },
+  { value: 'oil',          label: 'Oil',              emoji: '🫙', on: 'bg-orange-200 border-orange-400 text-orange-900',  off: 'bg-orange-50 border-orange-200 text-orange-700 hover:bg-orange-100' },
 ];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -122,12 +145,13 @@ export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect 
   const [actions, setActions] = useState<Action[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const [tempFilter, setTempFilter]         = useState<Set<TemperatureEnergetic>>(new Set());
-  const [moistureFilter, setMoistureFilter] = useState<Set<MoistureEnergetic>>(new Set());
-  const [toneFilter, setToneFilter]         = useState<Set<ToneEnergetic>>(new Set());
-  const [tasteFilter, setTasteFilter]       = useState<Set<TasteEnergetic>>(new Set());
-  const [systemFilter, setSystemFilter]     = useState<Set<number>>(new Set());
-  const [actionFilter, setActionFilter]     = useState<Set<number>>(new Set());
+  const [tempFilter, setTempFilter]             = useState<Set<TemperatureEnergetic>>(new Set());
+  const [moistureFilter, setMoistureFilter]     = useState<Set<MoistureEnergetic>>(new Set());
+  const [toneFilter, setToneFilter]             = useState<Set<ToneEnergetic>>(new Set());
+  const [tasteFilter, setTasteFilter]           = useState<Set<TasteEnergetic>>(new Set());
+  const [systemFilter, setSystemFilter]         = useState<Set<number>>(new Set());
+  const [actionFilter, setActionFilter]         = useState<Set<number>>(new Set());
+  const [menstruumFilter, setMenstruumFilter]   = useState<Set<MenstruumType>>(new Set());
 
   const filterPaneRef  = useRef<HTMLDivElement>(null);
   const resultsPaneRef = useRef<HTMLDivElement>(null);
@@ -164,7 +188,7 @@ export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect 
     const [herbsRes, systemsRes, actionsRes] = await Promise.all([
       supabase
         .from('herbs')
-        .select('id, common_name, latin_name, plant_part, temperature, moisture, tone, taste, temperature_inferred, moisture_inferred, tone_inferred, taste_inferred, pinyin_name, herb_primary_actions(primary_action_id, body_system_id)')
+        .select('id, common_name, latin_name, plant_part, temperature, moisture, tone, taste, temperature_inferred, moisture_inferred, tone_inferred, taste_inferred, pinyin_name, herb_primary_actions(primary_action_id, body_system_id), herb_menstruum(water_effective, glycerin_pct, vinegar_pct, alcohol_pct_min, alcohol_pct_max, powder_effective, oil_effective)')
         .eq('is_tcm', false)
         .order('common_name'),
       supabase.from('body_systems').select('id, name').order('name'),
@@ -193,6 +217,7 @@ export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect 
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             system_ids: new Set<number>(h.herb_primary_actions.map((a: any) => a.body_system_id).filter(Boolean)),
             pinyin_name: h.pinyin_name ?? null,
+            menstruum: (Array.isArray(h.herb_menstruum) ? h.herb_menstruum[0] : h.herb_menstruum) ?? null,
           };
         })
       );
@@ -204,19 +229,32 @@ export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect 
 
   const hasFilters =
     tempFilter.size + moistureFilter.size + toneFilter.size + tasteFilter.size +
-    systemFilter.size + actionFilter.size > 0;
+    systemFilter.size + actionFilter.size + menstruumFilter.size > 0;
+
+  function matchesMenstruum(m: HerbMenstruumData | null, type: MenstruumType): boolean {
+    if (!m) return false;
+    if (type === 'water')        return m.water_effective === true;
+    if (type === 'glycerin')     return m.glycerin_pct != null;
+    if (type === 'vinegar')      return m.vinegar_pct != null;
+    if (type === 'low_alcohol')  return m.alcohol_pct_max != null && m.alcohol_pct_max <= 45;
+    if (type === 'high_alcohol') return m.alcohol_pct_min != null && m.alcohol_pct_min >= 60;
+    if (type === 'powder')       return m.powder_effective === true;
+    if (type === 'oil')          return m.oil_effective === true;
+    return false;
+  }
 
   const filteredHerbs = useMemo(() => {
     return herbs.filter((h) => {
-      if (tempFilter.size > 0     && !tempFilter.has(h.temperature))                        return false;
-      if (moistureFilter.size > 0 && !moistureFilter.has(h.moisture))                       return false;
-      if (toneFilter.size > 0     && !toneFilter.has(h.tone))                               return false;
-      if (tasteFilter.size > 0    && (!h.taste || !tasteFilter.has(h.taste)))               return false;
-      if (systemFilter.size > 0   && ![...systemFilter].some((id) => h.system_ids.has(id))) return false;
-      if (actionFilter.size > 0   && ![...actionFilter].some((id) => h.action_ids.has(id))) return false;
+      if (tempFilter.size > 0       && !tempFilter.has(h.temperature))                              return false;
+      if (moistureFilter.size > 0   && !moistureFilter.has(h.moisture))                             return false;
+      if (toneFilter.size > 0       && !toneFilter.has(h.tone))                                     return false;
+      if (tasteFilter.size > 0      && (!h.taste || !tasteFilter.has(h.taste)))                     return false;
+      if (systemFilter.size > 0     && ![...systemFilter].some((id) => h.system_ids.has(id)))       return false;
+      if (actionFilter.size > 0     && ![...actionFilter].some((id) => h.action_ids.has(id)))       return false;
+      if (menstruumFilter.size > 0  && ![...menstruumFilter].some((t) => matchesMenstruum(h.menstruum, t))) return false;
       return true;
     });
-  }, [herbs, tempFilter, moistureFilter, toneFilter, tasteFilter, systemFilter, actionFilter]);
+  }, [herbs, tempFilter, moistureFilter, toneFilter, tasteFilter, systemFilter, actionFilter, menstruumFilter]);
 
   useEffect(() => {
     requestAnimationFrame(() => checkPaneScroll(resultsPaneRef.current, setResultsScroll));
@@ -244,6 +282,7 @@ export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect 
     setTasteFilter(new Set());
     setSystemFilter(new Set());
     setActionFilter(new Set());
+    setMenstruumFilter(new Set());
   }
 
   return (
@@ -336,6 +375,15 @@ export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect 
                 className="border rounded-full px-3 py-1 text-sm font-medium transition-all bg-violet-200 border-violet-400 text-violet-900"
               >
                 {action.name}
+              </button>
+            ))}
+            {MENSTRUUM_OPTIONS.filter((opt) => menstruumFilter.has(opt.value)).map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => setMenstruumFilter((prev) => toggle(prev, opt.value))}
+                className={`border rounded-full px-3 py-1 text-sm font-medium transition-all ${opt.on}`}
+              >
+                <span className="mr-1">{opt.emoji}</span>{opt.label}
               </button>
             ))}
             <p className="text-sm text-gray-500">
@@ -495,6 +543,25 @@ export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect 
                   </div>
                 </div>
               )}
+
+              {/* Menstruum */}
+              <div>
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2">Menstruum</p>
+                <div className="flex flex-wrap gap-2">
+                  {MENSTRUUM_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.value}
+                      onClick={() => setMenstruumFilter((prev) => toggle(prev, opt.value))}
+                      className={`border rounded-full px-3 py-1 text-sm font-medium transition-all ${
+                        menstruumFilter.has(opt.value) ? opt.on : opt.off
+                      }`}
+                    >
+                      <span className="mr-1">{opt.emoji}</span>
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
             )}
             {filterPaneOpen && <ScrollArrow direction="down" visible={filterScroll.down} />}

@@ -515,7 +515,7 @@ Note: omit `--no-acl` so that GRANT statements are included — required when re
 ## Restore to prod
 ```bash
 PGPASSWORD='<prod-password>' /opt/homebrew/Cellar/libpq/18.1/bin/psql \
-  -h db.<project-ref>.supabase.co -p 5432 -U postgres -d postgres \
+  "$DATABASE_RESTORE_URL" \
   -f "supabase/backups/YYYYMMDD_HHMMSS_description.sql"
 ```
-Use the direct connection (db.*.supabase.co:5432), not the pooler URL, for DDL-heavy restores.
+`DATABASE_RESTORE_URL` is in `.env.local` — use the transaction pooler URL (port 6543) with `sslmode=require` appended. The direct connection (`db.*.supabase.co:5432`) does not resolve for this project; the pooler with SSL handles DDL restores fine.

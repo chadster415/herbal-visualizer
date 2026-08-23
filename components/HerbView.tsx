@@ -190,7 +190,44 @@ function menstruumBadges(m: HerbMenstruum) {
     badges.push({ label: `Vinegar ${m.vinegar_pct}%`, color: 'bg-yellow-100 text-yellow-800 border-yellow-200' });
   if (m.water_effective)
     badges.push({ label: 'Water effective', color: 'bg-blue-100 text-blue-800 border-blue-200' });
+  if (m.powder_effective)
+    badges.push({ label: 'Powder effective', color: 'bg-yellow-100 text-yellow-900 border-yellow-300' });
+  if (m.oil_effective)
+    badges.push({ label: 'Oil effective', color: 'bg-orange-100 text-orange-900 border-orange-200' });
   return badges;
+}
+
+function powderEffectiveReason(constituents: HerbData['herb_constituents']): string {
+  if (!constituents?.length) return 'constituent profile suits whole-herb ingestion';
+
+  const cats = constituents.map((c) => c.constituents.category ?? '');
+  const hasMod = (cat: string) =>
+    constituents
+      .filter((c) => c.constituents.category === cat)
+      .some((c) => ['moderate', 'major', 'primary'].includes(c.concentration_level));
+
+  const reasons: string[] = [];
+
+  const polyCats = ['polysaccharide', 'sulfated polysaccharide', 'beta-glucan polysaccharide',
+                    'acidic polysaccharide', 'alpha-glucan polysaccharide'];
+  if (cats.some((c) => polyCats.includes(c)))
+    reasons.push('polysaccharides / mucilage');
+
+  const fosCats = ['fructo-oligosaccharide', 'fructooligosaccharide polysaccharide', 'oligosaccharide'];
+  if (cats.some((c) => fosCats.includes(c)))
+    reasons.push('prebiotic fiber (inulin / FOS)');
+
+  if (cats.includes('lectin'))
+    reasons.push('lectins (proteins, GI-active)');
+
+  if (cats.includes('mineral') && hasMod('mineral'))
+    reasons.push('minerals (lost in the marc)');
+
+  const anthraCats = ['anthraquinone', 'anthraquinone glycoside'];
+  if (cats.some((c) => anthraCats.includes(c)) && anthraCats.some((c) => hasMod(c)))
+    reasons.push('anthraquinones (gut-bacterial activation)');
+
+  return reasons.length > 0 ? reasons.join(', ') : 'constituent profile suits whole-herb ingestion';
 }
 
 function SectionHeader({ title, open, onToggle }: { title: string; open: boolean; onToggle: () => void }) {
@@ -1469,6 +1506,16 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
                         </div>
                         {selectedHerb.herb_menstruum.notes && (
                           <p className="text-xs text-gray-600 mt-1 italic">{selectedHerb.herb_menstruum.notes}</p>
+                        )}
+                        {selectedHerb.herb_menstruum.powder_effective && (
+                          <p className="text-xs text-yellow-700 mt-2 italic">
+                            Powder effective — {powderEffectiveReason(selectedHerb.herb_constituents)} work better ingested whole than extracted into a menstruum.
+                          </p>
+                        )}
+                        {selectedHerb.herb_menstruum.oil_effective && (
+                          <p className="text-xs text-orange-700 mt-2 italic">
+                            Oil effective — key constituents are lipophilic and extract well into a fixed oil (infused or cold-pressed).
+                          </p>
                         )}
                         {herbHasExtractableAlkaloids && (
                           <p className="text-xs text-amber-700 mt-2 italic">

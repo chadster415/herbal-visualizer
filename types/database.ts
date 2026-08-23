@@ -239,6 +239,8 @@ export interface HerbMenstruum {
   glycerin_pct?: number | null;
   vinegar_pct?: number | null;
   water_effective: boolean;
+  powder_effective: boolean;
+  oil_effective: boolean;
   primary_label: string;
   notes?: string | null;
   needs_review: boolean;

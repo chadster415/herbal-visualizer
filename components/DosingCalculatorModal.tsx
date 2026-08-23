@@ -35,6 +35,7 @@ interface HerbEntry {
 interface Props {
   isOpen: boolean;
   onClose: () => void;
+  initialHerbs?: HerbOption[];
 }
 
 function parseMmDropRange(text: string): { min: number; max: number } | null {
@@ -71,7 +72,7 @@ function computePartsArray(drops: number[]): number[] {
 
 const BOTTLE_SIZES = [30, 60, 120, 240];
 
-export function DosingCalculatorModal({ isOpen, onClose }: Props) {
+export function DosingCalculatorModal({ isOpen, onClose, initialHerbs }: Props) {
   const [allHerbs, setAllHerbs] = useState<HerbOption[]>([]);
   const [herbEntries, setHerbEntries] = useState<HerbEntry[]>([]);
   const [search, setSearch] = useState('');
@@ -90,6 +91,13 @@ export function DosingCalculatorModal({ isOpen, onClose }: Props) {
       .order('common_name')
       .then(({ data }) => setAllHerbs((data ?? []) as HerbOption[]));
   }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen || !initialHerbs?.length) return;
+    setHerbEntries([]);
+    initialHerbs.forEach((herb) => addHerb(herb));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, initialHerbs]);
 
   const filteredHerbs = useMemo(() => {
     if (!search.trim()) return [];
