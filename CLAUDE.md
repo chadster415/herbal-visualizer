@@ -94,9 +94,9 @@ herbal.link_constituent(p_latin_name TEXT, p_constituent_name TEXT,
   p_needs_review BOOLEAN DEFAULT FALSE) RETURNS VOID
 
 -- Upsert menstruum row for an herb
-herbal.set_menstruum(p_latin_name TEXT, p_alcohol_min SMALLINT DEFAULT NULL,
-  p_alcohol_max SMALLINT DEFAULT NULL, p_glycerin_pct SMALLINT DEFAULT NULL,
-  p_vinegar_pct SMALLINT DEFAULT NULL, p_water_effective BOOLEAN DEFAULT FALSE,
+herbal.set_menstruum(p_latin_name TEXT, p_alcohol_min INTEGER DEFAULT NULL,
+  p_alcohol_max INTEGER DEFAULT NULL, p_glycerin_pct INTEGER DEFAULT NULL,
+  p_vinegar_pct INTEGER DEFAULT NULL, p_water_effective BOOLEAN DEFAULT FALSE,
   p_primary_label TEXT DEFAULT NULL, p_notes TEXT DEFAULT NULL,
   p_needs_review BOOLEAN DEFAULT FALSE) RETURNS VOID
 ```

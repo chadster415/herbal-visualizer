@@ -140,4 +140,5 @@ export const TE_MATERIA_MEDICA: Record<number, { min: number; max: number }> = {
   2381: { min: 30, max: 90 },  // Bacopa (Bacopa monnieri)
   2479: { min: 20, max: 40 },  // Spikenard (Aralia racemosa)
   2498: { min: 30, max: 60 },  // Black Pepper (Piper nigrum)
+  2556: { min: 60, max: 120 },  // Bitter Melon (Momordica charantia)
 };

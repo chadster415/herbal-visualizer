@@ -388,15 +388,20 @@ DO $$
 BEGIN
   PERFORM herbal.set_menstruum(
     'Ocimum sanctum',                       -- latin_name
-    50::SMALLINT,                           -- alcohol_pct_min
-    70::SMALLINT,                           -- alcohol_pct_max
-    NULL,                                   -- glycerin_pct
-    NULL,                                   -- vinegar_pct
+    50::INTEGER,                            -- alcohol_pct_min
+    70::INTEGER,                            -- alcohol_pct_max
+    NULL::INTEGER,                          -- glycerin_pct
+    NULL::INTEGER,                          -- vinegar_pct
     true,                                   -- water_effective
     '50–70% alcohol or water infusion',     -- primary_label
     'Volatile oils (eugenol, linalool, β-caryophyllene) and triterpenes (ursolic acid) extract in moderate-high alcohol; flavonoids and rosmarinic acid extract in both alcohol and water. Traditional Ayurvedic use as leaf infusion.',
-    false                                   -- needs_review
+    false,                                  -- needs_review
+    false,                                  -- powder_effective
+    false                                   -- oil_effective
   );
+  -- NOTE: Always pass all 11 args. There are 3 overloads of set_menstruum that differ
+  -- only in trailing default params — PostgreSQL cannot resolve the overload unless all
+  -- args are supplied explicitly.
   RAISE NOTICE 'Holy Basil menstruum: done.';
 END $$;
 ```
@@ -507,6 +512,106 @@ If the herb is not in Stockley's, no action needed — the book covers 153 herb 
 
 ---
 
+### 3. Thomas Easley's Dispensatory (drop dosages + energetics)
+
+The source text file is at:
+```
+/Users/chadarmstrong/Library/Mobile Documents/com~apple~CloudDocs/Archive/Classes/Health and Plants/BHC/Apprenticeship/App/Dosages - Dispensatory.txt
+```
+The generated manifest is `lib/te-materia-medica.ts` — `herb_id → { min: drops, max: drops }`.
+
+**Step 1** — Search for the herb by common name (entries are ALL-CAPS headers):
+```bash
+grep -i "herb name\|latin name" \
+  "/Users/chadarmstrong/Library/Mobile Documents/com~apple~CloudDocs/Archive/Classes/Health and Plants/BHC/Apprenticeship/App/Dosages - Dispensatory.txt"
+```
+
+**Step 2** — If found, read the full entry:
+```bash
+grep -A 40 "^HERB NAME$" \
+  "/Users/chadarmstrong/Library/Mobile Documents/com~apple~CloudDocs/Archive/Classes/Health and Plants/BHC/Apprenticeship/App/Dosages - Dispensatory.txt"
+```
+
+**Step 3** — Extract the tincture dosage and convert ml → drops (1 ml = 30 drops):
+- `TINCTURE: Dried root (1:5, 50% alcohol); 2–4 ml … up to 3 times daily` → min: 60, max: 120
+
+**Step 4** — Add to `lib/te-materia-medica.ts` in numeric herb_id order:
+```typescript
+2556: { min: 60, max: 120 },  // Bitter Melon (Momordica charantia)
+```
+
+**Step 5 (important)** — Check the `ENERGETICS:` line in the entry. If energetics are given, they are **confirmed source values** — set them in a migration WITHOUT `_inferred` flags, overriding any constituent-based inference:
+```sql
+UPDATE herbal.herbs
+SET temperature = 'cooling', temperature_inferred = false,
+    moisture    = 'drying',  moisture_inferred    = false
+WHERE latin_name = 'Momordica charantia';
+```
+
+If the herb is absent from the Dispensatory, no action needed — the book covers ~200 herbs.
+
+---
+
+### 4. David Hoffmann's Medical Herbalism (drop dosages)
+
+The source text file is at:
+```
+/Users/chadarmstrong/Library/Mobile Documents/com~apple~CloudDocs/Archive/Classes/Health and Plants/BHC/Apprenticeship/App/Dosages - Medical Herbalism.txt
+```
+The generated manifest is `lib/dh-materia-medica.ts` — `herb_id → { min: drops, max: drops }`.
+
+**Step 1** — Search for the herb by latin name (entries open with `Genus species` binomials):
+```bash
+grep -i "genus species\|common name" \
+  "/Users/chadarmstrong/Library/Mobile Documents/com~apple~CloudDocs/Archive/Classes/Health and Plants/BHC/Apprenticeship/App/Dosages - Medical Herbalism.txt"
+```
+
+**Step 2** — If found, read the entry and locate the dosage line:
+```bash
+grep -A 60 "^Genus species" \
+  "/Users/chadarmstrong/Library/Mobile Documents/com~apple~CloudDocs/Archive/Classes/Health and Plants/BHC/Apprenticeship/App/Dosages - Medical Herbalism.txt" | grep -A2 "Preparations and Dosage"
+```
+
+**Step 3** — Extract the tincture dosage and convert ml → drops (1 ml = 30 drops):
+- `Tincture dosage is 2 to 4 ml (1:5 in 25%) three times a day` → min: 60, max: 120
+
+**Step 4** — Add to `lib/dh-materia-medica.ts` in numeric herb_id order:
+```typescript
+999: { min: 60, max: 120 },  // Herb Name (Genus species)
+```
+
+If the herb is absent from Medical Herbalism, no action needed — the book is European-focused and many non-European herbs are not covered.
+
+---
+
+### 5. Herb synonyms
+
+Every herb should have a populated `synonyms` array. This is a `TEXT[]` column on `herbs` — set it via migration UPDATE.
+
+**Step 1** — Check whether synonyms are already set:
+```bash
+PGPASSWORD=postgres /opt/homebrew/Cellar/libpq/18.1/bin/psql \
+  -h 127.0.0.1 -p 54322 -U postgres -d postgres \
+  -c "SELECT synonyms FROM herbal.herbs WHERE latin_name = 'Genus species';"
+```
+
+**Step 2** — If empty (`{}`), research common names, trade names, regional names, and include the genus as a synonym where commonly used alone. Include Ayurvedic/TCM names if applicable and well-known.
+
+**Step 3** — Add to the migration:
+```sql
+UPDATE herbal.herbs
+SET synonyms = ARRAY['Common Synonym', 'Regional Name', 'Trade Name']
+WHERE latin_name = 'Genus species';
+```
+
+**Rules:**
+- Do not include the herb's own `common_name` — it is already searchable separately.
+- Include alternate spellings and regional common names (e.g., UK vs US names).
+- Include well-known Ayurvedic/TCM names (e.g., 'Karela', 'Ashwagandha', 'Wu Wei Zi').
+- Limit to names a practitioner or student would realistically search for.
+
+---
+
 ## Migration file naming
 
 ```
@@ -533,8 +638,11 @@ Files go in `supabase/migrations/`. The user runs them manually in the Supabase 
 - [ ] Taste inferred from `herb_constituents`? Apply rules from `inferring-taste-from-constituents.md` after constituents are added. Set `taste_inferred = true` for inferred values. Do not infer sour or salty. Skip if fewer than 3 constituents or signals conflict (see Case 8).
 - [ ] Best menstruum recorded? Check `SELECT * FROM herbal.herb_menstruum WHERE herb_id = v_herb_id`. If missing, apply the constituent-to-menstruum rules to set alcohol range, `water_effective`, and `primary_label` via `set_menstruum` (see Case 9).
 - [ ] All INSERTs use `ON CONFLICT ... DO NOTHING` (migrations must be re-runnable).
-- [ ] MM Materia Medica checked — grep the MM text file, update `SYNONYM_MAP` in `parse-mm-materia-medica.py`, re-run the parser (see "Checking external references").
-- [ ] Stockley's checked — search `scripts/stockleys_herb_pages.json`; if found, extract images and add to `lib/contraindications-manifest.ts`.
+- [ ] MM Materia Medica checked — grep the MM text file, update `SYNONYM_MAP` in `parse-mm-materia-medica.py`, re-run the parser (see "Checking external references" §1).
+- [ ] Stockley's checked — search `scripts/stockleys_herb_pages.json`; if found, extract images and add to `lib/contraindications-manifest.ts` (see §2).
+- [ ] Easley's Dispensatory checked — grep `Dosages - Dispensatory.txt`; if found, add drops entry to `lib/te-materia-medica.ts` and check `ENERGETICS:` line for confirmed energetics (see §3).
+- [ ] Hoffmann's Medical Herbalism checked — grep `Dosages - Medical Herbalism.txt`; if found, add drops entry to `lib/dh-materia-medica.ts` (see §4).
+- [ ] Synonyms populated — check `herbs.synonyms` array is non-empty; if `{}`, add common names, regional names, and trade names via migration UPDATE (see §5).
 
 ---
 

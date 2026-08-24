@@ -141,6 +141,7 @@ SYNONYM_MAP = {
     'mentha arvensis':       ['mentha arvensis var. piperascens'],
     'menyanthes':            ['menyanthes trifoliata'],
     'mitchella':             ['mitchella repens'],
+    'momordica':             [],  # bitter melon — confirmed absent from MM
     'myrica':                ['myrica cerifera'],
     'myroxylon balsamum var. pereirae': ['myroxylon balsamum var. pereirae'],
     'myristica':             ['semen myristicae fragrantis'],  # nutmeg TCM

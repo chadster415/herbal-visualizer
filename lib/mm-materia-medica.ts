@@ -47,12 +47,6 @@ export const MM_MATERIA_MEDICA: Record<number, string> = {
   LEAF. Cold Infusion, 2-4 ounces.
   STATUS : W/LA`,
 
-  // Black Cohosh (Cimicifuga racemosa)
-  25: `*CIMICIFUGA RACEMOSA  (Macrotys,  Black Cohosh)
-  RHIZOME/ROOT. Tincture  [Fresh Root, 1:2, Dry Root, 1:5, 80% alcohol], 10-25
-  drops.  Capsules, #00, 1-2, both to 3X a day.
-  STATUS : W/LA`,
-
   // Echinacea (Echinacea spp.)
   26: `ECHINACEA ANGUSTIFOLIA ,E.PALLIDA  (Ks. Snakeroot, Purple Coneflower)
   ROOT and FLOWERS.  Tincture [Fresh Plant 1:2, Dry Plant, 1:5, 70% alcohol],
@@ -1344,5 +1338,15 @@ export const MM_MATERIA_MEDICA: Record<number, string> = {
   FRESH PLANT. Tincture [1:2], 20-40 drops to 4X a day.
   ILLEGAL TO POSSESS AT PRESENT.
   STATUS : W/Rare`,
+
+  // Self Heal (Prunella vulgaris)
+  2437: `PRUNELLA  (Self Heal, Heal All)
+  FRESH PLANT.  Poultice as needed.  Fresh Plant Tincture, [1:2], as needed.
+  STATUS : W/A`,
+
+  // Black Pepper (Piper nigrum)
+  2498: `PIPER NIGRUM  (Black Pepper)
+  PEPPERCORNS.  Tincture [1:5, 65% alcohol] 5-15 drops.
+  STATUS : C`,
 
 };
