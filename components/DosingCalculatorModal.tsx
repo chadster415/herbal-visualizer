@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { TrashIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { MM_MATERIA_MEDICA } from '@/lib/mm-materia-medica';
+import { DH_MATERIA_MEDICA } from '@/lib/dh-materia-medica';
+import { TE_MATERIA_MEDICA } from '@/lib/te-materia-medica';
 import { supabase } from '@/lib/supabase';
 
 interface HerbOption {
@@ -25,10 +27,14 @@ interface HerbEntry {
   plantPart: string | null;
   mmMin: number | null;
   mmMax: number | null;
+  dhMin: number | null;
+  dhMax: number | null;
+  teMin: number | null;
+  teMax: number | null;
   customMin: number;
   customMax: number;
   selectedDrops: number;
-  hasMMData: boolean;
+  hasSourceData: boolean;
   actions: HerbAction[] | null; // null = loading
 }
 
@@ -122,7 +128,16 @@ export function DosingCalculatorModal({ isOpen, onClose, initialHerbs }: Props) 
   const addHerb = async (herb: HerbOption) => {
     const mmText = MM_MATERIA_MEDICA[herb.id];
     const mmRange = mmText ? parseMmDropRange(mmText) : null;
+    const dhEntry = DH_MATERIA_MEDICA[herb.id] ?? null;
+    const teEntry = TE_MATERIA_MEDICA[herb.id] ?? null;
     const entryKey = `${herb.id}-${Date.now()}`;
+
+    // Combined range across all sources
+    const allMins = [mmRange?.min, dhEntry?.min, teEntry?.min].filter((v): v is number => v != null);
+    const allMaxs = [mmRange?.max, dhEntry?.max, teEntry?.max].filter((v): v is number => v != null);
+    const hasSourceData = allMins.length > 0;
+    const combinedMin = hasSourceData ? Math.min(...allMins) : 5;
+    const combinedMax = hasSourceData ? Math.max(...allMaxs) : 60;
 
     const entry: HerbEntry = {
       key: entryKey,
@@ -132,10 +147,14 @@ export function DosingCalculatorModal({ isOpen, onClose, initialHerbs }: Props) 
       plantPart: herb.plant_part,
       mmMin: mmRange?.min ?? null,
       mmMax: mmRange?.max ?? null,
-      customMin: 5,
-      customMax: 60,
-      selectedDrops: mmRange ? Math.round((mmRange.min + mmRange.max) / 2) : 30,
-      hasMMData: mmRange !== null,
+      dhMin: dhEntry?.min ?? null,
+      dhMax: dhEntry?.max ?? null,
+      teMin: teEntry?.min ?? null,
+      teMax: teEntry?.max ?? null,
+      customMin: combinedMin,
+      customMax: combinedMax,
+      selectedDrops: Math.round((combinedMin + combinedMax) / 2),
+      hasSourceData,
       actions: null,
     };
 
@@ -364,9 +383,12 @@ export function DosingCalculatorModal({ isOpen, onClose, initialHerbs }: Props) 
                 {showDropdown && filteredHerbs.length > 0 && (
                   <div ref={dropdownRef} className="absolute top-full mt-1 left-0 right-0 bg-white dark:bg-gray-800 border border-green-200 dark:border-gray-600 rounded-lg shadow-lg z-20 max-h-52 overflow-y-auto">
                     {filteredHerbs.map((h, idx) => {
-                      const mmRange = MM_MATERIA_MEDICA[h.id]
-                        ? parseMmDropRange(MM_MATERIA_MEDICA[h.id])
-                        : null;
+                      const mmRange = MM_MATERIA_MEDICA[h.id] ? parseMmDropRange(MM_MATERIA_MEDICA[h.id]) : null;
+                      const dhEntry = DH_MATERIA_MEDICA[h.id] ?? null;
+                      const teEntry = TE_MATERIA_MEDICA[h.id] ?? null;
+                      const allMins = [mmRange?.min, dhEntry?.min, teEntry?.min].filter((v): v is number => v != null);
+                      const allMaxs = [mmRange?.max, dhEntry?.max, teEntry?.max].filter((v): v is number => v != null);
+                      const hasAny = allMins.length > 0;
                       return (
                         <button
                           key={h.id}
@@ -385,12 +407,12 @@ export function DosingCalculatorModal({ isOpen, onClose, initialHerbs }: Props) 
                             )}
                             <span className="text-xs text-green-500 ml-2 italic">{h.latin_name}</span>
                           </span>
-                          {mmRange ? (
+                          {hasAny ? (
                             <span className="text-xs text-teal-600 dark:text-teal-400 font-medium shrink-0">
-                              {mmRange.min}–{mmRange.max} drops
+                              {Math.min(...allMins)}–{Math.max(...allMaxs)} drops
                             </span>
                           ) : (
-                            <span className="text-xs text-gray-400 shrink-0">no MM data</span>
+                            <span className="text-xs text-gray-400 shrink-0">no data</span>
                           )}
                         </button>
                       );
@@ -408,8 +430,8 @@ export function DosingCalculatorModal({ isOpen, onClose, initialHerbs }: Props) 
             ) : (
               <div className="space-y-3">
                 {herbEntries.map((entry, idx) => {
-                  const lo = entry.hasMMData ? entry.mmMin! : entry.customMin;
-                  const hi = entry.hasMMData ? entry.mmMax! : entry.customMax;
+                  const lo = entry.customMin;
+                  const hi = entry.customMax;
                   const entryParts = parts[idx];
                   const mlInBottle = entryParts * mlPerPart;
 
@@ -464,19 +486,39 @@ export function DosingCalculatorModal({ isOpen, onClose, initialHerbs }: Props) 
                               </div>
                               <div className="text-xs text-green-500 italic">{entry.latinName}</div>
                             </div>
-                            <div className="flex items-center gap-2 shrink-0">
-                              {entry.hasMMData ? (
-                                <span className="text-xs bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-300 px-2 py-0.5 rounded-full font-medium whitespace-nowrap">
-                                  MM {entry.mmMin}–{entry.mmMax} drops
+                            <div className="flex items-center gap-1.5 shrink-0">
+                              {entry.mmMin != null && (
+                                <span className="group relative text-xs bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-300 px-2 py-0.5 rounded-full font-medium cursor-default">
+                                  MM
+                                  <span className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover:block whitespace-nowrap rounded bg-gray-800 px-2 py-1 text-xs text-white shadow-lg z-50">
+                                    {entry.mmMin}–{entry.mmMax} drops
+                                  </span>
                                 </span>
-                              ) : (
+                              )}
+                              {entry.dhMin != null && (
+                                <span className="group relative text-xs bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300 px-2 py-0.5 rounded-full font-medium cursor-default">
+                                  DH
+                                  <span className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover:block whitespace-nowrap rounded bg-gray-800 px-2 py-1 text-xs text-white shadow-lg z-50">
+                                    {entry.dhMin}–{entry.dhMax} drops
+                                  </span>
+                                </span>
+                              )}
+                              {entry.teMin != null && (
+                                <span className="group relative text-xs bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 px-2 py-0.5 rounded-full font-medium cursor-default">
+                                  TE
+                                  <span className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover:block whitespace-nowrap rounded bg-gray-800 px-2 py-1 text-xs text-white shadow-lg z-50">
+                                    {entry.teMin}–{entry.teMax} drops
+                                  </span>
+                                </span>
+                              )}
+                              {!entry.hasSourceData && (
                                 <span className="text-xs bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 px-2 py-0.5 rounded-full font-medium">
                                   custom range
                                 </span>
                               )}
                               <button
                                 onClick={() => removeHerb(entry.key)}
-                                className="text-red-300 hover:text-red-500 transition-colors"
+                                className="text-red-300 hover:text-red-500 transition-colors ml-0.5"
                               >
                                 <TrashIcon className="w-4 h-4" />
                               </button>
@@ -488,8 +530,8 @@ export function DosingCalculatorModal({ isOpen, onClose, initialHerbs }: Props) 
                             <div className="md:hidden mb-3">{actionsJSX}</div>
                           )}
 
-                          {/* Custom range inputs (no MM data) */}
-                          {!entry.hasMMData && (
+                          {/* Custom range inputs (no source data) */}
+                          {!entry.hasSourceData && (
                             <div className="flex gap-3 mb-3">
                               <label className="flex-1">
                                 <span className="text-xs text-green-700 dark:text-green-400 font-medium">Min drops</span>
