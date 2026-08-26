@@ -95,6 +95,16 @@ interface DuiYaoPair {
   dui_yao_herb_properties: { herb_id: number; property: string; sort_order: number }[];
 }
 
+interface PriestPairing {
+  id: number;
+  herb_id: number;
+  partner_herb_id: number | null;
+  partner_name_raw: string;
+  combination_context: string | null;
+  sort_order: number;
+  partner: { id: number; common_name: string; latin_name: string } | null;
+}
+
 interface HerbViewProps {
   selectedHerbId?: number | null;
   onHerbIdChange?: (herbId: number | null) => void;
@@ -263,6 +273,8 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
   const [selectedEssence, setSelectedEssence] = useState<FlowerEssencePlant | null>(null);
   const [duiYaoPairs, setDuiYaoPairs] = useState<DuiYaoPair[]>([]);
   const [duiYaoLoading, setDuiYaoLoading] = useState(false);
+  const [priestPairings, setPriestPairings] = useState<PriestPairing[]>([]);
+  const [priestPairingsLoading, setPriestPairingsLoading] = useState(false);
   const [mobileListOpen, setMobileListOpen] = useState(true);
 
   // constituent_id → array of herb refs (for tooltip & existing Constituents section)
@@ -286,6 +298,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
   const [sectionsOpen, setSectionsOpen] = useState({
     primaryActions: true, secondaryActions: true,
     constituentProfile: true, constituents: true, disorders: true, duiYao: true,
+    priestPairings: true,
     contraindications: true, mmMateriaMedica: true, herbContraindications: true,
   });
   const toggleSection = (key: keyof typeof sectionsOpen) =>
@@ -452,6 +465,25 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
   }, [selectedHerb?.id]);
 
   useEffect(() => {
+    if (selectedHerb == null) { setPriestPairings([]); return; }
+    setPriestPairings([]);
+    setPriestPairingsLoading(true);
+    supabase
+      .from('priest_pairings')
+      .select(`
+        id, herb_id, partner_herb_id, partner_name_raw, combination_context, sort_order,
+        partner:herbs!priest_pairings_partner_herb_id_fkey(id, common_name, latin_name)
+      `)
+      .eq('herb_id', selectedHerb.id)
+      .order('sort_order')
+      .then(({ data, error }) => {
+        if (!error && data) setPriestPairings(data as unknown as PriestPairing[]);
+        else setPriestPairings([]);
+        setPriestPairingsLoading(false);
+      });
+  }, [selectedHerb?.id]);
+
+  useEffect(() => {
     if (selectedHerbId == null) {
       setMobileListOpen(true);
       return;
@@ -462,7 +494,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
         setSelectedSupplement(null);
         setAlternatesOpen(false);
         setMobileListOpen(false);
-        setSectionsOpen({ primaryActions: true, secondaryActions: true, constituentProfile: true, constituents: true, disorders: true, duiYao: true, contraindications: true, mmMateriaMedica: true, herbContraindications: true });
+        setSectionsOpen({ primaryActions: true, secondaryActions: true, constituentProfile: true, constituents: true, disorders: true, duiYao: true, priestPairings: true, contraindications: true, mmMateriaMedica: true, herbContraindications: true });
         setTimeout(() => { scrollHerbInSidebar(selectedHerbId); }, 100);
         fetchHerbDetail(selectedHerbId);
       }
@@ -587,7 +619,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
     if (!herb) return;
     setSelectedSupplement(null);
     setAlternatesOpen(false);
-    setSectionsOpen({ primaryActions: true, secondaryActions: true, constituentProfile: true, constituents: true, disorders: true, duiYao: true, contraindications: true, mmMateriaMedica: true, herbContraindications: true });
+    setSectionsOpen({ primaryActions: true, secondaryActions: true, constituentProfile: true, constituents: true, disorders: true, duiYao: true, priestPairings: true, contraindications: true, mmMateriaMedica: true, herbContraindications: true });
     onHerbClick?.(herbId);
     fetchHerbDetail(herbId);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -800,7 +832,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
                   const herb = filteredHerbs[highlightedIndex];
                   setSelectedSupplement(null);
                   setAlternatesOpen(false);
-                  setSectionsOpen({ primaryActions: true, secondaryActions: true, constituentProfile: true, constituents: true, disorders: true, duiYao: true, contraindications: true, mmMateriaMedica: true, herbContraindications: true });
+                  setSectionsOpen({ primaryActions: true, secondaryActions: true, constituentProfile: true, constituents: true, disorders: true, duiYao: true, priestPairings: true, contraindications: true, mmMateriaMedica: true, herbContraindications: true });
                   fetchHerbDetail(herb.id);
                   onHerbIdChange?.(herb.id);
                   setSearchTerm('');
@@ -906,7 +938,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
               onClick={() => {
                 setSelectedSupplement(null);
                 setAlternatesOpen(false);
-                setSectionsOpen({ primaryActions: true, secondaryActions: true, constituentProfile: true, constituents: true, disorders: true, duiYao: true, contraindications: true, mmMateriaMedica: true, herbContraindications: true });
+                setSectionsOpen({ primaryActions: true, secondaryActions: true, constituentProfile: true, constituents: true, disorders: true, duiYao: true, priestPairings: true, contraindications: true, mmMateriaMedica: true, herbContraindications: true });
                 fetchHerbDetail(herb.id);
                 onHerbIdChange?.(herb.id);
                 setSearchTerm('');
@@ -1181,6 +1213,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
                 ...(((selectedHerb.herb_constituents?.length ?? 0) > 0 || selectedHerb.herb_menstruum) ? [{ key: 'constituents' as const, label: 'General Constituents', pink: false }] : []),
                 ...((((selectedHerb.disorder_action_herbs?.length ?? 0) > 0) || ((selectedHerb.disorder_specific_remedies?.length ?? 0) > 0)) ? [{ key: 'disorders' as const, label: 'Disorders', pink: false }] : []),
                 ...(duiYaoPairs.length > 0 ? [{ key: 'duiYao' as const, label: 'Dui Yao Pairings', pink: false }] : []),
+                ...(priestPairings.length > 0 ? [{ key: 'priestPairings' as const, label: 'Priest & Priest', pink: false }] : []),
                 ...(MM_MATERIA_MEDICA[selectedHerb.id] ? [{ key: 'mmMateriaMedica' as const, label: 'MM Materia Medica', pink: false }] : []),
                 ...(CONTRAINDICATIONS[selectedHerb.id] ? [{ key: 'contraindications' as const, label: 'Drug Interactions', pink: true }] : []),
                 ...(selectedHerb.contraindications ? [{ key: 'herbContraindications' as const, label: 'Contraindications', pink: true }] : []),
@@ -1204,7 +1237,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
               <button
                 onClick={() => {
                   const allOpen = Object.values(sectionsOpen).every(Boolean);
-                  setSectionsOpen({ primaryActions: !allOpen, secondaryActions: !allOpen, constituentProfile: !allOpen, constituents: !allOpen, disorders: !allOpen, duiYao: !allOpen, contraindications: !allOpen, mmMateriaMedica: !allOpen, herbContraindications: !allOpen });
+                  setSectionsOpen({ primaryActions: !allOpen, secondaryActions: !allOpen, constituentProfile: !allOpen, constituents: !allOpen, disorders: !allOpen, duiYao: !allOpen, priestPairings: !allOpen, contraindications: !allOpen, mmMateriaMedica: !allOpen, herbContraindications: !allOpen });
                 }}
                 className="flex items-center gap-1.5 px-3 py-1 rounded-full border border-gray-300 text-xs text-gray-500 hover:border-gray-400 hover:text-gray-700 transition-colors"
               >
@@ -1678,6 +1711,61 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
                           </div>
                         );
                       })}
+                    </div>
+                  )
+                )}
+              </div>
+            )}
+            {/* ── Priest & Priest Pairings ──────────────────────────────── */}
+            {(priestPairings.length > 0 || priestPairingsLoading) && (
+              <div className="mt-6" ref={(el) => { sectionRefs.current.priestPairings = el; }}>
+                <SectionHeader title="Priest & Priest Pairings" open={sectionsOpen.priestPairings} onToggle={() => toggleSection('priestPairings')} />
+                {sectionsOpen.priestPairings && (
+                  priestPairingsLoading ? (
+                    <p className="text-gray-400 text-sm italic">Loading pairings…</p>
+                  ) : (
+                    <div className="pl-4 border-l-2 border-amber-100 space-y-3">
+                      {(() => {
+                        // Group consecutive rows sharing the same combination_context
+                        const groups: { context: string | null; rows: PriestPairing[] }[] = [];
+                        for (const row of priestPairings) {
+                          const last = groups[groups.length - 1];
+                          if (last && last.context === row.combination_context) {
+                            last.rows.push(row);
+                          } else {
+                            groups.push({ context: row.combination_context, rows: [row] });
+                          }
+                        }
+                        return groups.map((group, gi) => (
+                          <div key={gi} className="py-2.5 border-b border-amber-50 last:border-0">
+                            <div className="flex flex-wrap gap-2 mb-1.5">
+                              {group.rows.map((p) => (
+                                p.partner ? (
+                                  <button
+                                    key={p.id}
+                                    onClick={() => navigateToHerb(p.partner!.id)}
+                                    className="px-3 py-1 rounded-full bg-amber-50 border border-amber-300 text-amber-900 text-sm font-medium hover:bg-amber-100 hover:border-amber-500 transition-colors"
+                                  >
+                                    {p.partner.common_name}
+                                  </button>
+                                ) : (
+                                  <span
+                                    key={p.id}
+                                    className="px-3 py-1 rounded-full bg-gray-50 border border-gray-200 text-gray-500 text-sm italic"
+                                    title={`${p.partner_name_raw} — not in database`}
+                                  >
+                                    {p.partner_name_raw}
+                                  </span>
+                                )
+                              ))}
+                            </div>
+                            {group.context && (
+                              <p className="text-xs text-gray-500 leading-relaxed">{group.context}</p>
+                            )}
+                          </div>
+                        ));
+                      })()}
+                      <p className="text-[10px] text-gray-400 italic pt-1">Source: Priest & Priest, Herbal Medication (1982)</p>
                     </div>
                   )
                 )}
