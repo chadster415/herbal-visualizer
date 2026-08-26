@@ -44,6 +44,11 @@ export function FlashcardModal({ isOpen, onClose }: Props) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    document.body.style.overflow = isOpen ? 'hidden' : '';
+    return () => { document.body.style.overflow = ''; };
+  }, [isOpen]);
+
+  useEffect(() => {
     if (!isOpen) return;
     supabase
       .from('herbs')

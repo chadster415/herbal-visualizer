@@ -167,6 +167,11 @@ export function FormulaBuilderModal({ isOpen, onClose, onHerbClick, onTransferTo
   const [reviewMenstruum, setReviewMenstruum] = useState<Record<number, string>>({});
 
   useEffect(() => {
+    document.body.style.overflow = isOpen ? 'hidden' : '';
+    return () => { document.body.style.overflow = ''; };
+  }, [isOpen]);
+
+  useEffect(() => {
     if (!isOpen) return;
     setShowInfo(false);
     supabase

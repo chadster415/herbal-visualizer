@@ -6,12 +6,21 @@ import { MM_MATERIA_MEDICA } from '@/lib/mm-materia-medica';
 import { DH_MATERIA_MEDICA } from '@/lib/dh-materia-medica';
 import { TE_MATERIA_MEDICA } from '@/lib/te-materia-medica';
 import { supabase } from '@/lib/supabase';
+import { EnergeticEmojis } from './EnergeticEmojis';
 
 interface HerbOption {
   id: number;
   common_name: string;
   latin_name: string;
   plant_part: string | null;
+  temperature?: string | null;
+  moisture?: string | null;
+  tone?: string | null;
+  taste?: string | null;
+  temperature_inferred?: boolean | null;
+  moisture_inferred?: boolean | null;
+  tone_inferred?: boolean | null;
+  taste_inferred?: boolean | null;
 }
 
 interface HerbAction {
@@ -35,6 +44,14 @@ interface HerbEntry {
   customMax: number;
   selectedDrops: number;
   hasSourceData: boolean;
+  temperature: string | null;
+  moisture: string | null;
+  tone: string | null;
+  taste: string | null;
+  temperatureInferred: boolean;
+  moistureInferred: boolean;
+  toneInferred: boolean;
+  tasteInferred: boolean;
   actions: HerbAction[] | null; // null = loading
 }
 
@@ -90,10 +107,15 @@ export function DosingCalculatorModal({ isOpen, onClose, initialHerbs }: Props) 
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    document.body.style.overflow = isOpen ? 'hidden' : '';
+    return () => { document.body.style.overflow = ''; };
+  }, [isOpen]);
+
+  useEffect(() => {
     if (!isOpen) return;
     supabase
       .from('herbs')
-      .select('id, common_name, latin_name, plant_part')
+      .select('id, common_name, latin_name, plant_part, temperature, moisture, tone, taste, temperature_inferred, moisture_inferred, tone_inferred, taste_inferred')
       .order('common_name')
       .then(({ data }) => setAllHerbs((data ?? []) as HerbOption[]));
   }, [isOpen]);
@@ -155,6 +177,14 @@ export function DosingCalculatorModal({ isOpen, onClose, initialHerbs }: Props) 
       customMax: combinedMax,
       selectedDrops: Math.round((combinedMin + combinedMax) / 2),
       hasSourceData,
+      temperature: herb.temperature ?? null,
+      moisture: herb.moisture ?? null,
+      tone: herb.tone ?? null,
+      taste: herb.taste ?? null,
+      temperatureInferred: !!herb.temperature_inferred,
+      moistureInferred: !!herb.moisture_inferred,
+      toneInferred: !!herb.tone_inferred,
+      tasteInferred: !!herb.taste_inferred,
       actions: null,
     };
 
@@ -429,6 +459,17 @@ export function DosingCalculatorModal({ isOpen, onClose, initialHerbs }: Props) 
               </div>
             ) : (
               <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-semibold text-green-800 dark:text-green-300">
+                    {herbEntries.length} {herbEntries.length === 1 ? 'herb' : 'herbs'}
+                  </span>
+                  <button
+                    onClick={() => setHerbEntries([])}
+                    className="text-xs text-red-400 hover:text-red-600 dark:hover:text-red-400 transition-colors font-medium"
+                  >
+                    Clear all
+                  </button>
+                </div>
                 {herbEntries.map((entry, idx) => {
                   const lo = entry.customMin;
                   const hi = entry.customMax;
@@ -443,6 +484,20 @@ export function DosingCalculatorModal({ isOpen, onClose, initialHerbs }: Props) 
                       return acc;
                     },
                     {} as Record<string, string[]>,
+                  );
+
+                  const energeticsJSX = (
+                    <EnergeticEmojis
+                      temperature={entry.temperature}
+                      moisture={entry.moisture}
+                      tone={entry.tone}
+                      taste={entry.taste}
+                      temperatureInferred={entry.temperatureInferred}
+                      moistureInferred={entry.moistureInferred}
+                      toneInferred={entry.toneInferred}
+                      tasteInferred={entry.tasteInferred}
+                      className="text-base leading-none"
+                    />
                   );
 
                   // Actions JSX — placed right (desktop) or inline (mobile)
@@ -525,9 +580,12 @@ export function DosingCalculatorModal({ isOpen, onClose, initialHerbs }: Props) 
                             </div>
                           </div>
 
-                          {/* Mobile-only: actions inline below title */}
-                          {actionsJSX && (
-                            <div className="md:hidden mb-3">{actionsJSX}</div>
+                          {/* Mobile-only: energetics + actions inline below title */}
+                          {(energeticsJSX || actionsJSX) && (
+                            <div className="md:hidden mb-3 space-y-1">
+                              {energeticsJSX}
+                              {actionsJSX}
+                            </div>
                           )}
 
                           {/* Custom range inputs (no source data) */}
@@ -614,9 +672,10 @@ export function DosingCalculatorModal({ isOpen, onClose, initialHerbs }: Props) 
                           )}
                         </div>{/* end left column */}
 
-                        {/* Right column: actions (desktop only) */}
-                        {actionsJSX && (
-                          <div className="hidden md:block w-44 xl:w-52 shrink-0 border-l border-green-100 dark:border-gray-700 pl-4 pt-0.5">
+                        {/* Right column: energetics + actions (desktop only) */}
+                        {(energeticsJSX || actionsJSX) && (
+                          <div className="hidden md:flex md:flex-col md:gap-1.5 w-44 xl:w-52 shrink-0 border-l border-green-100 dark:border-gray-700 pl-4 pt-0.5">
+                            {energeticsJSX}
                             {actionsJSX}
                           </div>
                         )}
