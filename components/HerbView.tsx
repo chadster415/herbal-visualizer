@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { PairingsView } from './PairingsView';
+import { LinkIcon } from '@heroicons/react/24/outline';
 import { supabase } from '@/lib/supabase';
 import { EnergeticEmojis } from './EnergeticEmojis';
 import { InferredEnergeticsModal } from './InferredEnergeticsModal';
@@ -117,6 +119,10 @@ interface HerbViewProps {
   selectedEssenceId?: number | null;
   onEssenceClick?: (essenceId: number) => void;
   onSoulConditionClick?: (category: string) => void;
+  pairingsMode?: boolean;
+  onShowPairings?: (herbId: number) => void;
+  onFocusChange?: (herbId: number | null) => void;
+  pairingsInitialFocusId?: number | null;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -259,7 +265,7 @@ function SectionHeader({ title, open, onToggle }: { title: string; open: boolean
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onActionClick, onActionNameClick, onDisorderClick, selectedSupplementId, onSupplementClick, selectedEssenceId, onEssenceClick, onSoulConditionClick }: HerbViewProps) {
+export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onActionClick, onActionNameClick, onDisorderClick, selectedSupplementId, onSupplementClick, selectedEssenceId, onEssenceClick, onSoulConditionClick, pairingsMode, onShowPairings, onFocusChange, pairingsInitialFocusId }: HerbViewProps) {
   const [herbs, setHerbs] = useState<HerbData[]>([]);
   const [allProfiles, setAllProfiles] = useState<ConstituentProfile[]>([]);
   const [selectedHerb, setSelectedHerb] = useState<HerbData | null>(null);
@@ -271,6 +277,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
   const [selectedSupplement, setSelectedSupplement] = useState<Supplement | null>(null);
   const [essences, setEssences] = useState<FlowerEssencePlant[]>([]);
   const [selectedEssence, setSelectedEssence] = useState<FlowerEssencePlant | null>(null);
+  const [pairedHerbIds, setPairedHerbIds] = useState<Set<number>>(new Set());
   const [duiYaoPairs, setDuiYaoPairs] = useState<DuiYaoPair[]>([]);
   const [duiYaoLoading, setDuiYaoLoading] = useState(false);
   const [priestPairings, setPriestPairings] = useState<PriestPairing[]>([]);
@@ -365,6 +372,18 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
   }, [monographDropdownOpen]);
 
   useEffect(() => { fetchHerbs(); }, []);
+
+  useEffect(() => {
+    Promise.all([
+      supabase.from('dui_yao_pairs').select('herb1_id, herb2_id'),
+      supabase.from('priest_pairings').select('herb_id, partner_herb_id').not('partner_herb_id', 'is', null),
+    ]).then(([duiRes, priestRes]) => {
+      const ids = new Set<number>();
+      for (const { herb1_id, herb2_id } of duiRes.data ?? []) { ids.add(herb1_id); ids.add(herb2_id); }
+      for (const { herb_id, partner_herb_id } of priestRes.data ?? []) { if (partner_herb_id) { ids.add(herb_id); ids.add(partner_herb_id); } }
+      setPairedHerbIds(ids);
+    });
+  }, []);
 
   useEffect(() => {
     supabase
@@ -928,25 +947,29 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
 
         <div className="space-y-2 max-h-[70vh] overflow-y-auto px-1 py-1">
           {filteredHerbs.map((herb, idx) => (
+            <div key={herb.id} className="relative group/herbcard">
             <button
-              key={herb.id}
               ref={(el) => {
                 if (el) herbRefs.current.set(herb.id, el);
                 else herbRefs.current.delete(herb.id);
               }}
               onClick={() => {
-                setSelectedSupplement(null);
-                setAlternatesOpen(false);
-                setSectionsOpen({ primaryActions: true, secondaryActions: true, constituentProfile: true, constituents: true, disorders: true, pairings: true, contraindications: true, mmMateriaMedica: true, herbContraindications: true });
-                fetchHerbDetail(herb.id);
-                onHerbIdChange?.(herb.id);
                 setSearchTerm('');
                 setHighlightedIndex(-1);
                 setMobileListOpen(false);
-                if (typeof window !== 'undefined' && window.innerWidth < 1024) {
-                  setTimeout(() => detailPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+                if (pairingsMode) {
+                  onHerbClick?.(herb.id);
                 } else {
-                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                  setSelectedSupplement(null);
+                  setAlternatesOpen(false);
+                  setSectionsOpen({ primaryActions: true, secondaryActions: true, constituentProfile: true, constituents: true, disorders: true, pairings: true, contraindications: true, mmMateriaMedica: true, herbContraindications: true });
+                  fetchHerbDetail(herb.id);
+                  onHerbIdChange?.(herb.id);
+                  if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+                    setTimeout(() => detailPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+                  } else {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }
                 }
               }}
               className={`w-full text-left p-3 rounded-lg border transition-all scroll-my-1 ${
@@ -974,6 +997,17 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
                 </div>
               </div>
             </button>
+            {pairedHerbIds.has(herb.id) && (
+              <button
+                onClick={() => onShowPairings?.(herb.id)}
+                className="absolute bottom-2 right-2 p-1 rounded text-gray-400 hover:text-indigo-500 transition-colors"
+                title="View in pairings graph"
+                tabIndex={-1}
+              >
+                <LinkIcon className="w-3.5 h-3.5" />
+              </button>
+            )}
+            </div>
           ))}
 
           {/* Supplements section */}
@@ -1064,8 +1098,13 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
         </div>
       </div>
 
-      {/* Herb / Supplement / Essence Details */}
-      <div ref={detailPanelRef} className="lg:col-span-2 bg-white rounded-lg shadow-lg p-6">
+      {/* Herb / Supplement / Essence Details — or Pairings graph */}
+      {pairingsMode ? (
+        <div className="lg:col-span-2 bg-white rounded-lg shadow-lg overflow-hidden flex flex-col" style={{ height: 'calc(100vh - 11rem)' }}>
+          <PairingsView onHerbClick={(id) => onHerbClick?.(id)} onFocusChange={onFocusChange} initialFocusId={pairingsInitialFocusId} />
+        </div>
+      ) : null}
+      <div ref={detailPanelRef} className={`lg:col-span-2 bg-white rounded-lg shadow-lg p-6${pairingsMode ? ' hidden' : ''}`}>
         {selectedSupplement && !selectedHerb && !selectedEssence ? (
           <SupplementDetail
             supplement={selectedSupplement}

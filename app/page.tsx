@@ -23,12 +23,13 @@ import {
   MagnifyingGlassIcon,
   QuestionMarkCircleIcon,
   RectangleStackIcon,
+  ShareIcon,
   SparklesIcon,
   UserIcon,
   CalculatorIcon,
 } from '@heroicons/react/24/outline';
 
-type ViewMode = 'herb' | 'action' | 'system' | 'soul_condition';
+type ViewMode = 'herb' | 'action' | 'system' | 'soul_condition' | 'pairings';
 
 interface NavEntry {
   viewMode: ViewMode;
@@ -39,6 +40,7 @@ interface NavEntry {
   selectedSupplementId?: number | null;
   selectedEssenceId?: number | null;
   selectedSoulConditionCategory?: string | null;
+  pairingsInitialFocusId?: number | null;
 }
 
 export default function Home() {
@@ -81,9 +83,10 @@ export default function Home() {
   const [helpOpen, setHelpOpen] = useState(false);
   const [flowerEssenceQuizOpen, setFlowerEssenceQuizOpen] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<'browse' | 'practice' | 'formulation' | null>(null);
+  const [pairingsInitialFocusId, setPairingsInitialFocusId] = useState<number | null>(null);
 
   const pushAndNavigate = (next: NavEntry) => {
-    setHistory((prev) => [...prev, { viewMode, selectedHerbId, selectedActionId, selectedSystemId, selectedDisorderId, selectedSupplementId, selectedEssenceId, selectedSoulConditionCategory }]);
+    setHistory((prev) => [...prev, { viewMode, selectedHerbId, selectedActionId, selectedSystemId, selectedDisorderId, selectedSupplementId, selectedEssenceId, selectedSoulConditionCategory, pairingsInitialFocusId }]);
     setViewMode(next.viewMode);
     setSelectedHerbId(next.selectedHerbId);
     setSelectedActionId(next.selectedActionId);
@@ -92,6 +95,7 @@ export default function Home() {
     setSelectedSupplementId(next.selectedSupplementId ?? null);
     setSelectedEssenceId(next.selectedEssenceId ?? null);
     setSelectedSoulConditionCategory(next.selectedSoulConditionCategory ?? null);
+    setPairingsInitialFocusId(next.pairingsInitialFocusId ?? null);
     setScrollTrigger((k) => k + 1);
   };
 
@@ -108,6 +112,7 @@ export default function Home() {
       setSelectedSupplementId(entry.selectedSupplementId ?? null);
       setSelectedEssenceId(entry.selectedEssenceId ?? null);
       setSelectedSoulConditionCategory(entry.selectedSoulConditionCategory ?? null);
+      setPairingsInitialFocusId(entry.pairingsInitialFocusId ?? null);
       return next;
     });
   };
@@ -118,10 +123,20 @@ export default function Home() {
     setSelectedSystemId(null);
     setSelectedDisorderId(null);
     setSelectedSoulConditionCategory(null);
+    setPairingsInitialFocusId(null);
   };
 
   const handleHerbClick = (herbId: number) => {
     pushAndNavigate({ viewMode: 'herb', selectedHerbId: herbId, selectedActionId, selectedSystemId: null, selectedDisorderId: null, selectedSupplementId: null });
+  };
+
+  const handleShowPairings = (herbId: number) => {
+    pushAndNavigate({ viewMode: 'pairings', selectedHerbId: herbId, selectedActionId: null, selectedSystemId: null, selectedDisorderId: null, selectedSupplementId: null, pairingsInitialFocusId: herbId });
+  };
+
+  const handlePairingsFocusChange = (herbId: number | null) => {
+    if (herbId === null) return;
+    pushAndNavigate({ viewMode: 'pairings', selectedHerbId: herbId, selectedActionId: null, selectedSystemId: null, selectedDisorderId: null, selectedSupplementId: null, pairingsInitialFocusId: herbId });
   };
 
   const handleSupplementClick = (supplementId: number) => {
@@ -179,6 +194,7 @@ export default function Home() {
     viewMode === 'herb' ? 'By Herb' :
     viewMode === 'action' ? 'By Action' :
     viewMode === 'soul_condition' ? 'By Soul Condition' :
+    viewMode === 'pairings' ? 'Pairings' :
     'By Body System';
 
   return (
@@ -254,6 +270,12 @@ export default function Home() {
                       <CalculatorIcon className="w-4 h-4 shrink-0" /> Dosing Calculator
                     </button>
                     <button
+                      onClick={() => { switchTab('pairings'); setOpenDropdown(null); }}
+                      className="w-full text-left px-4 py-2.5 text-green-800 hover:bg-green-50 transition-all flex items-center gap-2"
+                    >
+                      <ShareIcon className="w-4 h-4 shrink-0" /> Pairings
+                    </button>
+                    <button
                       onClick={() => { setEnergeticsQuizOpen(true); setOpenDropdown(null); }}
                       className="w-full text-left px-4 py-2.5 text-green-800 hover:bg-green-50 transition-all flex items-center gap-2"
                     >
@@ -304,6 +326,13 @@ export default function Home() {
                     className="w-full text-left px-4 py-2.5 text-green-800 hover:bg-green-50 transition-all whitespace-nowrap flex items-center gap-2"
                   >
                     <CalculatorIcon className="w-5 h-5 shrink-0" /> Dosing Calculator
+                  </button>
+                  <div className="border-t border-green-100" />
+                  <button
+                    onClick={() => { switchTab('pairings'); setOpenDropdown(null); }}
+                    className={`w-full text-left px-4 py-2.5 hover:bg-green-50 transition-all whitespace-nowrap flex items-center gap-2 ${viewMode === 'pairings' ? 'font-semibold text-green-900 bg-green-50' : 'text-green-800'}`}
+                  >
+                    <ShareIcon className="w-5 h-5 shrink-0" /> Pairings
                   </button>
                 </div>
               )}
@@ -364,8 +393,12 @@ export default function Home() {
       </header>
 
       <main>
-        <div className={viewMode !== 'herb' ? 'hidden' : ''}>
+        <div className={viewMode !== 'herb' && viewMode !== 'pairings' ? 'hidden' : ''}>
           <HerbView
+            pairingsMode={viewMode === 'pairings'}
+            onShowPairings={handleShowPairings}
+            onFocusChange={handlePairingsFocusChange}
+            pairingsInitialFocusId={pairingsInitialFocusId}
             selectedHerbId={selectedHerbId}
             onHerbIdChange={setSelectedHerbId}
             onHerbClick={handleHerbClick}
