@@ -8,8 +8,11 @@ import {
   CalculatorIcon,
   ClipboardDocumentListIcon,
   FireIcon,
+  LinkIcon,
   MagnifyingGlassIcon,
+  PlusCircleIcon,
   RectangleStackIcon,
+  SparklesIcon,
   TagIcon,
   UserIcon,
 } from '@heroicons/react/24/outline';
@@ -32,6 +35,13 @@ const features: Feature[] = [
     title: 'Browse by Herb',
     description:
       'Explore the full herb database. Each herb card shows energetics (temperature, moisture, tone), therapeutic actions grouped by body system, chemical constituents, menstruum recommendations, and drug-herb contraindications where available.',
+    sub: [
+      {
+        label: 'References',
+        detail:
+          "Where available, herb pages include links to Michael Moore's Materia Medica and scanned pages from Stockley's Herbal Medicines Interactions.",
+      },
+    ],
   },
   {
     icon: <TagIcon className="w-5 h-5 text-green-700" />,
@@ -51,6 +61,24 @@ const features: Feature[] = [
           'Click the person icon next to "By Body System" to open an interactive body diagram and navigate directly to a system or disorder by clicking on the illustration.',
       },
     ],
+  },
+  {
+    icon: <LinkIcon className="w-5 h-5 text-green-700" />,
+    title: 'Herb Pairings',
+    description:
+      'Browse classical herb pairings organized by tradition. Dui Yao are TCM two-herb combinations from Chen & Chen, each with shared indications and per-herb properties. Priest & Priest pairings come from western clinical herbalism. Relevant pairings also appear at the bottom of each herb\'s detail page.',
+  },
+  {
+    icon: <SparklesIcon className="w-5 h-5 text-green-700" />,
+    title: 'Flower Essences',
+    description:
+      'Browse Bach flower essences organized by soul condition — the state of imbalance each essence addresses. Each entry shows the positive quality the essence cultivates alongside the negative state it treats. A quiz mode lets you practice identifying essences from their soul condition descriptions.',
+  },
+  {
+    icon: <PlusCircleIcon className="w-5 h-5 text-green-700" />,
+    title: 'Supplements',
+    description:
+      'Browse nutritional supplements — vitamins, minerals, amino acids, and enzymes — as referenced in body system disorder prescriptions. Useful for understanding the full therapeutic picture of a condition beyond herbs alone.',
   },
   {
     icon: <RectangleStackIcon className="w-5 h-5 text-green-700" />,

@@ -62,6 +62,8 @@ export function PairingsView({ onHerbClick, onFocusChange, initialFocusId }: Pai
   const containerRef = useRef<HTMLDivElement>(null);
   const [graphWidth, setGraphWidth] = useState(600);
   const [graphHeight, setGraphHeight] = useState(600);
+  const [graphReady, setGraphReady] = useState(false);
+  const graphReadyRef = useRef(false);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -157,10 +159,14 @@ export function PairingsView({ onHerbClick, onFocusChange, initialFocusId }: Pai
           if (tgt === initialFocusId) neighborSet.add(src);
         }
         const focId = initialFocusId;
-        setTimeout(() => graphRef.current?.zoomToFit(400, 60, (n: object) => {
-          const id = (n as GraphNode).id;
-          return id === focId || neighborSet.has(id);
-        }), 80);
+        setTimeout(() => {
+          const ft = !graphReadyRef.current;
+          graphRef.current?.zoomToFit(ft ? 0 : 400, 60, (n: object) => {
+            const id = (n as GraphNode).id;
+            return id === focId || neighborSet.has(id);
+          });
+          if (ft) { graphReadyRef.current = true; setGraphReady(true); }
+        }, 80);
       }
     }
   }, [initialFocusId]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -389,20 +395,29 @@ export function PairingsView({ onHerbClick, onFocusChange, initialFocusId }: Pai
   }, [focusedId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleEngineStop = useCallback(() => {
+    const firstTime = !graphReadyRef.current;
+    const dur = firstTime ? 0 : 400;
+    const reveal = () => { if (firstTime) { graphReadyRef.current = true; setGraphReady(true); } };
+
     if (pendingZoomRef.current) {
       pendingZoomRef.current = false;
       if (focusedId !== null) {
         const fid = focusedId;
         const nb = neighborIds;
-        setTimeout(() => graphRef.current?.zoomToFit(400, 60, (nd: object) => {
-          const id = (nd as GraphNode).id;
-          return id === fid || nb.has(id);
-        }), 80);
+        setTimeout(() => {
+          graphRef.current?.zoomToFit(dur, 60, (nd: object) => {
+            const id = (nd as GraphNode).id;
+            return id === fid || nb.has(id);
+          });
+          reveal();
+        }, 80);
         return;
       }
-      graphRef.current?.zoomToFit(400, 40);
+      graphRef.current?.zoomToFit(dur, 40);
+      reveal();
     } else if (focusedId === null) {
-      graphRef.current?.zoomToFit(400, 40);
+      graphRef.current?.zoomToFit(dur, 40);
+      reveal();
     }
   }, [focusedId, neighborIds]);
 
@@ -577,27 +592,29 @@ export function PairingsView({ onHerbClick, onFocusChange, initialFocusId }: Pai
         {loading ? (
           <div className="flex items-center justify-center h-full text-gray-400 text-sm italic">Loading pairings…</div>
         ) : (
-          <ForceGraph2D
-            ref={graphRef}
-            graphData={displayData}
-            width={graphWidth}
-            height={graphHeight}
-            nodeLabel={getNodeLabel}
-            nodeVal={getNodeVal}
-            nodeCanvasObject={paintNode}
-            nodeCanvasObjectMode={() => 'replace'}
-            nodeVisibility={getNodeVisibility}
-            linkCanvasObject={paintLink}
-            linkCanvasObjectMode={() => 'replace'}
-            linkVisibility={getLinkVisibility}
-            onNodeClick={handleNodeClick}
-            onBackgroundClick={handleBackgroundClick}
-            onEngineStop={handleEngineStop}
-            cooldownTicks={200}
-            d3AlphaDecay={0.015}
-            d3VelocityDecay={0.25}
-            backgroundColor="#ffffff"
-          />
+          <div style={{ opacity: graphReady ? 1 : 0, transition: graphReady ? 'opacity 0.1s ease' : 'none' }}>
+            <ForceGraph2D
+              ref={graphRef}
+              graphData={displayData}
+              width={graphWidth}
+              height={graphHeight}
+              nodeLabel={getNodeLabel}
+              nodeVal={getNodeVal}
+              nodeCanvasObject={paintNode}
+              nodeCanvasObjectMode={() => 'replace'}
+              nodeVisibility={getNodeVisibility}
+              linkCanvasObject={paintLink}
+              linkCanvasObjectMode={() => 'replace'}
+              linkVisibility={getLinkVisibility}
+              onNodeClick={handleNodeClick}
+              onBackgroundClick={handleBackgroundClick}
+              onEngineStop={handleEngineStop}
+              cooldownTicks={200}
+              d3AlphaDecay={0.015}
+              d3VelocityDecay={0.25}
+              backgroundColor="#ffffff"
+            />
+          </div>
         )}
 
         {/* Table overlay */}
