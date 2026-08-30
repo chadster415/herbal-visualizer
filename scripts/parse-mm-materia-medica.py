@@ -58,6 +58,7 @@ SYNONYM_MAP = {
     'cnicus benedictus':     ['cnicus benedictus'],
     'cola nitida':           ['cola acuminata', 'cola vera'],  # kola nut
     'colchicum':             [],  # autumn crocus — not in DB
+    'crocus':                ['crocus sativus'],  # true saffron
     'collinsonia':           ['collinsonia canadensis'],
     'commiphora':            ['commiphora molmol'],  # MM entry is about myrrh specifically
     'commiphora molmol':     ['commiphora molmol'],
@@ -103,6 +104,7 @@ SYNONYM_MAP = {
     'glycyrrhiza':           ['glycyrrhiza glabra'],
     'grindelia':             ['grindelia camporum'],
     'guaiacum officinale':   ['guaiacum officinale'],
+    'guayusa':               [],  # Ilex guayusa — confirmed absent from MM
     'hamamelis':             ['hamamelis virginiana'],
     'harpagophytum':         ['harpagophytum procumbens'],
     'humulus':               ['humulus lupulus'],
@@ -142,6 +144,7 @@ SYNONYM_MAP = {
     'menyanthes':            ['menyanthes trifoliata'],
     'mitchella':             ['mitchella repens'],
     'momordica':             [],  # bitter melon — confirmed absent from MM
+    'mucuna':                [],  # Mucuna pruriens / velvet bean — confirmed absent from MM
     'myrica':                ['myrica cerifera'],
     'myroxylon balsamum var. pereirae': ['myroxylon balsamum var. pereirae'],
     'myristica':             ['semen myristicae fragrantis'],  # nutmeg TCM

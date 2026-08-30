@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { HerbView } from '@/components/HerbView';
 import { ActionView } from '@/components/ActionView';
 import { SystemView } from '@/components/SystemView';
+import { ClassNotesAilmentView } from '@/components/ClassNotesAilmentView';
 import { SoulConditionView } from '@/components/SoulConditionView';
 import { FlashcardModal } from '@/components/FlashcardModal';
 import { EnergeticsQuizModal } from '@/components/EnergeticsQuizModal';
@@ -29,7 +30,7 @@ import {
   CalculatorIcon,
 } from '@heroicons/react/24/outline';
 
-type ViewMode = 'herb' | 'action' | 'system' | 'soul_condition' | 'pairings';
+type ViewMode = 'herb' | 'action' | 'system' | 'soul_condition' | 'pairings' | 'class_notes';
 
 interface NavEntry {
   viewMode: ViewMode;
@@ -41,6 +42,7 @@ interface NavEntry {
   selectedEssenceId?: number | null;
   selectedSoulConditionCategory?: string | null;
   pairingsInitialFocusId?: number | null;
+  selectedAilmentKeyword?: string | null;
 }
 
 export default function Home() {
@@ -84,9 +86,10 @@ export default function Home() {
   const [flowerEssenceQuizOpen, setFlowerEssenceQuizOpen] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<'browse' | 'practice' | 'formulation' | null>(null);
   const [pairingsInitialFocusId, setPairingsInitialFocusId] = useState<number | null>(null);
+  const [selectedAilmentKeyword, setSelectedAilmentKeyword] = useState<string | null>(null);
 
   const pushAndNavigate = (next: NavEntry) => {
-    setHistory((prev) => [...prev, { viewMode, selectedHerbId, selectedActionId, selectedSystemId, selectedDisorderId, selectedSupplementId, selectedEssenceId, selectedSoulConditionCategory, pairingsInitialFocusId }]);
+    setHistory((prev) => [...prev, { viewMode, selectedHerbId, selectedActionId, selectedSystemId, selectedDisorderId, selectedSupplementId, selectedEssenceId, selectedSoulConditionCategory, pairingsInitialFocusId, selectedAilmentKeyword }]);
     setViewMode(next.viewMode);
     setSelectedHerbId(next.selectedHerbId);
     setSelectedActionId(next.selectedActionId);
@@ -96,6 +99,7 @@ export default function Home() {
     setSelectedEssenceId(next.selectedEssenceId ?? null);
     setSelectedSoulConditionCategory(next.selectedSoulConditionCategory ?? null);
     setPairingsInitialFocusId(next.pairingsInitialFocusId ?? null);
+    setSelectedAilmentKeyword(next.selectedAilmentKeyword ?? null);
     setScrollTrigger((k) => k + 1);
   };
 
@@ -113,6 +117,7 @@ export default function Home() {
       setSelectedEssenceId(entry.selectedEssenceId ?? null);
       setSelectedSoulConditionCategory(entry.selectedSoulConditionCategory ?? null);
       setPairingsInitialFocusId(entry.pairingsInitialFocusId ?? null);
+      setSelectedAilmentKeyword(entry.selectedAilmentKeyword ?? null);
       return next;
     });
   };
@@ -124,6 +129,11 @@ export default function Home() {
     setSelectedDisorderId(null);
     setSelectedSoulConditionCategory(null);
     setPairingsInitialFocusId(null);
+    setSelectedAilmentKeyword(null);
+  };
+
+  const handleClassNotesClick = () => {
+    pushAndNavigate({ viewMode: 'class_notes', selectedHerbId: null, selectedActionId: null, selectedSystemId: null, selectedDisorderId: null, selectedAilmentKeyword: null });
   };
 
   const handleHerbClick = (herbId: number) => {
@@ -195,6 +205,7 @@ export default function Home() {
     viewMode === 'action' ? 'By Action' :
     viewMode === 'soul_condition' ? 'By Soul Condition' :
     viewMode === 'pairings' ? 'Pairings' :
+    viewMode === 'class_notes' ? 'Class Notes' :
     'By Body System';
 
   return (
@@ -249,6 +260,14 @@ export default function Home() {
                       )}
                     </div>
                   ))}
+                  <div className={`flex items-center border-t border-green-100 ${viewMode === 'class_notes' ? 'bg-green-100' : ''}`}>
+                    <button
+                      onClick={() => { switchTab('class_notes'); setOpenDropdown(null); }}
+                      className={`flex-1 text-left px-4 py-2.5 text-green-800 hover:bg-green-50 transition-all ${viewMode === 'class_notes' ? 'font-semibold' : ''}`}
+                    >
+                      Class Notes
+                    </button>
+                  </div>
                   {/* Mobile-only: tools collapsed into browse dropdown */}
                   <div className="md:hidden border-t border-green-100">
                     <button
@@ -422,6 +441,8 @@ export default function Home() {
             onSystemChange={setSelectedSystemId}
             selectedDisorderId={selectedDisorderId}
             onDisorderChange={setSelectedDisorderId}
+            onClassNotesClick={handleClassNotesClick}
+            onAilmentKeywordClick={(keyword) => pushAndNavigate({ viewMode: 'class_notes', selectedHerbId: null, selectedActionId: null, selectedSystemId: null, selectedDisorderId: null, selectedAilmentKeyword: keyword })}
           />
         )}
         {viewMode === 'soul_condition' && (
@@ -435,6 +456,14 @@ export default function Home() {
                 if (data) handleEssenceClick(data.id);
               });
             }}
+          />
+        )}
+        {viewMode === 'class_notes' && (
+          <ClassNotesAilmentView
+            selectedAilmentKeyword={selectedAilmentKeyword}
+            onAilmentChange={setSelectedAilmentKeyword}
+            onHerbClick={handleHerbClick}
+            onSupplementClick={handleSupplementClick}
           />
         )}
       </main>

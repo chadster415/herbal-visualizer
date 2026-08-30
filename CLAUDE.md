@@ -6,6 +6,22 @@
 - **[Inferring energetics from constituents](docs/inferring-energetics-from-constituents.md)** — Rules for assigning first-pass temperature/moisture energetics to herbs based on constituent profile, with confidence levels and SQL patterns for marking values as inferred. Tone cannot be reliably inferred; do not attempt.
 - **[Inferring taste from constituents](docs/inferring-taste-from-constituents.md)** — Rules for assigning first-pass taste (bitter/pungent/sweet/sour/salty) from constituent profile. Covers 7 bitter rules, 2 pungent rules, 1 sweet rule, conflict resolution hierarchy, and a table of skipped herbs with reasons. 117 herbs inferred across migrations 171–172.
 
+## Class Notes Source Files
+
+BHC class notes live in the user's Obsidian vault at:
+```
+/Users/chadarmstrong/Obsidian/Obsidian Vault/Classes/Berkeley Herbal Center/Apprenticeship Intensive/
+```
+
+File naming format: `BHC - Class NN - Topic - Author.md`
+
+Each class typically has up to three files:
+- `BHC - Class NN - Topic - Lisa Ashley.md` — personal handwritten notes (always check, always use)
+- `BHC - Class NN - Topic - Generated Notes.md` — AI-generated transcript summary (check before assuming unusable; may contain valuable dosing, clinical, or technique content)
+- `BHC - Class NN - Topic - Transcript.md` — raw transcript (rarely needed unless the other two lack detail)
+
+**Always read both the personal and generated notes files before writing a class-processing migration.** The generated notes sometimes have content the personal notes lack (e.g., afternoon dosing sessions, percolation technique notes, clinical case details).
+
 ## Project Overview
 A Next.js app backed by a local Supabase instance that visualizes herbal medicine data from BHC Apprenticeship class materials. Data is organized by body system → disorders → herbs → actions.
 

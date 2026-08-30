@@ -14,6 +14,15 @@ interface DisorderRef {
   dose: string | null;
 }
 
+interface ClassNoteSnippet {
+  id: number;
+  snippet_text: string;
+  class_name: string;
+  note_type: string;
+  section_header: string | null;
+  source_block: string | null;
+}
+
 interface SupplementDetailProps {
   supplement: Supplement;
   onDisorderClick?: (disorderId: number, systemId: number) => void;
@@ -40,6 +49,7 @@ function solubilityColor(solubility: string) {
 
 export function SupplementDetail({ supplement, onDisorderClick }: SupplementDetailProps) {
   const [disorderRefs, setDisorderRefs] = useState<DisorderRef[]>([]);
+  const [classNoteSnippets, setClassNoteSnippets] = useState<ClassNoteSnippet[]>([]);
 
   useEffect(() => {
     if (!supplement) return;
@@ -75,6 +85,19 @@ export function SupplementDetail({ supplement, onDisorderClick }: SupplementDeta
           };
         }).filter((r) => r.disorderName);
         setDisorderRefs(refs);
+      });
+  }, [supplement.id]);
+
+  useEffect(() => {
+    if (!supplement) return;
+    supabase
+      .from('class_note_snippets')
+      .select('id, snippet_text, class_name, note_type, section_header, sort_order, source_block')
+      .eq('supplement_id', supplement.id)
+      .order('class_name')
+      .order('sort_order')
+      .then(({ data }) => {
+        if (data) setClassNoteSnippets(data as ClassNoteSnippet[]);
       });
   }, [supplement.id]);
 
@@ -183,6 +206,42 @@ export function SupplementDetail({ supplement, onDisorderClick }: SupplementDeta
                     <div className="text-sm text-green-700 font-medium mt-0.5">{ref.dose}</div>
                   )}
                 </button>
+              ))}
+            </div>
+          </div>
+        )}
+        {/* Class Notes */}
+        {classNoteSnippets.length > 0 && (
+          <div>
+            <h3 className="text-base font-semibold text-gray-700 mb-2">Class Notes</h3>
+            <div className="space-y-3">
+              {classNoteSnippets.map((snippet) => (
+                <div key={snippet.id} className="border border-teal-200 border-l-4 border-l-teal-500 rounded-lg p-3 bg-teal-50">
+                  <div className="flex items-center justify-between mb-1 gap-2">
+                    <a
+                      href={`https://apple.com/icloud/`}
+                      className="text-xs font-semibold text-teal-700 hover:underline"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {snippet.class_name}
+                    </a>
+                    <span className={`text-xs px-1.5 py-0.5 rounded-full border ${snippet.note_type === 'personal' ? 'bg-amber-50 text-amber-700 border-amber-300' : 'bg-gray-100 text-gray-500 border-gray-300'}`}>
+                      {snippet.note_type}
+                    </span>
+                  </div>
+                  {snippet.section_header && (
+                    <p className="text-xs font-semibold text-teal-600 mb-1">{snippet.section_header}</p>
+                  )}
+                  <p className="text-sm text-gray-800 leading-relaxed">{snippet.snippet_text}</p>
+                  {snippet.source_block && (
+                    <details className="mt-2">
+                      <summary className="text-xs text-teal-600 cursor-pointer hover:text-teal-800">Source</summary>
+                      <blockquote className="mt-1 text-xs text-gray-600 whitespace-pre-wrap font-mono bg-white border border-teal-100 rounded p-2">
+                        {snippet.source_block}
+                      </blockquote>
+                    </details>
+                  )}
+                </div>
               ))}
             </div>
           </div>

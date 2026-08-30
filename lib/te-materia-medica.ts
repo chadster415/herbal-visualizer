@@ -141,4 +141,5 @@ export const TE_MATERIA_MEDICA: Record<number, { min: number; max: number }> = {
   2479: { min: 20, max: 40 },  // Spikenard (Aralia racemosa)
   2498: { min: 30, max: 60 },  // Black Pepper (Piper nigrum)
   2556: { min: 60, max: 120 },  // Bitter Melon (Momordica charantia)
+  2573: { min: 5, max: 20 },   // Saffron (Crocus sativus)
 };

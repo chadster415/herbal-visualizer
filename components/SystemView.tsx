@@ -32,6 +32,15 @@ interface SystemData extends BodySystem {
   disorders?: DisorderListItem[];
 }
 
+interface InferredAilment {
+  keyword: string;
+  synonyms: string[];
+}
+
+type FuseEntry =
+  | { type: 'regular'; disorder: DisorderListItem; system: SystemData }
+  | { type: 'inferred'; ailment: InferredAilment };
+
 interface SystemViewProps {
   onHerbClick?: (herbId: number) => void;
   onActionClick?: (actionId: number) => void;
@@ -40,10 +49,13 @@ interface SystemViewProps {
   onSystemChange?: (id: number | null) => void;
   selectedDisorderId?: number | null;
   onDisorderChange?: (id: number | null) => void;
+  onClassNotesClick?: () => void;
+  onAilmentKeywordClick?: (keyword: string) => void;
 }
 
-export function SystemView({ onHerbClick, onActionClick, onSupplementClick, selectedSystemId, onSystemChange, selectedDisorderId, onDisorderChange }: SystemViewProps) {
+export function SystemView({ onHerbClick, onActionClick, onSupplementClick, selectedSystemId, onSystemChange, selectedDisorderId, onDisorderChange, onClassNotesClick, onAilmentKeywordClick }: SystemViewProps) {
   const [systems, setSystems] = useState<SystemData[]>([]);
+  const [inferredAilments, setInferredAilments] = useState<InferredAilment[]>([]);
   const [selectedSystem, setSelectedSystem] = useState<SystemData | null>(null);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<'actions' | 'disorders'>('actions');
@@ -55,19 +67,25 @@ export function SystemView({ onHerbClick, onActionClick, onSupplementClick, sele
   const scrollSkipRef = useRef(true);
 
   const disorderFuse = useMemo(() => {
-    const entries = systems.flatMap((s) =>
-      (s.disorders ?? []).map((d) => ({ disorder: d, system: s }))
+    const regularEntries: FuseEntry[] = systems.flatMap((s) =>
+      (s.disorders ?? []).map((d) => ({ type: 'regular' as const, disorder: d, system: s }))
     );
-    return new Fuse(entries, {
+    const ailmentEntries: FuseEntry[] = inferredAilments.map((a) => ({
+      type: 'inferred' as const,
+      ailment: a,
+    }));
+    return new Fuse<FuseEntry>([...regularEntries, ...ailmentEntries], {
       keys: [
         { name: 'disorder.name', weight: 2 },
         { name: 'disorder.search_keywords', weight: 1 },
+        { name: 'ailment.keyword', weight: 2 },
+        { name: 'ailment.synonyms', weight: 1 },
       ],
       threshold: 0.4,
       ignoreLocation: true,
       minMatchCharLength: 2,
     });
-  }, [systems]);
+  }, [systems, inferredAilments]);
 
   useEffect(() => {
     fetchSystems();
@@ -101,13 +119,15 @@ export function SystemView({ onHerbClick, onActionClick, onSupplementClick, sele
 
   async function fetchSystems() {
     try {
-      const [{ data, error }, { data: disorderData }, { data: notesData }] = await Promise.all([
+      const [{ data, error }, { data: disorderData }, { data: notesData }, { data: kwData }, { data: synonymsData }] = await Promise.all([
         supabase
           .from('body_systems')
           .select(`*, herb_primary_actions (herbs (*), primary_actions (*), relative_strength)`)
           .order('name'),
         supabase.from('disorders').select('id, name, body_system_id, sort_order, is_case_study, search_keywords').order('sort_order'),
         supabase.from('body_system_notes').select('body_system_id, id, note_text, sort_order').order('sort_order'),
+        supabase.from('herb_keywords').select('keyword').eq('category', 'ailment'),
+        supabase.from('ailment_search_terms').select('ailment_keyword, synonyms'),
       ]);
 
       if (error) throw error;
@@ -134,6 +154,14 @@ export function SystemView({ onHerbClick, onActionClick, onSupplementClick, sele
         }));
 
       setSystems(systemsWithData);
+
+      const uniqueKeywords = [...new Set((kwData ?? []).map((r: { keyword: string }) => r.keyword))];
+      const synonymsMap = new Map(
+        (synonymsData ?? []).map((r: { ailment_keyword: string; synonyms: string[] }) => [r.ailment_keyword, r.synonyms])
+      );
+      setInferredAilments(
+        uniqueKeywords.map((k) => ({ keyword: k, synonyms: synonymsMap.get(k) ?? [] }))
+      );
     } catch (error) {
       console.error('Error fetching systems:', error);
     } finally {
@@ -355,7 +383,11 @@ export function SystemView({ onHerbClick, onActionClick, onSupplementClick, sele
                   const selectMatch = (idx: number) => {
                     const m = matches[idx];
                     if (!m) return;
-                    navigateToDisorder(m.system, m.disorder.id);
+                    if (m.type === 'regular') {
+                      navigateToDisorder(m.system, m.disorder.id);
+                    } else {
+                      onAilmentKeywordClick?.(m.ailment.keyword);
+                    }
                     setDisorderSearch('');
                     setDropdownIndex(-1);
                   };
@@ -378,15 +410,21 @@ export function SystemView({ onHerbClick, onActionClick, onSupplementClick, sele
                         <div ref={dropdownRef} className="absolute left-0 top-full mt-1 z-20 bg-white border border-gray-200 rounded-lg shadow-lg w-80 max-h-72 overflow-y-auto">
                           {matches.length > 0 ? (
                             <ul className="py-1">
-                              {matches.map(({ disorder, system }, idx) => (
-                                <li key={disorder.id}>
+                              {matches.map((entry, idx) => (
+                                <li key={entry.type === 'regular' ? entry.disorder.id : `ailment-${entry.ailment.keyword}`}>
                                   <button
                                     onClick={() => selectMatch(idx)}
                                     onMouseEnter={() => setDropdownIndex(idx)}
                                     className={`w-full text-left px-3 py-2 flex items-baseline justify-between gap-2 ${idx === dropdownIndex ? 'bg-green-50' : 'hover:bg-green-50'}`}
                                   >
-                                    <span className="text-sm text-gray-800">{disorder.name}</span>
-                                    <span className="text-xs text-gray-400 shrink-0">{system.name}</span>
+                                    <span className="text-sm text-gray-800 capitalize">
+                                      {entry.type === 'regular' ? entry.disorder.name : entry.ailment.keyword}
+                                    </span>
+                                    {entry.type === 'regular' ? (
+                                      <span className="text-xs text-gray-400 shrink-0">{entry.system.name}</span>
+                                    ) : (
+                                      <span className="text-[10px] font-medium bg-amber-100 text-amber-700 border border-amber-200 px-1.5 py-0.5 rounded-full shrink-0 whitespace-nowrap">class notes</span>
+                                    )}
                                   </button>
                                 </li>
                               ))}
@@ -401,6 +439,22 @@ export function SystemView({ onHerbClick, onActionClick, onSupplementClick, sele
                 })()}
               </div>
             </div>
+            {onClassNotesClick && (
+              <div className="mb-4">
+                <button
+                  onClick={onClassNotesClick}
+                  className="w-full text-left border border-amber-200 bg-amber-50/50 hover:bg-amber-100 hover:border-amber-300 rounded-lg p-3 transition-all"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-semibold text-gray-900">Class Notes</span>
+                    <span className="text-xs font-medium bg-amber-100 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-full shrink-0">
+                      inferred ailments
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-0.5">Browse disorders extracted from class notes</p>
+                </button>
+              </div>
+            )}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
               {systems.map((system) => (
                 <div key={system.id} className="border border-gray-100 rounded-lg p-3 flex flex-col gap-1.5">

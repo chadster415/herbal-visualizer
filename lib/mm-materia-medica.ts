@@ -1349,4 +1349,9 @@ export const MM_MATERIA_MEDICA: Record<number, string> = {
   PEPPERCORNS.  Tincture [1:5, 65% alcohol] 5-15 drops.
   STATUS : C`,
 
+  // Saffron (Crocus sativus)
+  2573: `*CROCUS  (True Saffron)
+  STIGMAS.  Tincture [1:5, 95% alcohol] 5-20 drops.
+  STATUS : C`,
+
 };

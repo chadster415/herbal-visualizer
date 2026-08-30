@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import { supabase } from '@/lib/supabase';
-import { ArrowsPointingInIcon, PlusCircleIcon, MinusCircleIcon, TableCellsIcon, XMarkIcon, ChevronDownIcon } from '@heroicons/react/24/outline';
+import { ArrowsPointingInIcon, PlusCircleIcon, MinusCircleIcon, TableCellsIcon, XMarkIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 
 const ForceGraph2D = dynamic(() => import('react-force-graph-2d'), { ssr: false });
 
@@ -589,9 +589,10 @@ export function PairingsView({ onHerbClick, onFocusChange, initialFocusId }: Pai
 
       {/* Canvas */}
       <div ref={containerRef} className="flex-1 min-h-0 relative overflow-hidden">
-        {loading ? (
-          <div className="flex items-center justify-center h-full text-gray-400 text-sm italic">Loading pairings…</div>
-        ) : (
+        {(loading || !graphReady) && (
+          <div className="absolute inset-0 flex items-center justify-center text-gray-400 text-sm italic z-10">Loading pairings…</div>
+        )}
+        {!loading && (
           <div style={{ opacity: graphReady ? 1 : 0, transition: graphReady ? 'opacity 0.1s ease' : 'none' }}>
             <ForceGraph2D
               ref={graphRef}
@@ -641,9 +642,26 @@ export function PairingsView({ onHerbClick, onFocusChange, initialFocusId }: Pai
             <div className="p-4 space-y-5">
               {/* Primary connections */}
               <section>
-                <h4 className="text-[11px] font-semibold uppercase tracking-widest text-gray-400 mb-2.5">
-                  Primary connections ({primaryTableRows.length})
-                </h4>
+                <div className="flex items-center justify-between mb-2.5">
+                  <h4 className="text-[11px] font-semibold uppercase tracking-widest text-gray-400">
+                    Primary connections ({primaryTableRows.length})
+                  </h4>
+                  {primaryTableRows.some((r) => (secondaryByPrimary.get(r.herbId) ?? []).length > 0) && (() => {
+                    const expandableIds = primaryTableRows
+                      .filter((r) => (secondaryByPrimary.get(r.herbId) ?? []).length > 0)
+                      .map((r) => r.herbId);
+                    const allExpanded = expandableIds.every((id) => expandedPrimary.has(id));
+                    return (
+                      <button
+                        onClick={() => setExpandedPrimary(allExpanded ? new Set() : new Set(expandableIds))}
+                        className="flex items-center gap-1 mr-3 text-[11px] text-gray-400 hover:text-gray-600 transition-colors"
+                      >
+                        {allExpanded ? 'Collapse all' : 'Expand all'}
+                        <ChevronRightIcon className={`w-3.5 h-3.5 transition-transform duration-150 ${allExpanded ? 'rotate-90' : ''}`} />
+                      </button>
+                    );
+                  })()}
+                </div>
                 <div className="space-y-2">
                   {primaryTableRows.map((row) => {
                     const secondaries = secondaryByPrimary.get(row.herbId) ?? [];
@@ -681,7 +699,7 @@ export function PairingsView({ onHerbClick, onFocusChange, initialFocusId }: Pai
                                 className="ml-auto p-0.5 text-gray-400 hover:text-gray-600 transition-colors flex items-center gap-1"
                               >
                                 <span className="text-[10px] text-gray-400">{secondaries.length}</span>
-                                <ChevronDownIcon className={`w-3.5 h-3.5 transition-transform duration-150 ${isExpanded ? 'rotate-180' : ''}`} />
+                                <ChevronRightIcon className={`w-3.5 h-3.5 transition-transform duration-150 ${isExpanded ? 'rotate-90' : ''}`} />
                               </button>
                             )}
                           </div>
