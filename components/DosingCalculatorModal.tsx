@@ -5,6 +5,7 @@ import { TrashIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { MM_MATERIA_MEDICA } from '@/lib/mm-materia-medica';
 import { DH_MATERIA_MEDICA } from '@/lib/dh-materia-medica';
 import { TE_MATERIA_MEDICA } from '@/lib/te-materia-medica';
+import { HOTE_MATERIA_MEDICA } from '@/lib/hote-materia-medica';
 import { supabase } from '@/lib/supabase';
 import { EnergeticEmojis } from './EnergeticEmojis';
 
@@ -40,6 +41,8 @@ interface HerbEntry {
   dhMax: number | null;
   teMin: number | null;
   teMax: number | null;
+  hoteMin: number | null;
+  hoteMax: number | null;
   customMin: number;
   customMax: number;
   selectedDrops: number;
@@ -152,11 +155,12 @@ export function DosingCalculatorModal({ isOpen, onClose, initialHerbs }: Props) 
     const mmRange = mmText ? parseMmDropRange(mmText) : null;
     const dhEntry = DH_MATERIA_MEDICA[herb.id] ?? null;
     const teEntry = TE_MATERIA_MEDICA[herb.id] ?? null;
+    const hoteEntry = HOTE_MATERIA_MEDICA[herb.id] ?? null;
     const entryKey = `${herb.id}-${Date.now()}`;
 
     // Combined range across all sources
-    const allMins = [mmRange?.min, dhEntry?.min, teEntry?.min].filter((v): v is number => v != null);
-    const allMaxs = [mmRange?.max, dhEntry?.max, teEntry?.max].filter((v): v is number => v != null);
+    const allMins = [mmRange?.min, dhEntry?.min, teEntry?.min, hoteEntry?.min].filter((v): v is number => v != null);
+    const allMaxs = [mmRange?.max, dhEntry?.max, teEntry?.max, hoteEntry?.max].filter((v): v is number => v != null);
     const hasSourceData = allMins.length > 0;
     const combinedMin = hasSourceData ? Math.min(...allMins) : 5;
     const combinedMax = hasSourceData ? Math.max(...allMaxs) : 60;
@@ -173,6 +177,8 @@ export function DosingCalculatorModal({ isOpen, onClose, initialHerbs }: Props) 
       dhMax: dhEntry?.max ?? null,
       teMin: teEntry?.min ?? null,
       teMax: teEntry?.max ?? null,
+      hoteMin: hoteEntry?.min ?? null,
+      hoteMax: hoteEntry?.max ?? null,
       customMin: combinedMin,
       customMax: combinedMax,
       selectedDrops: Math.round((combinedMin + combinedMax) / 2),
@@ -416,8 +422,9 @@ export function DosingCalculatorModal({ isOpen, onClose, initialHerbs }: Props) 
                       const mmRange = MM_MATERIA_MEDICA[h.id] ? parseMmDropRange(MM_MATERIA_MEDICA[h.id]) : null;
                       const dhEntry = DH_MATERIA_MEDICA[h.id] ?? null;
                       const teEntry = TE_MATERIA_MEDICA[h.id] ?? null;
-                      const allMins = [mmRange?.min, dhEntry?.min, teEntry?.min].filter((v): v is number => v != null);
-                      const allMaxs = [mmRange?.max, dhEntry?.max, teEntry?.max].filter((v): v is number => v != null);
+                      const hoteEntry = HOTE_MATERIA_MEDICA[h.id] ?? null;
+                      const allMins = [mmRange?.min, dhEntry?.min, teEntry?.min, hoteEntry?.min].filter((v): v is number => v != null);
+                      const allMaxs = [mmRange?.max, dhEntry?.max, teEntry?.max, hoteEntry?.max].filter((v): v is number => v != null);
                       const hasAny = allMins.length > 0;
                       return (
                         <button
@@ -539,45 +546,53 @@ export function DosingCalculatorModal({ isOpen, onClose, initialHerbs }: Props) 
                                   </span>
                                 )}
                               </div>
-                              <div className="text-xs text-green-500 italic">{entry.latinName}</div>
+                              <div className="text-xs text-green-500 italic mb-1.5">{entry.latinName}</div>
+                              <div className="flex items-center flex-wrap gap-1.5">
+                                {entry.mmMin != null && (
+                                  <span className="group relative text-xs bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-300 px-2 py-0.5 rounded-full font-medium cursor-default">
+                                    MM
+                                    <span className="pointer-events-none absolute bottom-full left-0 mb-1.5 hidden group-hover:block whitespace-nowrap rounded bg-gray-800 px-2 py-1 text-xs text-white shadow-lg z-50">
+                                      {entry.mmMin}–{entry.mmMax} drops (Michael Moore)
+                                    </span>
+                                  </span>
+                                )}
+                                {entry.dhMin != null && (
+                                  <span className="group relative text-xs bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300 px-2 py-0.5 rounded-full font-medium cursor-default">
+                                    DH
+                                    <span className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover:block whitespace-nowrap rounded bg-gray-800 px-2 py-1 text-xs text-white shadow-lg z-50">
+                                      {entry.dhMin}–{entry.dhMax} drops (David Hoffmann)
+                                    </span>
+                                  </span>
+                                )}
+                                {entry.teMin != null && (
+                                  <span className="group relative text-xs bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 px-2 py-0.5 rounded-full font-medium cursor-default">
+                                    TE
+                                    <span className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover:block whitespace-nowrap rounded bg-gray-800 px-2 py-1 text-xs text-white shadow-lg z-50">
+                                      {entry.teMin}–{entry.teMax} drops (Thomas Easley)
+                                    </span>
+                                  </span>
+                                )}
+                                {entry.hoteMin != null && (
+                                  <span className="group relative text-xs bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300 px-2 py-0.5 rounded-full font-medium cursor-default">
+                                    ST
+                                    <span className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover:block whitespace-nowrap rounded bg-gray-800 px-2 py-1 text-xs text-white shadow-lg z-50">
+                                      {entry.hoteMin}–{entry.hoteMax} drops (Sharol Tilgner)
+                                    </span>
+                                  </span>
+                                )}
+                                {!entry.hasSourceData && (
+                                  <span className="text-xs bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 px-2 py-0.5 rounded-full font-medium">
+                                    custom range
+                                  </span>
+                                )}
+                              </div>
                             </div>
-                            <div className="flex items-center gap-1.5 shrink-0">
-                              {entry.mmMin != null && (
-                                <span className="group relative text-xs bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-300 px-2 py-0.5 rounded-full font-medium cursor-default">
-                                  MM
-                                  <span className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover:block whitespace-nowrap rounded bg-gray-800 px-2 py-1 text-xs text-white shadow-lg z-50">
-                                    {entry.mmMin}–{entry.mmMax} drops
-                                  </span>
-                                </span>
-                              )}
-                              {entry.dhMin != null && (
-                                <span className="group relative text-xs bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300 px-2 py-0.5 rounded-full font-medium cursor-default">
-                                  DH
-                                  <span className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover:block whitespace-nowrap rounded bg-gray-800 px-2 py-1 text-xs text-white shadow-lg z-50">
-                                    {entry.dhMin}–{entry.dhMax} drops
-                                  </span>
-                                </span>
-                              )}
-                              {entry.teMin != null && (
-                                <span className="group relative text-xs bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 px-2 py-0.5 rounded-full font-medium cursor-default">
-                                  TE
-                                  <span className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover:block whitespace-nowrap rounded bg-gray-800 px-2 py-1 text-xs text-white shadow-lg z-50">
-                                    {entry.teMin}–{entry.teMax} drops
-                                  </span>
-                                </span>
-                              )}
-                              {!entry.hasSourceData && (
-                                <span className="text-xs bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 px-2 py-0.5 rounded-full font-medium">
-                                  custom range
-                                </span>
-                              )}
-                              <button
-                                onClick={() => removeHerb(entry.key)}
-                                className="text-red-300 hover:text-red-500 transition-colors ml-0.5"
-                              >
-                                <TrashIcon className="w-4 h-4" />
-                              </button>
-                            </div>
+                            <button
+                              onClick={() => removeHerb(entry.key)}
+                              className="text-red-300 hover:text-red-500 transition-colors shrink-0 mt-0.5"
+                            >
+                              <TrashIcon className="w-4 h-4" />
+                            </button>
                           </div>
 
                           {/* Mobile-only: energetics + actions inline below title */}

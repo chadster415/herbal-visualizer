@@ -45,6 +45,7 @@ interface SystemViewProps {
   onHerbClick?: (herbId: number) => void;
   onActionClick?: (actionId: number) => void;
   onSupplementClick?: (supplementId: number) => void;
+  onTransferToDosing?: (herbs: Array<{ id: number; common_name: string; latin_name: string; plant_part: string | null }>) => void;
   selectedSystemId?: number | null;
   onSystemChange?: (id: number | null) => void;
   selectedDisorderId?: number | null;
@@ -53,7 +54,7 @@ interface SystemViewProps {
   onAilmentKeywordClick?: (keyword: string) => void;
 }
 
-export function SystemView({ onHerbClick, onActionClick, onSupplementClick, selectedSystemId, onSystemChange, selectedDisorderId, onDisorderChange, onClassNotesClick, onAilmentKeywordClick }: SystemViewProps) {
+export function SystemView({ onHerbClick, onActionClick, onSupplementClick, onTransferToDosing, selectedSystemId, onSystemChange, selectedDisorderId, onDisorderChange, onClassNotesClick, onAilmentKeywordClick }: SystemViewProps) {
   const [systems, setSystems] = useState<SystemData[]>([]);
   const [inferredAilments, setInferredAilments] = useState<InferredAilment[]>([]);
   const [selectedSystem, setSelectedSystem] = useState<SystemData | null>(null);
@@ -318,6 +319,7 @@ export function SystemView({ onHerbClick, onActionClick, onSupplementClick, sele
                   onHerbClick={onHerbClick}
                   onActionClick={onActionClick}
                   onSupplementClick={onSupplementClick}
+                  onTransferToDosing={onTransferToDosing}
                   selectedDisorderId={selectedDisorderId}
                   onDisorderChange={onDisorderChange}
                 />

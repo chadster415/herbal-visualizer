@@ -86,11 +86,12 @@ interface DisorderViewProps {
   onHerbClick?: (herbId: number) => void;
   onActionClick?: (actionId: number) => void;
   onSupplementClick?: (supplementId: number) => void;
+  onTransferToDosing?: (herbs: Array<{ id: number; common_name: string; latin_name: string; plant_part: string | null }>) => void;
   selectedDisorderId?: number | null;
   onDisorderChange?: (id: number | null) => void;
 }
 
-export function DisorderView({ bodySystemId, onHerbClick, onActionClick, onSupplementClick, selectedDisorderId, onDisorderChange }: DisorderViewProps) {
+export function DisorderView({ bodySystemId, onHerbClick, onActionClick, onSupplementClick, onTransferToDosing, selectedDisorderId, onDisorderChange }: DisorderViewProps) {
   const [disorders, setDisorders] = useState<DisorderData[]>([]);
   const [selectedDisorder, setSelectedDisorder] = useState<DisorderData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -644,6 +645,24 @@ export function DisorderView({ bodySystemId, onHerbClick, onActionClick, onSuppl
                         })}
                       </div>
 
+                      {onTransferToDosing && prescription.prescription_herbs.length > 0 && (
+                        <div className="mb-3">
+                          <button
+                            onClick={() => onTransferToDosing(prescription.prescription_herbs.map((ph) => ({
+                              id: ph.herbs.id,
+                              common_name: ph.herbs.common_name,
+                              latin_name: ph.herbs.latin_name,
+                              plant_part: ph.herbs.plant_part ?? null,
+                            })))}
+                            className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-md bg-purple-100 hover:bg-purple-200 text-purple-800 border border-purple-300 transition-all"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
+                              <path fillRule="evenodd" d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V4a2 2 0 00-2-2H6zm1 2a1 1 0 000 2h6a1 1 0 100-2H7zm0 4a1 1 0 000 2h1a1 1 0 100-2H7zm5 0a1 1 0 100 2h1a1 1 0 100-2h-1zm-5 4a1 1 0 100 2h1a1 1 0 100-2H7zm5 0a1 1 0 100 2h1a1 1 0 100-2h-1z" clipRule="evenodd" />
+                            </svg>
+                            Open in Dosing Calculator
+                          </button>
+                        </div>
+                      )}
                       <div className="text-sm text-gray-700 bg-white rounded p-3">
                         {prescription.instructions}
                       </div>

@@ -437,6 +437,7 @@ export default function Home() {
             onHerbClick={handleHerbClick}
             onActionClick={handleActionClick}
             onSupplementClick={handleSupplementClick}
+            onTransferToDosing={(herbs) => { setDosingInitialHerbs(herbs); setDosingCalculatorOpen(true); }}
             selectedSystemId={selectedSystemId}
             onSystemChange={setSelectedSystemId}
             selectedDisorderId={selectedDisorderId}
