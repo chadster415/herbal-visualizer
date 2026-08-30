@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import {
   XMarkIcon,
+  AcademicCapIcon,
   BeakerIcon,
   BookOpenIcon,
   CalculatorIcon,
@@ -59,6 +60,19 @@ const features: Feature[] = [
         label: 'Body Diagram',
         detail:
           'Click the person icon next to "By Body System" to open an interactive body diagram and navigate directly to a system or disorder by clicking on the illustration.',
+      },
+    ],
+  },
+  {
+    icon: <AcademicCapIcon className="w-5 h-5 text-green-700" />,
+    title: 'Class Notes',
+    description:
+      'Search class materials by ailment or condition keyword — e.g. "insomnia", "eczema", "UTI". The view lists every herb associated with that condition in class notes and shows the relevant snippets for each. Synonyms are supported, so searching "high blood pressure" also finds entries tagged "hypertension".',
+    sub: [
+      {
+        label: 'Quick access',
+        detail:
+          'Ailment keywords that appear on Body System disorder pages are clickable — tapping one jumps directly to the Class Notes view filtered to that condition.',
       },
     ],
   },
