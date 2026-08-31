@@ -1,7 +1,9 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { supabase } from '@/lib/supabase';
 import { HerbView } from '@/components/HerbView';
+import { LoginModal } from '@/components/LoginModal';
 import { ActionView } from '@/components/ActionView';
 import { SystemView } from '@/components/SystemView';
 import { ClassNotesAilmentView } from '@/components/ClassNotesAilmentView';
@@ -68,6 +70,18 @@ export default function Home() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setIsLoggedIn(!!session);
+      setUserEmail(session?.user.email ?? null);
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsLoggedIn(!!session);
+      setUserEmail(session?.user.email ?? null);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
   const [viewMode, setViewMode] = useState<ViewMode>('herb');
   const [selectedHerbId, setSelectedHerbId] = useState<number | null>(null);
   const [selectedActionId, setSelectedActionId] = useState<number | null>(null);
@@ -91,6 +105,9 @@ export default function Home() {
   const [openDropdown, setOpenDropdown] = useState<'browse' | 'practice' | 'formulation' | 'quizzes' | null>(null);
   const [pairingsInitialFocusId, setPairingsInitialFocusId] = useState<number | null>(null);
   const [selectedAilmentKeyword, setSelectedAilmentKeyword] = useState<string | null>(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [loginOpen, setLoginOpen] = useState(false);
 
   const pushAndNavigate = (next: NavEntry) => {
     setHistory((prev) => [...prev, { viewMode, selectedHerbId, selectedActionId, selectedSystemId, selectedDisorderId, selectedSupplementId, selectedEssenceId, selectedSoulConditionCategory, pairingsInitialFocusId, selectedAilmentKeyword }]);
@@ -443,15 +460,32 @@ export default function Home() {
           </div>
 
           <div className="relative">
-            <button
-              onClick={() => setHelpOpen(true)}
-              className="absolute right-0 text-green-600 hover:text-green-800 transition-colors"
-              style={{ bottom: 'calc(100% + 10px)' }}
-              aria-label="App guide"
-              title="App guide"
-            >
-              <QuestionMarkCircleIcon className="w-8 h-8" />
-            </button>
+            <div className="absolute right-0 flex items-center gap-3" style={{ bottom: 'calc(100% + 10px)' }}>
+              {isLoggedIn ? (
+                <button
+                  onClick={() => supabase.auth.signOut()}
+                  className="text-xs text-green-700 hover:text-green-900 font-medium transition-colors"
+                  title={userEmail ?? ''}
+                >
+                  Sign out
+                </button>
+              ) : (
+                <button
+                  onClick={() => setLoginOpen(true)}
+                  className="text-xs text-gray-400 hover:text-green-700 transition-colors"
+                >
+                  Login
+                </button>
+              )}
+              <button
+                onClick={() => setHelpOpen(true)}
+                className="text-green-600 hover:text-green-800 transition-colors"
+                aria-label="App guide"
+                title="App guide"
+              >
+                <QuestionMarkCircleIcon className="w-8 h-8" />
+              </button>
+            </div>
             {/* Filter Herbs — prominent search button */}
             <button
               onClick={() => setHerbFilterOpen(true)}
@@ -481,6 +515,7 @@ export default function Home() {
             selectedEssenceId={selectedEssenceId}
             onEssenceClick={handleEssenceClick}
             onSoulConditionClick={handleSoulConditionClick}
+            isLoggedIn={isLoggedIn}
           />
         </div>
         <div className={viewMode !== 'action' ? 'hidden' : ''}><ActionView selectedActionId={selectedActionId} onActionIdChange={setSelectedActionId} onHerbClick={handleHerbClick} /></div>
@@ -573,6 +608,7 @@ export default function Home() {
         }}
       />
       <HelpModal isOpen={helpOpen} onClose={() => setHelpOpen(false)} />
+      <LoginModal isOpen={loginOpen} onClose={() => setLoginOpen(false)} />
     </div>
   );
 }

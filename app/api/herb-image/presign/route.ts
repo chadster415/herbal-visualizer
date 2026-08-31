@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { verifySupabaseUser } from '@/lib/supabase-auth';
 
 const s3 = new S3Client({
   region: process.env.AWS_REGION ?? 'us-west-1',
@@ -12,16 +12,14 @@ const s3 = new S3Client({
 });
 
 export async function POST(req: NextRequest) {
-  const cookieStore = await cookies();
-  if (cookieStore.get('_hv_verified')?.value !== '1') {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
   const origin = req.headers.get('origin') ?? '';
   const host = req.headers.get('host') ?? '';
   if (origin && !origin.includes(host)) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
+
+  const user = await verifySupabaseUser(req);
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { herbId } = await req.json();
   if (!herbId) return NextResponse.json({ error: 'herbId required' }, { status: 400 });

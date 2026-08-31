@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 import { S3Client, DeleteObjectCommand } from '@aws-sdk/client-s3';
+import { verifySupabaseUser } from '@/lib/supabase-auth';
 
 const s3 = new S3Client({
   region: process.env.AWS_REGION ?? 'us-west-1',
@@ -10,18 +10,15 @@ const s3 = new S3Client({
   },
 });
 
-async function requireAuth(req: NextRequest): Promise<string | null> {
-  const cookieStore = await cookies();
-  if (cookieStore.get('_hv_verified')?.value !== '1') return 'Unauthorized';
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ herbId: string }> }) {
   const origin = req.headers.get('origin') ?? '';
   const host = req.headers.get('host') ?? '';
-  if (origin && !origin.includes(host)) return 'Forbidden';
-  return null;
-}
+  if (origin && !origin.includes(host)) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
 
-export async function DELETE(req: NextRequest, { params }: { params: Promise<{ herbId: string }> }) {
-  const authError = await requireAuth(req);
-  if (authError) return NextResponse.json({ error: authError }, { status: 401 });
+  const user = await verifySupabaseUser(req);
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { herbId } = await params;
   const bucket = process.env.AWS_S3_BUCKET ?? 'herbal-herb-images';

@@ -137,6 +137,7 @@ interface HerbViewProps {
   onShowPairings?: (herbId: number) => void;
   onFocusChange?: (herbId: number | null) => void;
   pairingsInitialFocusId?: number | null;
+  isLoggedIn?: boolean;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -301,7 +302,7 @@ function SectionHeader({ title, open, onToggle }: { title: string; open: boolean
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onActionClick, onActionNameClick, onDisorderClick, selectedSupplementId, onSupplementClick, selectedEssenceId, onEssenceClick, onSoulConditionClick, pairingsMode, onShowPairings, onFocusChange, pairingsInitialFocusId }: HerbViewProps) {
+export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onActionClick, onActionNameClick, onDisorderClick, selectedSupplementId, onSupplementClick, selectedEssenceId, onEssenceClick, onSoulConditionClick, pairingsMode, onShowPairings, onFocusChange, pairingsInitialFocusId, isLoggedIn }: HerbViewProps) {
   const [herbs, setHerbs] = useState<HerbData[]>([]);
   const [allProfiles, setAllProfiles] = useState<ConstituentProfile[]>([]);
   const [selectedHerb, setSelectedHerb] = useState<HerbData | null>(null);
@@ -746,9 +747,13 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
     if (!selectedHerb || !newLinkUrl.trim()) return;
     setAddLinkSaving(true);
     try {
+      const { data: { session } } = await supabase.auth.getSession();
       const res = await fetch('/api/monograph-links', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(session ? { Authorization: `Bearer ${session.access_token}` } : {}),
+        },
         body: JSON.stringify({ herb_id: selectedHerb.id, url: newLinkUrl.trim() }),
       });
       if (!res.ok) throw new Error('Failed to add link');
@@ -1338,7 +1343,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
                 {/* Monograph links — single link shown directly; multiple collapse into a dropdown */}
                 {(() => {
                   const sorted = (selectedHerb.herb_monograph_links ?? []).slice().sort((a, b) => a.sort_order - b.sort_order);
-                  const addBtn = (
+                  const addBtn = isLoggedIn ? (
                     <button
                       onClick={() => { setNewLinkUrl(''); setAddLinkOpen(true); }}
                       className="px-3 py-1 text-green-700 border border-green-300 rounded hover:bg-green-50 transition-colors text-sm font-bold leading-none shrink-0"
@@ -1346,8 +1351,8 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
                     >
                       +
                     </button>
-                  );
-                  if (sorted.length === 0) return <div className="flex items-center gap-1.5">{addBtn}</div>;
+                  ) : null;
+                  if (sorted.length === 0) return addBtn ? <div className="flex items-center gap-1.5">{addBtn}</div> : null;
                   if (sorted.length === 1) {
                     return (
                       <div className="flex items-center gap-1.5">
@@ -1477,7 +1482,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
             </div>
 
             {/* Herb image — paste ⌘V to upload */}
-            <HerbImageUpload herbId={selectedHerb.id} />
+            <HerbImageUpload herbId={selectedHerb.id} isLoggedIn={isLoggedIn} />
 
             <div className="flex justify-end mb-5">
               <button
