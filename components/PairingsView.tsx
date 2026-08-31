@@ -10,7 +10,7 @@ const ForceGraph2D = dynamic(() => import('react-force-graph-2d'), { ssr: false 
 interface GraphNode {
   id: number;
   name: string;
-  pairType: 'dui_yao' | 'priest' | 'both';
+  pairType: 'dui_yao' | 'western' | 'both';
   degree: number;
   x?: number;
   y?: number;
@@ -21,7 +21,8 @@ interface GraphNode {
 interface GraphLink {
   source: number | GraphNode;
   target: number | GraphNode;
-  pairType: 'dui_yao' | 'priest';
+  pairType: 'dui_yao' | 'western';
+  pairSource?: string;
   tooltip?: string;
 }
 
@@ -33,14 +34,10 @@ interface PairingsViewProps {
 
 const NODE_COLORS: Record<string, string> = {
   dui_yao: '#818cf8',
-  priest:  '#fbbf24',
+  western:  '#fbbf24',
   both:    '#34d399',
 };
 
-const PAIR_LABEL: Record<string, string> = {
-  dui_yao: 'Dui Yao',
-  priest: 'Priest & Priest',
-};
 
 function resolveId(endpoint: number | GraphNode): number {
   return typeof endpoint === 'object' ? endpoint.id : endpoint;
@@ -49,7 +46,7 @@ function resolveId(endpoint: number | GraphNode): number {
 export function PairingsView({ onHerbClick, onFocusChange, initialFocusId }: PairingsViewProps) {
   const [graphData, setGraphData] = useState<{ nodes: GraphNode[]; links: GraphLink[] }>({ nodes: [], links: [] });
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<'all' | 'dui_yao' | 'priest'>('all');
+  const [filter, setFilter] = useState<'all' | 'dui_yao' | 'western'>('all');
   const [focusedId, setFocusedId] = useState<number | null>(null);
   const [showSecondary, setShowSecondary] = useState(false);
   const [showTable, setShowTable] = useState(false);
@@ -58,7 +55,7 @@ export function PairingsView({ onHerbClick, onFocusChange, initialFocusId }: Pai
   const graphRef = useRef<any>(null);
   const pendingZoomRef = useRef(false);
   const prevInitialFocusRef = useRef<number | null | undefined>(undefined);
-  const prevFilterRef = useRef<'all' | 'dui_yao' | 'priest'>('all');
+  const prevFilterRef = useRef<'all' | 'dui_yao' | 'western'>('all');
   const containerRef = useRef<HTMLDivElement>(null);
   const [graphWidth, setGraphWidth] = useState(600);
   const [graphHeight, setGraphHeight] = useState(600);
@@ -78,9 +75,9 @@ export function PairingsView({ onHerbClick, onFocusChange, initialFocusId }: Pai
 
   useEffect(() => {
     async function load() {
-      const [duiYaoRes, priestRes, herbsRes] = await Promise.all([
+      const [duiYaoRes, westernRes, herbsRes] = await Promise.all([
         supabase.from('dui_yao_pairs').select('herb1_id, herb2_id, combined_summary, dui_yao_indications(indication, sort_order)'),
-        supabase.from('priest_pairings').select('herb_id, partner_herb_id, combination_context').not('partner_herb_id', 'is', null),
+        supabase.from('herb_pairs').select('herb1_id, herb2_id, source, combined_summary'),
         supabase.from('herbs').select('id, common_name'),
       ]);
 
@@ -90,7 +87,7 @@ export function PairingsView({ onHerbClick, onFocusChange, initialFocusId }: Pai
       const nodeMap = new Map<number, GraphNode>();
       const links: GraphLink[] = [];
 
-      function touch(id: number, type: 'dui_yao' | 'priest') {
+      function touch(id: number, type: 'dui_yao' | 'western') {
         const name = herbName.get(id);
         if (!name) return;
         if (!nodeMap.has(id)) {
@@ -114,16 +111,10 @@ export function PairingsView({ onHerbClick, onFocusChange, initialFocusId }: Pai
         links.push({ source: herb1_id, target: herb2_id, pairType: 'dui_yao', tooltip: tooltipParts.join('\n\n') || undefined });
       }
 
-      const seen = new Set<string>();
-      for (const { herb_id, partner_herb_id, combination_context } of priestRes.data ?? []) {
-        if (!partner_herb_id) continue;
-        touch(herb_id, 'priest');
-        touch(partner_herb_id, 'priest');
-        const key = `${Math.min(herb_id, partner_herb_id)}-${Math.max(herb_id, partner_herb_id)}`;
-        if (!seen.has(key)) {
-          seen.add(key);
-          links.push({ source: herb_id, target: partner_herb_id, pairType: 'priest', tooltip: combination_context || undefined });
-        }
+      for (const { herb1_id, herb2_id, source, combined_summary } of westernRes.data ?? []) {
+        touch(herb1_id, 'western');
+        touch(herb2_id, 'western');
+        links.push({ source: herb1_id, target: herb2_id, pairType: 'western', pairSource: source ?? undefined, tooltip: combined_summary || undefined });
       }
 
       setGraphData({ nodes: Array.from(nodeMap.values()), links });
@@ -267,10 +258,10 @@ export function PairingsView({ onHerbClick, onFocusChange, initialFocusId }: Pai
 
   // Table data: primary rows + secondary rows grouped by primary herb ID
   const { primaryTableRows, secondaryByPrimary } = useMemo(() => {
-    if (focusedId === null) return { primaryTableRows: [], secondaryByPrimary: new Map<number, { herbId: number; herbName: string; pairType: 'dui_yao' | 'priest'; tooltip: string }[]>() };
+    if (focusedId === null) return { primaryTableRows: [], secondaryByPrimary: new Map<number, { herbId: number; herbName: string; pairType: 'dui_yao' | 'western'; pairSource?: string; tooltip: string }[]>() };
     const nodeById = new Map(graphData.nodes.map((n) => [n.id, n]));
 
-    const primaryRows: { herbId: number; herbName: string; pairType: 'dui_yao' | 'priest'; tooltip: string }[] = [];
+    const primaryRows: { herbId: number; herbName: string; pairType: 'dui_yao' | 'western'; pairSource?: string; tooltip: string }[] = [];
     for (const link of displayData.links) {
       const src = resolveId(link.source);
       const tgt = resolveId(link.target);
@@ -280,11 +271,11 @@ export function PairingsView({ onHerbClick, onFocusChange, initialFocusId }: Pai
       if (neighborId === null) continue;
       const node = nodeById.get(neighborId);
       if (!node) continue;
-      primaryRows.push({ herbId: neighborId, herbName: node.name, pairType: link.pairType, tooltip: link.tooltip ?? '' });
+      primaryRows.push({ herbId: neighborId, herbName: node.name, pairType: link.pairType, pairSource: link.pairSource, tooltip: link.tooltip ?? '' });
     }
 
     // Group secondary connections by the primary herb they connect through
-    const byPrimary = new Map<number, { herbId: number; herbName: string; pairType: 'dui_yao' | 'priest'; tooltip: string }[]>();
+    const byPrimary = new Map<number, { herbId: number; herbName: string; pairType: 'dui_yao' | 'western'; pairSource?: string; tooltip: string }[]>();
     for (const row of primaryRows) byPrimary.set(row.herbId, []);
     for (const link of secondaryData.links) {
       const src = resolveId(link.source);
@@ -294,7 +285,7 @@ export function PairingsView({ onHerbClick, onFocusChange, initialFocusId }: Pai
       else { secondaryHerbId = src; viaHerbId = tgt; }
       const secondaryNode = nodeById.get(secondaryHerbId);
       if (!secondaryNode) continue;
-      byPrimary.get(viaHerbId)?.push({ herbId: secondaryHerbId, herbName: secondaryNode.name, pairType: link.pairType, tooltip: link.tooltip ?? '' });
+      byPrimary.get(viaHerbId)?.push({ herbId: secondaryHerbId, herbName: secondaryNode.name, pairType: link.pairType, pairSource: link.pairSource, tooltip: link.tooltip ?? '' });
     }
 
     return { primaryTableRows: primaryRows, secondaryByPrimary: byPrimary };
@@ -423,6 +414,12 @@ export function PairingsView({ onHerbClick, onFocusChange, initialFocusId }: Pai
 
   const getNodeVal = useCallback((node: object) => Math.max(1, (node as GraphNode).degree), []);
 
+  const getLinkLabel = useCallback((link: object) => {
+    const l = link as GraphLink;
+    if (l.pairType !== 'western' || !l.pairSource) return '';
+    return l.pairSource.split(',')[0].trim();
+  }, []);
+
   const paintNode = useCallback(
     (node: object, ctx: CanvasRenderingContext2D, globalScale: number) => {
       const n = node as GraphNode & { x: number; y: number };
@@ -476,7 +473,7 @@ export function PairingsView({ onHerbClick, onFocusChange, initialFocusId }: Pai
     ctx.save();
     ctx.globalAlpha = isSecondaryLink ? 0.35 : 1;
     ctx.beginPath();
-    if (l.pairType === 'priest') {
+    if (l.pairType === 'western') {
       ctx.setLineDash([4, 3]);
       ctx.strokeStyle = 'rgba(245, 158, 11, 0.55)';
       ctx.lineWidth = 1.2;
@@ -507,7 +504,7 @@ export function PairingsView({ onHerbClick, onFocusChange, initialFocusId }: Pai
           </button>
         ) : (
           <div className="flex gap-1.5">
-            {(['all', 'dui_yao', 'priest'] as const).map((f) => (
+            {(['all', 'dui_yao', 'western'] as const).map((f) => (
               <button
                 key={f}
                 onClick={() => setFilter(f)}
@@ -515,7 +512,7 @@ export function PairingsView({ onHerbClick, onFocusChange, initialFocusId }: Pai
                   filter === f ? 'bg-green-600 text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }`}
               >
-                {f === 'all' ? 'All' : f === 'dui_yao' ? 'Dui Yao' : 'Priest & Priest'}
+                {f === 'all' ? 'All' : f === 'dui_yao' ? 'Dui Yao' : 'Western'}
               </button>
             ))}
           </div>
@@ -526,8 +523,10 @@ export function PairingsView({ onHerbClick, onFocusChange, initialFocusId }: Pai
       {focusedNode && (
         <div className="px-5 py-2 border-b border-gray-100 flex items-center gap-3 shrink-0 bg-gray-50">
           <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: NODE_COLORS[focusedNode.pairType] }} />
-          <span className="font-medium text-gray-900 text-sm">{focusedNode.name}</span>
-          <span className="text-xs text-gray-400">{neighborIds.size} connection{neighborIds.size !== 1 ? 's' : ''}</span>
+          <div className="flex flex-col min-w-0">
+            <span className="font-medium text-gray-900 text-sm leading-tight">{focusedNode.name}</span>
+            <span className="text-xs text-gray-400 leading-tight">{neighborIds.size} connection{neighborIds.size !== 1 ? 's' : ''}</span>
+          </div>
           <div className="ml-auto flex gap-1.5">
             <button
               onClick={handleRecenter}
@@ -574,7 +573,7 @@ export function PairingsView({ onHerbClick, onFocusChange, initialFocusId }: Pai
         <span className="flex items-center gap-1.5">
           <span className="inline-block shrink-0" style={{ width: 18, height: 0, borderBottom: '2px dashed #fbbf24', verticalAlign: 'middle', marginTop: -1 }} />
           <span className="w-2.5 h-2.5 rounded-full bg-amber-400 inline-block shrink-0 ml-1" />
-          Priest &amp; Priest
+          Western
         </span>
         <span className="flex items-center gap-1.5">
           <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 inline-block shrink-0" />
@@ -604,6 +603,7 @@ export function PairingsView({ onHerbClick, onFocusChange, initialFocusId }: Pai
               nodeCanvasObject={paintNode}
               nodeCanvasObjectMode={() => 'replace'}
               nodeVisibility={getNodeVisibility}
+              linkLabel={getLinkLabel}
               linkCanvasObject={paintLink}
               linkCanvasObjectMode={() => 'replace'}
               linkVisibility={getLinkVisibility}
@@ -685,7 +685,7 @@ export function PairingsView({ onHerbClick, onFocusChange, initialFocusId }: Pai
                                 ? 'bg-indigo-100 text-indigo-700'
                                 : 'bg-amber-100 text-amber-700'
                             }`}>
-                              {PAIR_LABEL[row.pairType]}
+                              {row.pairType === 'dui_yao' ? 'Dui Yao' : (row.pairSource ? row.pairSource.split(',')[0].trim() : 'Western')}
                             </span>
                             {secondaries.length > 0 && (
                               <button
@@ -731,7 +731,7 @@ export function PairingsView({ onHerbClick, onFocusChange, initialFocusId }: Pai
                                       ? 'bg-indigo-100 text-indigo-600'
                                       : 'bg-amber-100 text-amber-600'
                                   }`}>
-                                    {PAIR_LABEL[sec.pairType]}
+                                    {sec.pairType === 'dui_yao' ? 'Dui Yao' : (sec.pairSource ? sec.pairSource.split(',')[0].trim() : 'Western')}
                                   </span>
                                 </div>
                                 {sec.tooltip ? (

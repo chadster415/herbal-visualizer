@@ -1,5 +1,7 @@
 'use client';
 
+import { useEffect } from 'react';
+
 interface ConstituentProfile {
   id: number;
   herb_id: number | null;
@@ -349,6 +351,12 @@ export function InferredTasteModal({
   herbConstituents,
   profiles,
 }: Props) {
+  useEffect(() => {
+    if (!isOpen) return;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = ''; };
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   const signals = analyzeTaste(herbConstituents, profiles);
@@ -414,9 +422,7 @@ export function InferredTasteModal({
             </div>
           )}
 
-          <p className="text-xs text-gray-400 border-t border-gray-100 pt-4">
-            Rules source: <span className="font-mono">docs/inferring-taste-from-constituents.md</span>.
-          </p>
+
         </div>
       </div>
     </div>

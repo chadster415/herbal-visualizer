@@ -108,14 +108,17 @@ interface DuiYaoPair {
   dui_yao_herb_properties: { herb_id: number; property: string; sort_order: number }[];
 }
 
-interface PriestPairing {
+interface HerbPairStub { id: number; common_name: string; latin_name: string; }
+interface HerbPair {
   id: number;
-  herb_id: number;
-  partner_herb_id: number | null;
-  partner_name_raw: string;
-  combination_context: string | null;
-  sort_order: number;
-  partner: { id: number; common_name: string; latin_name: string } | null;
+  herb1_id: number;
+  herb2_id: number;
+  source: string;
+  combined_summary: string | null;
+  herb1: HerbPairStub;
+  herb2: HerbPairStub;
+  herb_pair_indications: { indication: string; sort_order: number }[];
+  herb_pair_herb_properties: { herb_id: number; property: string; sort_order: number }[];
 }
 
 interface HerbViewProps {
@@ -260,13 +263,23 @@ function powderEffectiveReason(constituents: HerbData['herb_constituents']): str
 function highlightHerbName(text: string, terms: string[]): React.ReactNode[] {
   const valid = terms.filter(t => t && t.length > 2);
   if (valid.length === 0) return [text];
-  const pattern = valid.map(t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|');
-  const parts = text.split(new RegExp(`(${pattern})`, 'gi'));
-  return parts.map((part, i) =>
-    i % 2 === 1
-      ? <strong key={i} className="font-bold text-teal-900">{part}</strong>
-      : part
-  );
+  // Normalize curly apostrophes (U+2018, U+2019) to straight (U+0027) before
+  // matching so "Devil's Claw" (DB) matches "Devil's claw" (notes).
+  const S = String.fromCharCode(0x27);
+  const normApos = (s: string) =>
+    s.split(String.fromCharCode(0x2018)).join(S).split(String.fromCharCode(0x2019)).join(S);
+  const normText = normApos(text);
+  const toPattern = (t: string) => normApos(t).replace(/[.*+?^${}()|[\]\\]/g, '\\\$&');
+  const pattern = valid.map(toPattern).join('|');
+  const parts = normText.split(new RegExp(`(${pattern})`, 'gi'));
+  let pos = 0;
+  return parts.map((part, i) => {
+    const orig = text.slice(pos, pos + part.length);
+    pos += part.length;
+    return i % 2 === 1
+      ? <strong key={i} className="font-bold text-teal-900">{orig}</strong>
+      : orig;
+  });
 }
 
 function SectionHeader({ title, open, onToggle }: { title: string; open: boolean; onToggle: () => void }) {
@@ -303,8 +316,8 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
   const [pairedHerbIds, setPairedHerbIds] = useState<Set<number>>(new Set());
   const [duiYaoPairs, setDuiYaoPairs] = useState<DuiYaoPair[]>([]);
   const [duiYaoLoading, setDuiYaoLoading] = useState(false);
-  const [priestPairings, setPriestPairings] = useState<PriestPairing[]>([]);
-  const [priestPairingsLoading, setPriestPairingsLoading] = useState(false);
+  const [herbPairs, setHerbPairs] = useState<HerbPair[]>([]);
+  const [herbPairsLoading, setHerbPairsLoading] = useState(false);
   const [mobileListOpen, setMobileListOpen] = useState(true);
   const [classNoteSnippets, setClassNoteSnippets] = useState<ClassNoteSnippet[]>([]);
   const [keywordHerbIds, setKeywordHerbIds] = useState<Set<number>>(new Set());
@@ -458,11 +471,11 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
   useEffect(() => {
     Promise.all([
       supabase.from('dui_yao_pairs').select('herb1_id, herb2_id'),
-      supabase.from('priest_pairings').select('herb_id, partner_herb_id').not('partner_herb_id', 'is', null),
-    ]).then(([duiRes, priestRes]) => {
+      supabase.from('herb_pairs').select('herb1_id, herb2_id'),
+    ]).then(([duiRes, wpRes]) => {
       const ids = new Set<number>();
       for (const { herb1_id, herb2_id } of duiRes.data ?? []) { ids.add(herb1_id); ids.add(herb2_id); }
-      for (const { herb_id, partner_herb_id } of priestRes.data ?? []) { if (partner_herb_id) { ids.add(herb_id); ids.add(partner_herb_id); } }
+      for (const { herb1_id, herb2_id } of wpRes.data ?? []) { ids.add(herb1_id); ids.add(herb2_id); }
       setPairedHerbIds(ids);
     });
   }, []);
@@ -608,21 +621,23 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
   }, [selectedHerb?.id]);
 
   useEffect(() => {
-    if (selectedHerb == null) { setPriestPairings([]); return; }
-    setPriestPairings([]);
-    setPriestPairingsLoading(true);
+    if (selectedHerb == null) { setHerbPairs([]); return; }
+    setHerbPairs([]);
+    setHerbPairsLoading(true);
     supabase
-      .from('priest_pairings')
+      .from('herb_pairs')
       .select(`
-        id, herb_id, partner_herb_id, partner_name_raw, combination_context, sort_order,
-        partner:herbs!priest_pairings_partner_herb_id_fkey(id, common_name, latin_name)
+        id, herb1_id, herb2_id, source, combined_summary,
+        herb1:herbs!herb_pairs_herb1_id_fkey(id, common_name, latin_name),
+        herb2:herbs!herb_pairs_herb2_id_fkey(id, common_name, latin_name),
+        herb_pair_indications(indication, sort_order),
+        herb_pair_herb_properties(herb_id, property, sort_order)
       `)
-      .eq('herb_id', selectedHerb.id)
-      .order('sort_order')
+      .or(`herb1_id.eq.${selectedHerb.id},herb2_id.eq.${selectedHerb.id}`)
       .then(({ data, error }) => {
-        if (!error && data) setPriestPairings(data as unknown as PriestPairing[]);
-        else setPriestPairings([]);
-        setPriestPairingsLoading(false);
+        if (!error && data) setHerbPairs(data as unknown as HerbPair[]);
+        else setHerbPairs([]);
+        setHerbPairsLoading(false);
       });
   }, [selectedHerb?.id]);
 
@@ -1444,7 +1459,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
                 ...(selectedProfiles.length > 0 ? [{ key: 'constituentProfile' as const, label: 'Constituents', pink: false }] : []),
                 ...(((selectedHerb.herb_constituents?.length ?? 0) > 0 || selectedHerb.herb_menstruum) ? [{ key: 'constituents' as const, label: 'General Constituents', pink: false }] : []),
                 ...((((selectedHerb.disorder_action_herbs?.length ?? 0) > 0) || ((selectedHerb.disorder_specific_remedies?.length ?? 0) > 0)) ? [{ key: 'disorders' as const, label: 'Disorders', pink: false }] : []),
-                ...((duiYaoPairs.length > 0 || priestPairings.length > 0) ? [{ key: 'pairings' as const, label: 'Pairings', pink: false }] : []),
+                ...((duiYaoPairs.length > 0 || herbPairs.length > 0) ? [{ key: 'pairings' as const, label: 'Pairings', pink: false }] : []),
                 ...(MM_MATERIA_MEDICA[selectedHerb.id] ? [{ key: 'mmMateriaMedica' as const, label: 'MM Materia Medica', pink: false }] : []),
                 ...(CONTRAINDICATIONS[selectedHerb.id] ? [{ key: 'contraindications' as const, label: 'Drug Interactions', pink: true }] : []),
                 ...(selectedHerb.contraindications ? [{ key: 'herbContraindications' as const, label: 'Contraindications', pink: true }] : []),
@@ -1599,6 +1614,8 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
                             <blockquote className="mt-1.5 pl-3 border-l-2 border-teal-300 text-xs text-gray-600 whitespace-pre-wrap font-mono leading-relaxed">
                               {highlightHerbName(snippet.source_block, [
                                 selectedHerb.common_name,
+                                selectedHerb.latin_name,
+                                selectedHerb.latin_name.split(' ')[0],
                                 ...(selectedHerb.synonyms ?? []),
                               ])}
                             </blockquote>
@@ -1912,8 +1929,8 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
                 )}
               </div>
             )}
-            {/* ── Pairings (Dui Yao + Priest & Priest) ─────────────────── */}
-            {(duiYaoPairs.length > 0 || duiYaoLoading || priestPairings.length > 0 || priestPairingsLoading) && (
+            {/* ── Pairings (Dui Yao + Western Herb Pairs) ──────────────── */}
+            {(duiYaoPairs.length > 0 || duiYaoLoading || herbPairs.length > 0 || herbPairsLoading) && (
               <div className="mt-6" ref={(el) => { sectionRefs.current.pairings = el; }}>
                 <SectionHeader title="Pairings" open={sectionsOpen.pairings} onToggle={() => toggleSection('pairings')} />
                 {sectionsOpen.pairings && (
@@ -2004,54 +2021,80 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
                         )}
                       </div>
                     )}
-                    {/* ── Priest & Priest ── */}
-                    {(priestPairings.length > 0 || priestPairingsLoading) && (
+                    {/* ── Western Herb Pairs ── */}
+                    {(herbPairs.length > 0 || herbPairsLoading) && (
                       <div className={duiYaoPairs.length > 0 ? 'border-t border-gray-100 pt-6' : ''}>
-                        <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-3 px-1">Priest &amp; Priest</p>
-                        {priestPairingsLoading ? (
+                        <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-3 px-1">Western Pairs</p>
+                        {herbPairsLoading ? (
                           <p className="text-gray-400 text-sm italic">Loading pairings…</p>
                         ) : (
-                          <div className="pl-4 border-l-2 border-amber-100 space-y-3">
-                            {(() => {
-                              const groups: { context: string | null; rows: PriestPairing[] }[] = [];
-                              for (const row of priestPairings) {
-                                const last = groups[groups.length - 1];
-                                if (last && last.context === row.combination_context) {
-                                  last.rows.push(row);
-                                } else {
-                                  groups.push({ context: row.combination_context, rows: [row] });
-                                }
-                              }
-                              return groups.map((group, gi) => (
-                                <div key={gi} className="py-2.5 border-b border-amber-50 last:border-0">
-                                  <div className="flex flex-wrap gap-2 mb-1.5">
-                                    {group.rows.map((p) => (
-                                      p.partner ? (
-                                        <button
-                                          key={p.id}
-                                          onClick={() => navigateToHerb(p.partner!.id)}
-                                          className="px-3 py-1 rounded-full bg-amber-50 border border-amber-300 text-amber-900 text-sm font-medium hover:bg-amber-100 hover:border-amber-500 transition-colors"
-                                        >
-                                          {p.partner.common_name}
-                                        </button>
-                                      ) : (
-                                        <span
-                                          key={p.id}
-                                          className="px-3 py-1 rounded-full bg-gray-50 border border-gray-200 text-gray-500 text-sm italic"
-                                          title={`${p.partner_name_raw} — not in database`}
-                                        >
-                                          {p.partner_name_raw}
-                                        </span>
-                                      )
-                                    ))}
+                          <div className="space-y-4">
+                            {herbPairs.map((pair) => {
+                              const partner = pair.herb1_id === selectedHerb!.id ? pair.herb2 : pair.herb1;
+                              const myProps = pair.herb_pair_herb_properties
+                                .filter((p) => p.herb_id === selectedHerb!.id)
+                                .sort((a, b) => a.sort_order - b.sort_order);
+                              const partnerProps = pair.herb_pair_herb_properties
+                                .filter((p) => p.herb_id === partner.id)
+                                .sort((a, b) => a.sort_order - b.sort_order);
+                              const indications = [...pair.herb_pair_indications].sort((a, b) => a.sort_order - b.sort_order);
+                              return (
+                                <div key={pair.id} className="border border-amber-200 rounded-lg overflow-hidden">
+                                  <div className="bg-amber-50 px-4 py-2.5 flex items-start justify-between gap-2">
+                                    <button onClick={() => navigateToHerb(partner.id)} className="text-left group">
+                                      <div className="font-semibold text-sm text-amber-800 group-hover:text-amber-950 group-hover:underline transition-colors">
+                                        Paired with: {partner.common_name}
+                                      </div>
+                                      <div className="text-xs italic text-gray-500">{partner.latin_name}</div>
+                                    </button>
+                                    <span className="shrink-0 text-[10px] text-amber-600 mt-0.5 text-right leading-tight max-w-[140px]">{pair.source}</span>
                                   </div>
-                                  {group.context && (
-                                    <p className="text-xs text-gray-500 leading-relaxed">{group.context}</p>
+                                  {(myProps.length > 0 || partnerProps.length > 0) && (
+                                    <div className="grid grid-cols-2 gap-3 px-4 py-3 border-t border-amber-100">
+                                      {myProps.length > 0 && (
+                                        <div>
+                                          <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-1">{selectedHerb!.common_name}</p>
+                                          <ul className="space-y-0.5">
+                                            {myProps.map((prop, i) => (
+                                              <li key={i} className="text-xs text-gray-700 flex gap-1.5">
+                                                <span className="text-gray-400 shrink-0">•</span>{prop.property}
+                                              </li>
+                                            ))}
+                                          </ul>
+                                        </div>
+                                      )}
+                                      {partnerProps.length > 0 && (
+                                        <div>
+                                          <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-1">{partner.common_name}</p>
+                                          <ul className="space-y-0.5">
+                                            {partnerProps.map((prop, i) => (
+                                              <li key={i} className="text-xs text-gray-700 flex gap-1.5">
+                                                <span className="text-gray-400 shrink-0">•</span>{prop.property}
+                                              </li>
+                                            ))}
+                                          </ul>
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
+                                  {pair.combined_summary && (
+                                    <div className="px-4 py-3 border-t border-amber-100">
+                                      <p className="text-sm text-gray-700 leading-relaxed">{pair.combined_summary}</p>
+                                    </div>
+                                  )}
+                                  {indications.length > 0 && (
+                                    <div className="px-4 py-3 border-t border-amber-100">
+                                      <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-1.5">Indications</p>
+                                      <ol className="space-y-0.5 list-decimal list-inside">
+                                        {indications.map((ind, i) => (
+                                          <li key={i} className="text-xs text-gray-700">{ind.indication}</li>
+                                        ))}
+                                      </ol>
+                                    </div>
                                   )}
                                 </div>
-                              ));
-                            })()}
-                            <p className="text-[10px] text-gray-400 italic pt-1">Source: Priest & Priest, Herbal Medication (1982)</p>
+                              );
+                            })}
                           </div>
                         )}
                       </div>

@@ -15,11 +15,14 @@ import { IntakeFormModal } from '@/components/IntakeFormModal';
 import { BodyDiagramModal } from '@/components/BodyDiagramModal';
 import { HelpModal } from '@/components/HelpModal';
 import { FlowerEssenceQuizModal } from '@/components/FlowerEssenceQuizModal';
+import { ClassQuizModal } from '@/components/ClassQuizModal';
 import {
+  AcademicCapIcon,
   ArrowLeftIcon,
   BeakerIcon,
   ChevronDownIcon,
   ClipboardDocumentListIcon,
+  DocumentTextIcon,
   FireIcon,
   MagnifyingGlassIcon,
   QuestionMarkCircleIcon,
@@ -84,7 +87,8 @@ export default function Home() {
   const [bodyDiagramOpen, setBodyDiagramOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
   const [flowerEssenceQuizOpen, setFlowerEssenceQuizOpen] = useState(false);
-  const [openDropdown, setOpenDropdown] = useState<'browse' | 'practice' | 'formulation' | null>(null);
+  const [classQuizOpen, setClassQuizOpen] = useState(false);
+  const [openDropdown, setOpenDropdown] = useState<'browse' | 'practice' | 'formulation' | 'quizzes' | null>(null);
   const [pairingsInitialFocusId, setPairingsInitialFocusId] = useState<number | null>(null);
   const [selectedAilmentKeyword, setSelectedAilmentKeyword] = useState<string | null>(null);
 
@@ -200,12 +204,12 @@ export default function Home() {
     }
   };
 
+  const isBrowseMode = viewMode === 'herb' || viewMode === 'action' || viewMode === 'system' || viewMode === 'soul_condition';
+
   const viewModeLabel =
     viewMode === 'herb' ? 'By Herb' :
     viewMode === 'action' ? 'By Action' :
     viewMode === 'soul_condition' ? 'By Soul Condition' :
-    viewMode === 'pairings' ? 'Pairings' :
-    viewMode === 'class_notes' ? 'Class Notes' :
     'By Body System';
 
   return (
@@ -235,9 +239,13 @@ export default function Home() {
             <div className="relative z-10">
               <button
                 onClick={() => setOpenDropdown(openDropdown === 'browse' ? null : 'browse')}
-                className="px-6 py-3 rounded-lg font-medium transition-all bg-green-600 text-white shadow-lg border border-green-500 flex items-center gap-2"
+                className={`px-6 py-3 rounded-lg font-medium transition-all flex items-center gap-2 ${
+                  isBrowseMode
+                    ? 'bg-green-600 text-white shadow-lg border border-green-500'
+                    : 'bg-white text-green-800 hover:bg-green-100 border border-green-300'
+                }`}
               >
-                {viewModeLabel} <ChevronDownIcon className="w-4 h-4 opacity-80" />
+                {isBrowseMode ? viewModeLabel : 'Browse'} <ChevronDownIcon className="w-4 h-4 opacity-80" />
               </button>
               {openDropdown === 'browse' && (
                 <div className="absolute top-full mt-1 left-0 bg-white border border-green-200 rounded-lg shadow-lg min-w-[190px] overflow-hidden z-10">
@@ -260,14 +268,6 @@ export default function Home() {
                       )}
                     </div>
                   ))}
-                  <div className={`flex items-center border-t border-green-100 ${viewMode === 'class_notes' ? 'bg-green-100' : ''}`}>
-                    <button
-                      onClick={() => { switchTab('class_notes'); setOpenDropdown(null); }}
-                      className={`flex-1 text-left px-4 py-2.5 text-green-800 hover:bg-green-50 transition-all ${viewMode === 'class_notes' ? 'font-semibold' : ''}`}
-                    >
-                      Class Notes
-                    </button>
-                  </div>
                   {/* Mobile-only: tools collapsed into browse dropdown */}
                   <div className="md:hidden border-t border-green-100">
                     <button
@@ -312,25 +312,38 @@ export default function Home() {
                     >
                       <SparklesIcon className="w-4 h-4 shrink-0" /> Flower Essence Quiz
                     </button>
+                    <button
+                      onClick={() => { setClassQuizOpen(true); setOpenDropdown(null); }}
+                      className="w-full text-left px-4 py-2.5 text-green-800 hover:bg-green-50 transition-all flex items-center gap-2"
+                    >
+                      <AcademicCapIcon className="w-4 h-4 shrink-0" /> Class Quizzes
+                    </button>
+                    <button
+                      onClick={() => { switchTab('class_notes'); setOpenDropdown(null); }}
+                      className="w-full text-left px-4 py-2.5 text-green-800 hover:bg-green-50 transition-all flex items-center gap-2"
+                    >
+                      <DocumentTextIcon className="w-4 h-4 shrink-0" /> Class Notes
+                    </button>
                   </div>
                 </div>
               )}
             </div>
 
-            <button
-              onClick={() => setFlashcardsOpen(true)}
-              className="hidden md:flex px-6 py-3 rounded-lg font-medium transition-all bg-white text-green-800 hover:bg-green-100 border border-green-300 items-center gap-2"
-            >
-              <RectangleStackIcon className="w-5 h-5 shrink-0" /> Flashcards
-            </button>
-
             {/* Formulation dropdown */}
             <div className="hidden md:block relative z-10">
               <button
                 onClick={() => setOpenDropdown(openDropdown === 'formulation' ? null : 'formulation')}
-                className="px-6 py-3 rounded-lg font-medium transition-all bg-white text-green-800 hover:bg-green-100 border border-green-300 flex items-center gap-2"
+                className={`px-6 py-3 rounded-lg font-medium transition-all flex items-center gap-2 ${
+                  viewMode === 'pairings'
+                    ? 'bg-green-600 text-white shadow-lg border border-green-500'
+                    : 'bg-white text-green-800 hover:bg-green-100 border border-green-300'
+                }`}
               >
-                <BeakerIcon className="w-5 h-5 shrink-0" /> Formulation <ChevronDownIcon className="w-4 h-4 opacity-60" />
+                {viewMode === 'pairings'
+                  ? <><ShareIcon className="w-5 h-5 shrink-0" /> Pairings</>
+                  : <><BeakerIcon className="w-5 h-5 shrink-0" /> Formulation</>
+                }
+                <ChevronDownIcon className="w-4 h-4 opacity-60" />
               </button>
               {openDropdown === 'formulation' && (
                 <div className="absolute top-full mt-1 left-0 bg-white border border-green-200 rounded-lg shadow-lg overflow-hidden z-10">
@@ -357,13 +370,13 @@ export default function Home() {
               )}
             </div>
 
-            {/* Practice dropdown */}
+            {/* Assessments dropdown (formerly Quizzes) */}
             <div className="hidden md:block relative z-10">
               <button
                 onClick={() => setOpenDropdown(openDropdown === 'practice' ? null : 'practice')}
                 className="px-6 py-3 rounded-lg font-medium transition-all bg-white text-green-800 hover:bg-green-100 border border-green-300 flex items-center gap-2"
               >
-                Quizzes <ChevronDownIcon className="w-4 h-4 opacity-60" />
+                Assessments <ChevronDownIcon className="w-4 h-4 opacity-60" />
               </button>
               {openDropdown === 'practice' && (
                 <div className="absolute top-full mt-1 left-0 bg-white border border-green-200 rounded-lg shadow-lg overflow-hidden z-10">
@@ -388,6 +401,45 @@ export default function Home() {
                 </div>
               )}
             </div>
+
+            {/* Quizzes dropdown */}
+            <div className="hidden md:block relative z-10">
+              <button
+                onClick={() => setOpenDropdown(openDropdown === 'quizzes' ? null : 'quizzes')}
+                className="px-6 py-3 rounded-lg font-medium transition-all bg-white text-green-800 hover:bg-green-100 border border-green-300 flex items-center gap-2"
+              >
+                <AcademicCapIcon className="w-5 h-5 shrink-0" /> Quizzes <ChevronDownIcon className="w-4 h-4 opacity-60" />
+              </button>
+              {openDropdown === 'quizzes' && (
+                <div className="absolute top-full mt-1 left-0 bg-white border border-green-200 rounded-lg shadow-lg overflow-hidden z-10">
+                  <button
+                    onClick={() => { setClassQuizOpen(true); setOpenDropdown(null); }}
+                    className="w-full text-left px-4 py-2.5 text-green-800 hover:bg-green-50 transition-all whitespace-nowrap flex items-center gap-2"
+                  >
+                    <AcademicCapIcon className="w-5 h-5 shrink-0" /> Class Quizzes
+                  </button>
+                  <div className="border-t border-green-100" />
+                  <button
+                    onClick={() => { setFlashcardsOpen(true); setOpenDropdown(null); }}
+                    className="w-full text-left px-4 py-2.5 text-green-800 hover:bg-green-50 transition-all whitespace-nowrap flex items-center gap-2"
+                  >
+                    <RectangleStackIcon className="w-5 h-5 shrink-0" /> Flashcards
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Class Notes standalone button (desktop) */}
+            <button
+              onClick={() => { switchTab('class_notes'); setOpenDropdown(null); }}
+              className={`hidden md:flex px-6 py-3 rounded-lg font-medium transition-all border items-center gap-2 ${
+                viewMode === 'class_notes'
+                  ? 'bg-green-100 text-green-900 border-green-400 font-semibold'
+                  : 'bg-white text-green-800 hover:bg-green-100 border-green-300'
+              }`}
+            >
+              <DocumentTextIcon className="w-5 h-5 shrink-0" /> Class Notes
+            </button>
           </div>
 
           <div className="relative">
@@ -484,12 +536,13 @@ export default function Home() {
         onClose={() => setDosingCalculatorOpen(false)}
         initialHerbs={dosingInitialHerbs}
       />
-      {(energeticsQuizOpen || intakeFormOpen || flowerEssenceQuizOpen) && (
-        <div className="fixed inset-0 z-[39]" onClick={() => { setEnergeticsQuizOpen(false); setIntakeFormOpen(false); setFlowerEssenceQuizOpen(false); }} aria-hidden="true" />
+      {(energeticsQuizOpen || intakeFormOpen || flowerEssenceQuizOpen || classQuizOpen) && (
+        <div className="fixed inset-0 z-[39]" onClick={() => { setEnergeticsQuizOpen(false); setIntakeFormOpen(false); setFlowerEssenceQuizOpen(false); setClassQuizOpen(false); }} aria-hidden="true" />
       )}
       <EnergeticsQuizModal isOpen={energeticsQuizOpen} onClose={() => setEnergeticsQuizOpen(false)} onHerbSelect={(herbName) => { handleQuizHerbSelect(herbName); if (typeof window !== 'undefined' && window.innerWidth < 640) setEnergeticsQuizOpen(false); }} />
       <IntakeFormModal isOpen={intakeFormOpen} onClose={() => setIntakeFormOpen(false)} onHerbSelect={(herbId) => { handleHerbClick(herbId); if (typeof window !== 'undefined' && window.innerWidth < 640) setIntakeFormOpen(false); }} />
       <FlowerEssenceQuizModal isOpen={flowerEssenceQuizOpen} onClose={() => setFlowerEssenceQuizOpen(false)} onEssenceSelect={handleQuizEssenceSelect} />
+      <ClassQuizModal isOpen={classQuizOpen} onClose={() => setClassQuizOpen(false)} />
       <BodyDiagramModal
         open={bodyDiagramOpen}
         onClose={() => setBodyDiagramOpen(false)}

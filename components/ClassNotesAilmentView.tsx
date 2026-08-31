@@ -8,11 +8,24 @@ import { supabase } from '@/lib/supabase';
 function highlightName(text: string, terms: string[]): ReactNode[] {
   const valid = terms.filter((t) => t && t.length > 2);
   if (valid.length === 0) return [text];
-  const pattern = valid.map((t) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|');
-  const parts = text.split(new RegExp(`(${pattern})`, 'gi'));
-  return parts.map((part, i) =>
-    i % 2 === 1 ? <strong key={i} className="font-bold text-teal-900">{part}</strong> : part
-  );
+  // Normalize curly apostrophes (U+2018, U+2019) to straight (U+0027) before
+  // matching so "Devil’s Claw" (DB) matches "Devil’s claw" (notes).
+  const S = String.fromCharCode(0x27);
+  const normApos = (s: string) =>
+    s.split(String.fromCharCode(0x2018)).join(S).split(String.fromCharCode(0x2019)).join(S);
+  const normText = normApos(text);
+  const toPattern = (t: string) =>
+    normApos(t).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const pattern = valid.map(toPattern).join('|');
+  const parts = normText.split(new RegExp(`(${pattern})`, 'gi'));
+  let pos = 0;
+  return parts.map((part, i) => {
+    const orig = text.slice(pos, pos + part.length);
+    pos += part.length;
+    return i % 2 === 1
+      ? <strong key={i} className="font-bold text-teal-900">{orig}</strong>
+      : orig;
+  });
 }
 
 interface AilmentEntry {
@@ -336,7 +349,7 @@ export function ClassNotesAilmentView({
                       </div>
                       {isOpen && (
                         <div className="mt-3">
-                          <SnippetList snippets={snippets} highlightTerms={[herb.common_name, ...(herb.synonyms ?? [])]} />
+                          <SnippetList snippets={snippets} highlightTerms={[herb.common_name, herb.latin_name, herb.latin_name.split(' ')[0], ...(herb.synonyms ?? [])]} />
                         </div>
                       )}
                     </div>
