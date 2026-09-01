@@ -1,5 +1,9 @@
 export type StrengthLevel = 'mild' | 'strong' | 'very_strong';
 
+export type SunRequirement = 'full_sun' | 'full_sun_to_partial_shade' | 'partial_shade' | 'partial_shade_to_shade' | 'shade';
+export type WaterNeed = 'dry' | 'dry_to_moderate' | 'moderate' | 'moderate_to_moist' | 'moist';
+export type SoilFertility = 'low' | 'low_to_moderate' | 'moderate' | 'moderate_to_rich' | 'rich';
+
 export type TemperatureEnergetic = 'warming' | 'cooling' | 'neutral';
 export type MoistureEnergetic = 'moistening' | 'drying' | 'neutral';
 export type ToneEnergetic = 'toning' | 'relaxing' | 'neutral';
@@ -25,6 +29,9 @@ export interface Herb {
   contraindications?: string | null;
   contraindications_source?: string | null;
   synonyms?: string[];
+  sun_requirement?: SunRequirement | null;
+  water_need?: WaterNeed | null;
+  soil_fertility?: SoilFertility | null;
 }
 
 export interface PrimaryAction {

@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
 import { EnergeticEmojis } from './EnergeticEmojis';
-import type { TemperatureEnergetic, MoistureEnergetic, ToneEnergetic, TasteEnergetic } from '@/types/database';
+import type { TemperatureEnergetic, MoistureEnergetic, ToneEnergetic, TasteEnergetic, SunRequirement, WaterNeed, SoilFertility } from '@/types/database';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -36,6 +36,9 @@ interface HerbRow {
   moisture_inferred: boolean;
   tone_inferred: boolean;
   taste_inferred: boolean;
+  sun_requirement: SunRequirement | null;
+  water_need: WaterNeed | null;
+  soil_fertility: SoilFertility | null;
   action_ids: Set<number>;
   system_ids: Set<number>;
   menstruum: HerbMenstruumData | null;
@@ -86,6 +89,30 @@ const MENSTRUUM_OPTIONS: { value: MenstruumType; label: string; emoji: string; o
   { value: 'oil',          label: 'Oil',              emoji: '🫙', on: 'bg-orange-200 border-orange-400 text-orange-900',  off: 'bg-orange-50 border-orange-200 text-orange-700 hover:bg-orange-100' },
 ];
 
+const SUN_OPTIONS: { value: SunRequirement; label: string; emoji: string; on: string; off: string }[] = [
+  { value: 'full_sun',                   label: 'Full Sun',          emoji: '☀️',  on: 'bg-yellow-200 border-yellow-400 text-yellow-900',  off: 'bg-yellow-50 border-yellow-200 text-yellow-700 hover:bg-yellow-100' },
+  { value: 'full_sun_to_partial_shade',  label: 'Full Sun / Part Shade', emoji: '🌤️', on: 'bg-amber-100 border-amber-300 text-amber-800',  off: 'bg-amber-50 border-amber-200 text-amber-700 hover:bg-amber-100' },
+  { value: 'partial_shade',             label: 'Part Shade',        emoji: '⛅', on: 'bg-zinc-200 border-zinc-400 text-zinc-900',       off: 'bg-zinc-100 border-zinc-300 text-zinc-700 hover:bg-zinc-200' },
+  { value: 'partial_shade_to_shade',    label: 'Part Shade / Shade', emoji: '🌥️', on: 'bg-slate-200 border-slate-400 text-slate-900',    off: 'bg-slate-100 border-slate-300 text-slate-700 hover:bg-slate-200' },
+  { value: 'shade',                     label: 'Shade',             emoji: '🌑', on: 'bg-gray-300 border-gray-500 text-gray-900',       off: 'bg-gray-100 border-gray-300 text-gray-600 hover:bg-gray-200' },
+];
+
+const WATER_OPTIONS: { value: WaterNeed; label: string; emoji: string; on: string; off: string }[] = [
+  { value: 'dry',               label: 'Dry',            emoji: '🌵', on: 'bg-rose-100 border-rose-300 text-rose-800',    off: 'bg-rose-50 border-rose-200 text-rose-700 hover:bg-rose-100' },
+  { value: 'dry_to_moderate',   label: 'Dry–Moderate',   emoji: '💧', on: 'bg-sky-100 border-sky-300 text-sky-800',       off: 'bg-sky-50 border-sky-200 text-sky-700 hover:bg-sky-100' },
+  { value: 'moderate',          label: 'Moderate',       emoji: '💦', on: 'bg-sky-200 border-sky-400 text-sky-900',       off: 'bg-sky-50 border-sky-200 text-sky-700 hover:bg-sky-100' },
+  { value: 'moderate_to_moist', label: 'Mod–Moist',      emoji: '🌊', on: 'bg-blue-200 border-blue-400 text-blue-900',   off: 'bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100' },
+  { value: 'moist',             label: 'Moist',          emoji: '🏞️', on: 'bg-violet-200 border-violet-400 text-violet-900', off: 'bg-violet-50 border-violet-200 text-violet-700 hover:bg-violet-100' },
+];
+
+const SOIL_OPTIONS: { value: SoilFertility; label: string; emoji: string; on: string; off: string }[] = [
+  { value: 'low',              label: 'Low',          emoji: '🪨', on: 'bg-stone-200 border-stone-400 text-stone-900',  off: 'bg-stone-100 border-stone-300 text-stone-700 hover:bg-stone-200' },
+  { value: 'low_to_moderate',  label: 'Low–Moderate', emoji: '🌱', on: 'bg-lime-100 border-lime-300 text-lime-800',     off: 'bg-lime-50 border-lime-200 text-lime-700 hover:bg-lime-100' },
+  { value: 'moderate',         label: 'Moderate',     emoji: '🌿', on: 'bg-lime-200 border-lime-400 text-lime-900',     off: 'bg-lime-50 border-lime-200 text-lime-700 hover:bg-lime-100' },
+  { value: 'moderate_to_rich', label: 'Mod–Rich',     emoji: '🌾', on: 'bg-green-200 border-green-400 text-green-900', off: 'bg-green-50 border-green-200 text-green-700 hover:bg-green-100' },
+  { value: 'rich',             label: 'Rich',         emoji: '🍀', on: 'bg-emerald-200 border-emerald-400 text-emerald-900', off: 'bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100' },
+];
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function toggle<T>(set: Set<T>, val: T): Set<T> {
@@ -99,7 +126,6 @@ function cardBg(temp: TemperatureEnergetic) {
   if (temp === 'cooling') return 'bg-sky-50 border-sky-200 hover:bg-sky-100';
   return 'bg-gray-50 border-gray-200 hover:bg-gray-100';
 }
-
 
 function checkPaneScroll(
   el: HTMLDivElement | null,
@@ -137,7 +163,41 @@ function ScrollArrow({ direction, visible }: { direction: 'up' | 'down'; visible
   );
 }
 
+// ─── Section header with chevron ──────────────────────────────────────────────
+
+function SectionHeader({ label, open, onToggle }: { label: string; open: boolean; onToggle: () => void }) {
+  return (
+    <button
+      className="w-full flex items-center justify-between mb-2 group"
+      onClick={onToggle}
+    >
+      <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">{label}</p>
+      <svg
+        className={`w-3.5 h-3.5 text-gray-300 group-hover:text-gray-500 transition-transform duration-150 ${open ? '' : '-rotate-90'}`}
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+      </svg>
+    </button>
+  );
+}
+
 // ─── Component ────────────────────────────────────────────────────────────────
+
+const DEFAULT_SECTIONS = {
+  temperature: true,
+  moisture: true,
+  tone: true,
+  taste: true,
+  bodySystem: true,
+  action: true,
+  menstruum: true,
+  sun: true,
+  water: true,
+  soilFertility: true,
+};
 
 export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect }: HerbFilterPanelProps) {
   const [herbs, setHerbs] = useState<HerbRow[]>([]);
@@ -152,6 +212,15 @@ export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect 
   const [systemFilter, setSystemFilter]         = useState<Set<number>>(new Set());
   const [actionFilter, setActionFilter]         = useState<Set<number>>(new Set());
   const [menstruumFilter, setMenstruumFilter]   = useState<Set<MenstruumType>>(new Set());
+  const [sunFilter, setSunFilter]               = useState<Set<SunRequirement>>(new Set());
+  const [waterFilter, setWaterFilter]           = useState<Set<WaterNeed>>(new Set());
+  const [soilFilter, setSoilFilter]             = useState<Set<SoilFertility>>(new Set());
+
+  const [sectionsOpen, setSectionsOpen] = useState(DEFAULT_SECTIONS);
+
+  function toggleSection(key: keyof typeof DEFAULT_SECTIONS) {
+    setSectionsOpen((prev) => ({ ...prev, [key]: !prev[key] }));
+  }
 
   const filterPaneRef  = useRef<HTMLDivElement>(null);
   const resultsPaneRef = useRef<HTMLDivElement>(null);
@@ -188,7 +257,7 @@ export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect 
     const [herbsRes, systemsRes, actionsRes] = await Promise.all([
       supabase
         .from('herbs')
-        .select('id, common_name, latin_name, plant_part, temperature, moisture, tone, taste, temperature_inferred, moisture_inferred, tone_inferred, taste_inferred, pinyin_name, herb_primary_actions(primary_action_id, body_system_id), herb_menstruum(water_effective, glycerin_pct, vinegar_pct, alcohol_pct_min, alcohol_pct_max, powder_effective, oil_effective)')
+        .select('id, common_name, latin_name, plant_part, temperature, moisture, tone, taste, temperature_inferred, moisture_inferred, tone_inferred, taste_inferred, pinyin_name, sun_requirement, water_need, soil_fertility, herb_primary_actions(primary_action_id, body_system_id), herb_menstruum(water_effective, glycerin_pct, vinegar_pct, alcohol_pct_min, alcohol_pct_max, powder_effective, oil_effective)')
         .eq('is_tcm', false)
         .order('common_name'),
       supabase.from('body_systems').select('id, name').order('name'),
@@ -212,6 +281,9 @@ export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect 
             moisture_inferred:    h.moisture_inferred    ?? false,
             tone_inferred:        h.tone_inferred        ?? false,
             taste_inferred:       h.taste_inferred       ?? false,
+            sun_requirement: (h.sun_requirement ?? null) as SunRequirement | null,
+            water_need:      (h.water_need      ?? null) as WaterNeed | null,
+            soil_fertility:  (h.soil_fertility  ?? null) as SoilFertility | null,
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             action_ids: new Set<number>(h.herb_primary_actions.map((a: any) => a.primary_action_id).filter(Boolean)),
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -229,7 +301,8 @@ export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect 
 
   const hasFilters =
     tempFilter.size + moistureFilter.size + toneFilter.size + tasteFilter.size +
-    systemFilter.size + actionFilter.size + menstruumFilter.size > 0;
+    systemFilter.size + actionFilter.size + menstruumFilter.size +
+    sunFilter.size + waterFilter.size + soilFilter.size > 0;
 
   function matchesMenstruum(m: HerbMenstruumData | null, type: MenstruumType): boolean {
     if (!m) return false;
@@ -252,9 +325,12 @@ export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect 
       if (systemFilter.size > 0     && ![...systemFilter].some((id) => h.system_ids.has(id)))       return false;
       if (actionFilter.size > 0     && ![...actionFilter].some((id) => h.action_ids.has(id)))       return false;
       if (menstruumFilter.size > 0  && ![...menstruumFilter].some((t) => matchesMenstruum(h.menstruum, t))) return false;
+      if (sunFilter.size > 0        && (!h.sun_requirement || !sunFilter.has(h.sun_requirement)))   return false;
+      if (waterFilter.size > 0      && (!h.water_need      || !waterFilter.has(h.water_need)))      return false;
+      if (soilFilter.size > 0       && (!h.soil_fertility  || !soilFilter.has(h.soil_fertility)))   return false;
       return true;
     });
-  }, [herbs, tempFilter, moistureFilter, toneFilter, tasteFilter, systemFilter, actionFilter, menstruumFilter]);
+  }, [herbs, tempFilter, moistureFilter, toneFilter, tasteFilter, systemFilter, actionFilter, menstruumFilter, sunFilter, waterFilter, soilFilter]);
 
   useEffect(() => {
     requestAnimationFrame(() => checkPaneScroll(resultsPaneRef.current, setResultsScroll));
@@ -265,7 +341,6 @@ export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect 
     [bodySystems]
   );
 
-  // Only show actions that appear in at least one loaded (non-TCM) herb
   const usedActionIds = useMemo(
     () => new Set(herbs.flatMap((h) => [...h.action_ids])),
     [herbs]
@@ -283,6 +358,9 @@ export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect 
     setSystemFilter(new Set());
     setActionFilter(new Set());
     setMenstruumFilter(new Set());
+    setSunFilter(new Set());
+    setWaterFilter(new Set());
+    setSoilFilter(new Set());
   }
 
   return (
@@ -386,6 +464,33 @@ export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect 
                 <span className="mr-1">{opt.emoji}</span>{opt.label}
               </button>
             ))}
+            {SUN_OPTIONS.filter((opt) => sunFilter.has(opt.value)).map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => setSunFilter((prev) => toggle(prev, opt.value))}
+                className={`border rounded-full px-3 py-1 text-sm font-medium transition-all ${opt.on}`}
+              >
+                <span className="mr-1">{opt.emoji}</span>{opt.label}
+              </button>
+            ))}
+            {WATER_OPTIONS.filter((opt) => waterFilter.has(opt.value)).map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => setWaterFilter((prev) => toggle(prev, opt.value))}
+                className={`border rounded-full px-3 py-1 text-sm font-medium transition-all ${opt.on}`}
+              >
+                <span className="mr-1">{opt.emoji}</span>{opt.label}
+              </button>
+            ))}
+            {SOIL_OPTIONS.filter((opt) => soilFilter.has(opt.value)).map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => setSoilFilter((prev) => toggle(prev, opt.value))}
+                className={`border rounded-full px-3 py-1 text-sm font-medium transition-all ${opt.on}`}
+              >
+                <span className="mr-1">{opt.emoji}</span>{opt.label}
+              </button>
+            ))}
             <p className="text-sm text-gray-500">
               {hasFilters
                 ? `${filteredHerbs.length} ${filteredHerbs.length === 1 ? 'herb matches' : 'herbs match'}`
@@ -426,142 +531,220 @@ export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect 
 
               {/* Temperature */}
               <div>
-                <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2">Temperature</p>
-                <div className="flex flex-wrap gap-2">
-                  {TEMP_OPTIONS.map((opt) => (
-                    <button
-                      key={opt.value}
-                      onClick={() => setTempFilter((prev) => toggle(prev, opt.value))}
-                      className={`border rounded-full px-3 py-1 text-sm font-medium transition-all ${
-                        tempFilter.has(opt.value) ? opt.on : opt.off
-                      }`}
-                    >
-                      {opt.emoji && <span className="mr-1">{opt.emoji}</span>}
-                      {opt.label}
-                    </button>
-                  ))}
-                </div>
+                <SectionHeader label="Temperature" open={sectionsOpen.temperature} onToggle={() => toggleSection('temperature')} />
+                {sectionsOpen.temperature && (
+                  <div className="flex flex-wrap gap-2">
+                    {TEMP_OPTIONS.map((opt) => (
+                      <button
+                        key={opt.value}
+                        onClick={() => setTempFilter((prev) => toggle(prev, opt.value))}
+                        className={`border rounded-full px-3 py-1 text-sm font-medium transition-all ${
+                          tempFilter.has(opt.value) ? opt.on : opt.off
+                        }`}
+                      >
+                        {opt.emoji && <span className="mr-1">{opt.emoji}</span>}
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Moisture */}
               <div>
-                <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2">Moisture</p>
-                <div className="flex flex-wrap gap-2">
-                  {MOISTURE_OPTIONS.map((opt) => (
-                    <button
-                      key={opt.value}
-                      onClick={() => setMoistureFilter((prev) => toggle(prev, opt.value))}
-                      className={`border rounded-full px-3 py-1 text-sm font-medium transition-all ${
-                        moistureFilter.has(opt.value) ? opt.on : opt.off
-                      }`}
-                    >
-                      {opt.emoji && <span className="mr-1">{opt.emoji}</span>}
-                      {opt.label}
-                    </button>
-                  ))}
-                </div>
+                <SectionHeader label="Moisture" open={sectionsOpen.moisture} onToggle={() => toggleSection('moisture')} />
+                {sectionsOpen.moisture && (
+                  <div className="flex flex-wrap gap-2">
+                    {MOISTURE_OPTIONS.map((opt) => (
+                      <button
+                        key={opt.value}
+                        onClick={() => setMoistureFilter((prev) => toggle(prev, opt.value))}
+                        className={`border rounded-full px-3 py-1 text-sm font-medium transition-all ${
+                          moistureFilter.has(opt.value) ? opt.on : opt.off
+                        }`}
+                      >
+                        {opt.emoji && <span className="mr-1">{opt.emoji}</span>}
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Tone */}
               <div>
-                <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2">Tone</p>
-                <div className="flex flex-wrap gap-2">
-                  {TONE_OPTIONS.map((opt) => (
-                    <button
-                      key={opt.value}
-                      onClick={() => setToneFilter((prev) => toggle(prev, opt.value))}
-                      className={`border rounded-full px-3 py-1 text-sm font-medium transition-all ${
-                        toneFilter.has(opt.value) ? opt.on : opt.off
-                      }`}
-                    >
-                      {opt.emoji && <span className="mr-1">{opt.emoji}</span>}
-                      {opt.label}
-                    </button>
-                  ))}
-                </div>
+                <SectionHeader label="Tone" open={sectionsOpen.tone} onToggle={() => toggleSection('tone')} />
+                {sectionsOpen.tone && (
+                  <div className="flex flex-wrap gap-2">
+                    {TONE_OPTIONS.map((opt) => (
+                      <button
+                        key={opt.value}
+                        onClick={() => setToneFilter((prev) => toggle(prev, opt.value))}
+                        className={`border rounded-full px-3 py-1 text-sm font-medium transition-all ${
+                          toneFilter.has(opt.value) ? opt.on : opt.off
+                        }`}
+                      >
+                        {opt.emoji && <span className="mr-1">{opt.emoji}</span>}
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Taste */}
               <div>
-                <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2">Taste</p>
-                <div className="flex flex-wrap gap-2">
-                  {TASTE_OPTIONS.map((opt) => (
-                    <button
-                      key={opt.value}
-                      onClick={() => setTasteFilter((prev) => toggle(prev, opt.value))}
-                      className={`border rounded-full px-3 py-1 text-sm font-medium transition-all ${
-                        tasteFilter.has(opt.value) ? opt.on : opt.off
-                      }`}
-                    >
-                      <span className="mr-1">{opt.emoji}</span>
-                      {opt.label}
-                    </button>
-                  ))}
-                </div>
+                <SectionHeader label="Taste" open={sectionsOpen.taste} onToggle={() => toggleSection('taste')} />
+                {sectionsOpen.taste && (
+                  <div className="flex flex-wrap gap-2">
+                    {TASTE_OPTIONS.map((opt) => (
+                      <button
+                        key={opt.value}
+                        onClick={() => setTasteFilter((prev) => toggle(prev, opt.value))}
+                        className={`border rounded-full px-3 py-1 text-sm font-medium transition-all ${
+                          tasteFilter.has(opt.value) ? opt.on : opt.off
+                        }`}
+                      >
+                        <span className="mr-1">{opt.emoji}</span>
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Body System */}
               {bodySystems.length > 0 && (
                 <div>
-                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2">Body System</p>
-                  <div className="flex flex-wrap gap-2">
-                    {bodySystems.map((sys) => (
-                      <button
-                        key={sys.id}
-                        onClick={() => setSystemFilter((prev) => toggle(prev, sys.id))}
-                        className={`border rounded-full px-3 py-1 text-sm font-medium transition-all ${
-                          systemFilter.has(sys.id)
-                            ? 'bg-green-200 border-green-400 text-green-900'
-                            : 'bg-green-50 border-green-200 text-green-700 hover:bg-green-100'
-                        }`}
-                      >
-                        {sys.name}
-                      </button>
-                    ))}
-                  </div>
+                  <SectionHeader label="Body System" open={sectionsOpen.bodySystem} onToggle={() => toggleSection('bodySystem')} />
+                  {sectionsOpen.bodySystem && (
+                    <div className="flex flex-wrap gap-2">
+                      {bodySystems.map((sys) => (
+                        <button
+                          key={sys.id}
+                          onClick={() => setSystemFilter((prev) => toggle(prev, sys.id))}
+                          className={`border rounded-full px-3 py-1 text-sm font-medium transition-all ${
+                            systemFilter.has(sys.id)
+                              ? 'bg-green-200 border-green-400 text-green-900'
+                              : 'bg-green-50 border-green-200 text-green-700 hover:bg-green-100'
+                          }`}
+                        >
+                          {sys.name}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
 
               {/* Action */}
               {availableActions.length > 0 && (
                 <div>
-                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2">Action</p>
-                  <div className="flex flex-wrap gap-2">
-                    {availableActions.map((action) => (
-                      <button
-                        key={action.id}
-                        onClick={() => setActionFilter((prev) => toggle(prev, action.id))}
-                        className={`border rounded-full px-3 py-1 text-sm font-medium transition-all ${
-                          actionFilter.has(action.id)
-                            ? 'bg-violet-200 border-violet-400 text-violet-900'
-                            : 'bg-violet-50 border-violet-200 text-violet-700 hover:bg-violet-100'
-                        }`}
-                      >
-                        {action.name}
-                      </button>
-                    ))}
-                  </div>
+                  <SectionHeader label="Action" open={sectionsOpen.action} onToggle={() => toggleSection('action')} />
+                  {sectionsOpen.action && (
+                    <div className="flex flex-wrap gap-2">
+                      {availableActions.map((action) => (
+                        <button
+                          key={action.id}
+                          onClick={() => setActionFilter((prev) => toggle(prev, action.id))}
+                          className={`border rounded-full px-3 py-1 text-sm font-medium transition-all ${
+                            actionFilter.has(action.id)
+                              ? 'bg-violet-200 border-violet-400 text-violet-900'
+                              : 'bg-violet-50 border-violet-200 text-violet-700 hover:bg-violet-100'
+                          }`}
+                        >
+                          {action.name}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
 
               {/* Menstruum */}
               <div>
-                <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2">Menstruum</p>
-                <div className="flex flex-wrap gap-2">
-                  {MENSTRUUM_OPTIONS.map((opt) => (
-                    <button
-                      key={opt.value}
-                      onClick={() => setMenstruumFilter((prev) => toggle(prev, opt.value))}
-                      className={`border rounded-full px-3 py-1 text-sm font-medium transition-all ${
-                        menstruumFilter.has(opt.value) ? opt.on : opt.off
-                      }`}
-                    >
-                      <span className="mr-1">{opt.emoji}</span>
-                      {opt.label}
-                    </button>
-                  ))}
-                </div>
+                <SectionHeader label="Menstruum" open={sectionsOpen.menstruum} onToggle={() => toggleSection('menstruum')} />
+                {sectionsOpen.menstruum && (
+                  <div className="flex flex-wrap gap-2">
+                    {MENSTRUUM_OPTIONS.map((opt) => (
+                      <button
+                        key={opt.value}
+                        onClick={() => setMenstruumFilter((prev) => toggle(prev, opt.value))}
+                        className={`border rounded-full px-3 py-1 text-sm font-medium transition-all ${
+                          menstruumFilter.has(opt.value) ? opt.on : opt.off
+                        }`}
+                      >
+                        <span className="mr-1">{opt.emoji}</span>
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
+
+              {/* Sun */}
+              <div>
+                <SectionHeader label="Sun" open={sectionsOpen.sun} onToggle={() => toggleSection('sun')} />
+                {sectionsOpen.sun && (
+                  <div className="flex flex-wrap gap-2">
+                    {SUN_OPTIONS.map((opt) => (
+                      <button
+                        key={opt.value}
+                        onClick={() => setSunFilter((prev) => toggle(prev, opt.value))}
+                        className={`border rounded-full px-3 py-1 text-sm font-medium transition-all ${
+                          sunFilter.has(opt.value) ? opt.on : opt.off
+                        }`}
+                      >
+                        <span className="mr-1">{opt.emoji}</span>
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Water */}
+              <div>
+                <SectionHeader label="Water (once established)" open={sectionsOpen.water} onToggle={() => toggleSection('water')} />
+                {sectionsOpen.water && (
+                  <div className="flex flex-wrap gap-2">
+                    {WATER_OPTIONS.map((opt) => (
+                      <button
+                        key={opt.value}
+                        onClick={() => setWaterFilter((prev) => toggle(prev, opt.value))}
+                        className={`border rounded-full px-3 py-1 text-sm font-medium transition-all ${
+                          waterFilter.has(opt.value) ? opt.on : opt.off
+                        }`}
+                      >
+                        <span className="mr-1">{opt.emoji}</span>
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Soil Fertility */}
+              <div>
+                <SectionHeader label="Soil Fertility" open={sectionsOpen.soilFertility} onToggle={() => toggleSection('soilFertility')} />
+                {sectionsOpen.soilFertility && (
+                  <div className="flex flex-wrap gap-2">
+                    {SOIL_OPTIONS.map((opt) => (
+                      <button
+                        key={opt.value}
+                        onClick={() => setSoilFilter((prev) => toggle(prev, opt.value))}
+                        className={`border rounded-full px-3 py-1 text-sm font-medium transition-all ${
+                          soilFilter.has(opt.value) ? opt.on : opt.off
+                        }`}
+                      >
+                        <span className="mr-1">{opt.emoji}</span>
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
             </div>
             )}
             {filterPaneOpen && <ScrollArrow direction="down" visible={filterScroll.down} />}
@@ -580,7 +763,7 @@ export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect 
               if (!isDragging.current || !bodyRef.current) return;
               const delta = e.clientY - dragStartY.current;
               const containerH = bodyRef.current.getBoundingClientRect().height;
-              const maxH = containerH - 24 - 12 - 80; // padding + handle + min results height
+              const maxH = containerH - 24 - 12 - 80;
               setFilterPaneHeight(Math.max(60, Math.min(maxH, dragStartHeight.current + delta)));
             }}
             onPointerUp={() => { isDragging.current = false; }}
