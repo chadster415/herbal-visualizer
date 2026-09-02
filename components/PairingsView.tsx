@@ -251,6 +251,21 @@ export function PairingsView({ onHerbClick, onFocusChange, initialFocusId }: Pai
     return map;
   }, [focusedId, displayData.links]);
 
+  // When focused, color neighbors by how they connect to the focused herb (not their global type)
+  const neighborLinkTypes = useMemo(() => {
+    if (focusedId === null) return new Map<number, 'dui_yao' | 'western' | 'both'>();
+    const map = new Map<number, 'dui_yao' | 'western' | 'both'>();
+    for (const link of displayData.links) {
+      const src = resolveId(link.source);
+      const tgt = resolveId(link.target);
+      const neighborId = src === focusedId ? tgt : tgt === focusedId ? src : null;
+      if (neighborId === null) continue;
+      const existing = map.get(neighborId);
+      map.set(neighborId, !existing ? link.pairType : existing !== link.pairType ? 'both' : existing);
+    }
+    return map;
+  }, [focusedId, displayData.links]);
+
   const secondaryTooltips = useMemo(() => {
     const map = new Map<number, string>();
     for (const link of secondaryData.links) {
@@ -433,7 +448,10 @@ export function PairingsView({ onHerbClick, onFocusChange, initialFocusId }: Pai
       const isFocused = n.id === focusedId;
       const isSecondary = showSecondary && secondaryData.ids.has(n.id);
       const r = Math.sqrt(Math.max(1, n.degree)) * 3.5 + 4 + (isFocused ? 3 : 0) - (isSecondary ? 1.5 : 0);
-      const color = NODE_COLORS[n.pairType];
+      const effectiveType = (!isFocused && focusedId !== null && neighborLinkTypes.has(n.id))
+        ? neighborLinkTypes.get(n.id)!
+        : n.pairType;
+      const color = NODE_COLORS[effectiveType];
 
       ctx.save();
       ctx.globalAlpha = isSecondary ? 0.5 : 1;
@@ -463,7 +481,7 @@ export function PairingsView({ onHerbClick, onFocusChange, initialFocusId }: Pai
       ctx.fillText(n.name, n.x, n.y + r + 1 / globalScale);
       ctx.restore();
     },
-    [focusedId, showSecondary, secondaryData.ids],
+    [focusedId, showSecondary, secondaryData.ids, neighborLinkTypes],
   );
 
   const paintLink = useCallback((link: object, ctx: CanvasRenderingContext2D) => {
