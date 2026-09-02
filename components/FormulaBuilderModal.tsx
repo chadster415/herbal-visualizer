@@ -6,6 +6,8 @@ import { ArrowLeftIcon, ArrowRightIcon, CheckIcon, InformationCircleIcon, XMarkI
 
 type Stage = 'context' | 'build' | 'review';
 type Role = 'base' | 'synergist' | 'specific';
+type FourPartRole = 'tonic' | 'specific' | 'corollary' | 'vehicle';
+type FormulaType = '3part' | '4part';
 
 interface Herb {
   id: number;
@@ -140,6 +142,77 @@ const ROLES: Role[] = ['base', 'synergist', 'specific'];
 const EMPTY_CANDIDATES: Record<Role, Candidate[]> = { base: [], synergist: [], specific: [] };
 const EMPTY_SELECTED: Record<Role, Herb | null> = { base: null, synergist: null, specific: null };
 
+const FOUR_ROLES: FourPartRole[] = ['tonic', 'specific', 'corollary', 'vehicle'];
+const EMPTY_FOUR_CANDIDATES: Record<FourPartRole, Candidate[]> = { tonic: [], specific: [], corollary: [], vehicle: [] };
+const EMPTY_FOUR_SELECTED: Record<FourPartRole, Herb | null> = { tonic: null, specific: null, corollary: null, vehicle: null };
+
+const FOUR_ROLE_CFG = {
+  tonic: {
+    label: 'Tier 1: Tonic',
+    sub: '2 parts — nourishing foundation',
+    parts: '2 parts',
+    border: 'border-emerald-400',
+    dot: 'bg-emerald-500',
+    text: 'text-emerald-600 dark:text-emerald-400',
+    headerBg: 'bg-emerald-50 dark:bg-emerald-900/20',
+    optional: false,
+  },
+  specific: {
+    label: 'Tier 2: Specific',
+    sub: '1 part — primary condition herb',
+    parts: '1 part',
+    border: 'border-sky-400',
+    dot: 'bg-sky-500',
+    text: 'text-sky-600 dark:text-sky-400',
+    headerBg: 'bg-sky-50 dark:bg-sky-900/20',
+    optional: false,
+  },
+  corollary: {
+    label: 'Tier 3: Corollary',
+    sub: '1 part — secondary support',
+    parts: '1 part',
+    border: 'border-violet-400',
+    dot: 'bg-violet-500',
+    text: 'text-violet-600 dark:text-violet-400',
+    headerBg: 'bg-violet-50 dark:bg-violet-900/20',
+    optional: false,
+  },
+  vehicle: {
+    label: 'Tier 4: Vehicle',
+    sub: '½ part — organ carrier',
+    parts: '½ part',
+    border: 'border-amber-400',
+    dot: 'bg-amber-500',
+    text: 'text-amber-600 dark:text-amber-400',
+    headerBg: 'bg-amber-50 dark:bg-amber-900/20',
+    optional: true,
+  },
+} as const;
+
+const FOUR_ROLE_INFO: Record<FourPartRole, string[]> = {
+  tonic: [
+    'Trophorestorative herbs that nourish and sustain an organ or body system long-term.',
+    'Safe for ongoing use — often consumed as foods or teas.',
+    'Listed at 2 parts — double the quantity of the other tiers.',
+  ],
+  specific: [
+    'The primary herb for the given condition or illness.',
+    'Directly targets the body system or the illness itself.',
+    'Listed at 1 part.',
+  ],
+  corollary: [
+    'Addresses secondary issues that accompany the condition — bitters, warming herbs, or herbs supporting a secondary body system.',
+    'Can also help the Tier 2 specific work more effectively.',
+    'Listed at 1 part.',
+  ],
+  vehicle: [
+    '"Carrier" herb with a pronounced affinity for the target organ or body system.',
+    'Ushers the other herbs to where they\'re needed in the body.',
+    'Optional — can be left out, or replaced by an extra Tier 1 or Tier 3 herb.',
+    'Listed at ½ part when used.',
+  ],
+};
+
 export function FormulaBuilderModal({ isOpen, onClose, onHerbClick, onTransferToDosing }: Props) {
   const [stage, setStage] = useState<Stage>('context');
   const [loading, setLoading] = useState(false);
@@ -162,6 +235,14 @@ export function FormulaBuilderModal({ isOpen, onClose, onHerbClick, onTransferTo
   const [candidates, setCandidates] = useState<Record<Role, Candidate[]>>(EMPTY_CANDIDATES);
   const [selected, setSelected] = useState<Record<Role, Herb | null>>(EMPTY_SELECTED);
   const [specificIsFallback, setSpecificIsFallback] = useState(false);
+
+  // 4-part formula state
+  const [formulaType, setFormulaType] = useState<FormulaType | null>(null);
+  const [fourCandidates, setFourCandidates] = useState<Record<FourPartRole, Candidate[]>>(EMPTY_FOUR_CANDIDATES);
+  const [fourSelected, setFourSelected] = useState<Record<FourPartRole, Herb | null>>(EMPTY_FOUR_SELECTED);
+  const [activeFourRole, setActiveFourRole] = useState<FourPartRole>('tonic');
+  const [infoOpenFourRole, setInfoOpenFourRole] = useState<FourPartRole | null>(null);
+  const [fourSpecificIsFallback, setFourSpecificIsFallback] = useState(false);
 
   // Stage 3 — menstruum data for selected herbs
   const [reviewMenstruum, setReviewMenstruum] = useState<Record<number, string>>({});
@@ -200,7 +281,9 @@ export function FormulaBuilderModal({ isOpen, onClose, onHerbClick, onTransferTo
 
   useEffect(() => {
     if (stage !== 'review') return;
-    const ids = [selected.base?.id, selected.synergist?.id, selected.specific?.id].filter(Boolean) as number[];
+    const ids = formulaType === '4part'
+      ? [fourSelected.tonic?.id, fourSelected.specific?.id, fourSelected.corollary?.id, fourSelected.vehicle?.id].filter(Boolean) as number[]
+      : [selected.base?.id, selected.synergist?.id, selected.specific?.id].filter(Boolean) as number[];
     if (!ids.length) return;
     supabase
       .from('herb_menstruum')
@@ -212,12 +295,13 @@ export function FormulaBuilderModal({ isOpen, onClose, onHerbClick, onTransferTo
         data.forEach((row) => { map[row.herb_id] = row.primary_label; });
         setReviewMenstruum(map);
       });
-  }, [stage, selected]);
+  }, [stage, selected, fourSelected, formulaType]);
 
-  const fetchCandidates = async () => {
+  const fetchCandidates = async (type: FormulaType) => {
     if (!selectedSystem || !selectedDisorder) return;
     setLoading(true);
-    setSelected(EMPTY_SELECTED);
+    if (type === '3part') setSelected(EMPTY_SELECTED);
+    else setFourSelected(EMPTY_FOUR_SELECTED);
     // Round 1: everything we can fetch in parallel
     const [baseRes, synRes, specRes, prescIdRes, indicatedActionsRes] = await Promise.all([
       supabase
@@ -309,29 +393,49 @@ export function FormulaBuilderModal({ isOpen, onClose, onHerbClick, onTransferTo
     const specFallback: Candidate[] = usingSpecFallback ? synFallback : specList;
     setSpecificIsFallback(usingSpecFallback);
 
-    setCandidates({
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      base: buildCandidates((baseRes.data ?? []) as any[], constitution, true),
-      synergist: synFallback,
-      specific: specFallback,
-    });
+    if (type === '3part') {
+      setCandidates({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        base: buildCandidates((baseRes.data ?? []) as any[], constitution, true),
+        synergist: synFallback,
+        specific: specFallback,
+      });
+    } else {
+      const usingFourSpecFallback = specList.length === 0 && synFallback.length > 0;
+      setFourSpecificIsFallback(usingFourSpecFallback);
+      setFourCandidates({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        tonic: buildCandidates((baseRes.data ?? []) as any[], constitution, true),
+        specific: usingFourSpecFallback ? synFallback : specList,
+        corollary: synFallback,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        vehicle: buildCandidates((baseRes.data ?? []) as any[], constitution, false),
+      });
+    }
     setLoading(false);
   };
 
   const reset = () => {
     setStage('context');
+    setFormulaType(null);
     setSelectedSystem(null);
     setSelectedDisorder(null);
     setConstitution({ temperature: 'neutral', moisture: 'neutral', tone: 'neutral' });
     setSelected(EMPTY_SELECTED);
     setCandidates(EMPTY_CANDIDATES);
     setActiveRole('base');
+    setFourSelected(EMPTY_FOUR_SELECTED);
+    setFourCandidates(EMPTY_FOUR_CANDIDATES);
+    setActiveFourRole('tonic');
   };
 
   if (!isOpen) return null;
 
   const toggleHerb = (role: Role, herb: Herb) =>
     setSelected((prev) => ({ ...prev, [role]: prev[role]?.id === herb.id ? null : herb }));
+
+  const toggleFourHerb = (role: FourPartRole, herb: Herb) =>
+    setFourSelected((prev) => ({ ...prev, [role]: prev[role]?.id === herb.id ? null : herb }));
 
   // --- Render helpers ---
 
@@ -359,6 +463,36 @@ export function FormulaBuilderModal({ isOpen, onClose, onHerbClick, onTransferTo
       <button
         key={c.herb.id}
         onClick={() => toggleHerb(role, c.herb)}
+        className={`w-full text-left p-3 rounded-lg border-2 transition-all shadow-sm ${
+          isSelected
+            ? `${cfg.border} ${cfg.headerBg}`
+            : 'border-transparent bg-white dark:bg-gray-800 hover:border-gray-200 dark:hover:border-gray-600'
+        }`}
+      >
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0 flex-1">
+            <div className="text-sm font-medium italic text-gray-900 dark:text-gray-100 leading-tight">
+              {c.herb.latin_name}
+            </div>
+            <div className="text-xs text-gray-500 dark:text-gray-400">{c.herb.common_name}{c.herb.plant_part ? ` (${c.herb.plant_part})` : ''}</div>
+            {c.context && (
+              <div title={c.context} className="text-xs text-gray-400 dark:text-gray-500 mt-1 line-clamp-2">{c.context}</div>
+            )}
+            <div className="flex flex-wrap gap-1 mt-1.5">{energeticBadges(c.herb)}</div>
+          </div>
+          <div className="pt-0.5">{scoreDots(c.score, cfg.dot)}</div>
+        </div>
+      </button>
+    );
+  };
+
+  const fourCandidateCard = (c: Candidate, role: FourPartRole) => {
+    const cfg = FOUR_ROLE_CFG[role];
+    const isSelected = fourSelected[role]?.id === c.herb.id;
+    return (
+      <button
+        key={c.herb.id}
+        onClick={() => toggleFourHerb(role, c.herb)}
         className={`w-full text-left p-3 rounded-lg border-2 transition-all shadow-sm ${
           isSelected
             ? `${cfg.border} ${cfg.headerBg}`
@@ -487,6 +621,71 @@ export function FormulaBuilderModal({ isOpen, onClose, onHerbClick, onTransferTo
     </div>
   );
 
+  // --- 4-Part Info view ---
+
+  const renderFourInfo = () => (
+    <div className="max-w-lg mx-auto space-y-6 py-2 text-sm text-gray-700 leading-relaxed">
+      <div>
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">The 4-Tier Formula Structure</h2>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 italic">Holly Bellebuono — An Herbalist&apos;s Guide to Formulary</p>
+      </div>
+
+      <p>
+        Rather than a single &ldquo;magic bullet&rdquo; herb, this approach builds a layered platform: a nourishing
+        foundation, a condition-specific herb, secondary support, and an optional carrier to deliver everything
+        to the right place in the body.
+      </p>
+
+      <div className="border border-sky-200 rounded-lg overflow-hidden">
+        <div className="bg-sky-50 dark:bg-sky-900/20 px-4 py-2 border-b border-sky-200 dark:border-sky-800">
+          <h3 className="font-semibold text-sky-800 dark:text-sky-300">The Four Tiers</h3>
+        </div>
+        <div className="divide-y divide-gray-100 dark:divide-gray-700">
+          {FOUR_ROLES.map((role) => {
+            const cfg = FOUR_ROLE_CFG[role];
+            return (
+              <div key={role} className="px-4 py-3">
+                <div className="flex items-baseline gap-2 mb-1">
+                  <span className={`font-semibold ${cfg.text}`}>{cfg.label}</span>
+                  <span className="text-xs text-gray-400">{cfg.parts}{cfg.optional ? ' · optional' : ''}</span>
+                </div>
+                <p>{FOUR_ROLE_INFO[role][0]}</p>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        <div>
+          <h3 className="font-semibold text-gray-800 dark:text-gray-200 mb-1">Proportions</h3>
+          <p>
+            The Tonic (Tier 1) is listed at 2 parts — double the quantity of the other tiers. Long-term
+            nourishment is the foundation; the specific and corollary herbs work at smaller quantities for
+            shorter periods, while the tonic sustains the formula over weeks or months.
+          </p>
+        </div>
+        <div>
+          <h3 className="font-semibold text-gray-800 dark:text-gray-200 mb-1">The Vehicle Is Optional</h3>
+          <p>
+            Not every formula needs a Tier 4 vehicle. If a multipurpose herb already serves as both tonic
+            and carrier, it may double up. When in doubt, leave the vehicle out — or add an extra Tier 1
+            or Tier 3 herb to round the formula instead.
+          </p>
+        </div>
+        <div>
+          <h3 className="font-semibold text-gray-800 dark:text-gray-200 mb-1">How to Use This Builder</h3>
+          <p>
+            Select a body system and disorder, set the patient&apos;s constitution, then choose one herb per
+            tier. Tier 1 candidates are nourishing tonics for the system; Tier 2 are condition-specific
+            remedies; Tier 3 are corollary/synergist herbs; Tier 4 are body-system herbs with organ affinity.
+            Dots indicate how well each herb&apos;s energetics oppose the patient&apos;s constitution.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+
   // --- Stage: Context ---
 
   const renderContext = () => (
@@ -605,13 +804,22 @@ export function FormulaBuilderModal({ isOpen, onClose, onHerbClick, onTransferTo
         </div>
       </div>
 
-      <button
-        onClick={async () => { await fetchCandidates(); setStage('build'); }}
-        disabled={!selectedSystem || !selectedDisorder || loading}
-        className="w-full py-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium transition-colors"
-      >
-        {loading ? 'Loading…' : <span className="flex items-center gap-2 justify-center">Build Formula <ArrowRightIcon className="w-4 h-4" /></span>}
-      </button>
+      <div className="space-y-2">
+        <button
+          onClick={async () => { setFormulaType('3part'); await fetchCandidates('3part'); setStage('build'); }}
+          disabled={!selectedSystem || !selectedDisorder || loading}
+          className="w-full py-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium transition-colors"
+        >
+          {loading ? 'Loading…' : <span className="flex items-center gap-2 justify-center">Build 3-Part Formula <ArrowRightIcon className="w-4 h-4" /></span>}
+        </button>
+        <button
+          onClick={async () => { setFormulaType('4part'); await fetchCandidates('4part'); setStage('build'); }}
+          disabled={!selectedSystem || !selectedDisorder || loading}
+          className="w-full py-3 rounded-lg bg-sky-600 hover:bg-sky-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium transition-colors"
+        >
+          {loading ? 'Loading…' : <span className="flex items-center gap-2 justify-center">Build 4-Part Formula <ArrowRightIcon className="w-4 h-4" /></span>}
+        </button>
+      </div>
     </div>
   );
 
@@ -744,6 +952,148 @@ export function FormulaBuilderModal({ isOpen, onClose, onHerbClick, onTransferTo
             {allSelected
               ? <span className="flex items-center gap-2 justify-center">Review Formula <ArrowRightIcon className="w-4 h-4" /></span>
               : `Still need: ${unselected.map((r) => ROLE_CFG[r].label).join(', ')}`}
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  // --- Stage: 4-Part Build ---
+
+  const renderFourBuild = () => {
+    const required = FOUR_ROLES.filter((r) => !FOUR_ROLE_CFG[r].optional);
+    const unselectedRequired = required.filter((r) => !fourSelected[r]);
+    const allRequiredSelected = unselectedRequired.length === 0;
+
+    return (
+      <div className="flex flex-col gap-3 h-full">
+        {/* Header */}
+        <div className="flex items-start justify-between flex-shrink-0">
+          <div>
+            <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">
+              {selectedDisorder!.name}
+            </h2>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              {selectedSystem!.name} · 4-Part Formula
+              {(constitution.temperature !== 'neutral' || constitution.moisture !== 'neutral' || constitution.tone !== 'neutral') && (
+                <span className="ml-2">
+                  {constitution.temperature === 'hot' ? '🔥' : constitution.temperature === 'cold' ? '❄️' : ''}
+                  {constitution.moisture === 'damp' ? '💧' : constitution.moisture === 'dry' ? '🌵' : ''}
+                  {constitution.tone === 'tense' ? '⚡' : constitution.tone === 'lax' ? '🌊' : ''}
+                  <span className="text-gray-400 ml-1">· dots = energetics match</span>
+                </span>
+              )}
+            </p>
+          </div>
+          <button
+            onClick={() => setStage('context')}
+            className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 flex-shrink-0 ml-4 mt-0.5"
+          >
+            <ArrowLeftIcon className="w-4 h-4" /> back
+          </button>
+        </div>
+
+        {/* Mobile tabs — abbreviated tier labels */}
+        <div className="flex rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden text-xs flex-shrink-0 md:hidden">
+          {FOUR_ROLES.map((r) => {
+            const cfg = FOUR_ROLE_CFG[r];
+            const shortLabel = r === 'tonic' ? 'T1 Tonic' : r === 'specific' ? 'T2 Specific' : r === 'corollary' ? 'T3 Corollary' : 'T4 Vehicle';
+            return (
+              <button
+                key={r}
+                onClick={() => setActiveFourRole(r)}
+                className={`flex-1 py-2 font-medium transition-colors relative ${
+                  activeFourRole === r
+                    ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100'
+                    : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'
+                }`}
+              >
+                {shortLabel}
+                {fourSelected[r] && (
+                  <span className={`absolute top-1.5 right-1 w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Columns */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3 flex-1 min-h-0">
+          {FOUR_ROLES.map((role) => {
+            const cfg = FOUR_ROLE_CFG[role];
+            const list = fourCandidates[role];
+            const sel = fourSelected[role];
+            const isActiveOnMobile = role === activeFourRole;
+
+            return (
+              <div
+                key={role}
+                className={`flex flex-col min-h-0 ${!isActiveOnMobile ? 'hidden md:flex' : ''}`}
+              >
+                <div className={`flex-shrink-0 rounded-t-lg border-t-2 ${cfg.border} ${cfg.headerBg} px-3 py-2 mb-2`}>
+                  <div className="flex items-center justify-between gap-1">
+                    <div className={`font-semibold text-sm ${cfg.text}`}>{cfg.label}</div>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setInfoOpenFourRole(infoOpenFourRole === role ? null : role); }}
+                      className={`flex-shrink-0 transition-opacity ${infoOpenFourRole === role ? 'opacity-100' : 'opacity-40 hover:opacity-80'} ${cfg.text}`}
+                      title="About this tier"
+                    >
+                      <InformationCircleIcon className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">{cfg.sub}</div>
+                  {cfg.optional && (
+                    <div className="text-xs text-gray-400 dark:text-gray-500 italic mt-0.5">Optional</div>
+                  )}
+                  {role === 'specific' && fourSpecificIsFallback && (
+                    <div className="text-xs text-amber-600 dark:text-amber-400 mt-1 italic">
+                      No specific remedies recorded — showing corollary list instead.
+                    </div>
+                  )}
+                  {sel && (
+                    <div className="text-xs text-gray-600 dark:text-gray-300 font-medium mt-1 italic truncate">
+                      <CheckIcon className="w-3 h-3 inline mr-0.5" /> {sel.latin_name}
+                    </div>
+                  )}
+                  {infoOpenFourRole === role && (
+                    <ul className="mt-2 pt-2 border-t border-gray-200 dark:border-gray-600 space-y-1">
+                      {FOUR_ROLE_INFO[role].map((line, i) => (
+                        <li key={i} className="text-xs text-gray-600 dark:text-gray-300 leading-snug">{line}</li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+
+                <div className="flex-1 overflow-y-auto space-y-2 pr-0.5">
+                  {list.length === 0 ? (
+                    <p className="text-xs text-gray-400 dark:text-gray-500 italic p-2">
+                      {role === 'tonic'
+                        ? 'No tonic herbs found for this body system.'
+                        : role === 'specific'
+                        ? 'No specific remedies found — try selecting from Tier 3.'
+                        : role === 'corollary'
+                        ? 'No herbs found for this disorder.'
+                        : 'No body-system herbs found.'}
+                    </p>
+                  ) : (
+                    list.map((c) => fourCandidateCard(c, role))
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Continue button */}
+        <div className="flex-shrink-0 pt-2 border-t border-gray-200 dark:border-gray-700">
+          <button
+            onClick={() => setStage('review')}
+            disabled={!allRequiredSelected}
+            className="w-full py-2.5 rounded-lg bg-sky-600 hover:bg-sky-700 disabled:opacity-40 disabled:cursor-not-allowed text-white font-medium transition-colors text-sm"
+          >
+            {allRequiredSelected
+              ? <span className="flex items-center gap-2 justify-center">Review Formula <ArrowRightIcon className="w-4 h-4" /></span>
+              : `Still need: ${unselectedRequired.map((r) => FOUR_ROLE_CFG[r].label).join(', ')}`}
           </button>
         </div>
       </div>
@@ -891,6 +1241,145 @@ export function FormulaBuilderModal({ isOpen, onClose, onHerbClick, onTransferTo
     );
   };
 
+  // --- Stage: 4-Part Review ---
+
+  const renderFourReview = () => {
+    const constitutionSet =
+      constitution.temperature !== 'neutral' ||
+      constitution.moisture !== 'neutral' ||
+      constitution.tone !== 'neutral';
+
+    const transferHerbs = ([fourSelected.tonic, fourSelected.specific, fourSelected.corollary, fourSelected.vehicle] as (Herb | null)[])
+      .filter((h): h is Herb => h !== null)
+      .filter((h, i, arr) => arr.findIndex((x) => x.id === h.id) === i);
+
+    const herbCard4 = (herb: Herb, role: FourPartRole) => {
+      const cfg = FOUR_ROLE_CFG[role];
+      return (
+        <div className={`rounded-xl border-2 ${cfg.border} p-4 bg-white dark:bg-gray-800`}>
+          <div className="flex items-center justify-between mb-2">
+            <div className={`text-xs font-bold uppercase tracking-wider ${cfg.text}`}>{cfg.label}</div>
+            <span className="text-xs text-gray-400 dark:text-gray-500 font-medium">{cfg.parts}</span>
+          </div>
+          <div className="font-semibold italic text-gray-900 dark:text-gray-100 text-sm leading-tight">
+            {herb.latin_name}
+          </div>
+          <div className="text-xs text-gray-500 dark:text-gray-400 mb-2">{herb.common_name}{herb.plant_part ? ` (${herb.plant_part})` : ''}</div>
+          <div className="flex flex-wrap gap-1">{energeticBadges(herb)}</div>
+          {reviewMenstruum[herb.id] && (
+            <div className="mt-2">
+              <span className="px-2.5 py-0.5 rounded-full text-xs font-medium border bg-purple-50 text-purple-800 border-purple-200 dark:bg-purple-900/20 dark:text-purple-300 dark:border-purple-700">
+                {reviewMenstruum[herb.id]}
+              </span>
+            </div>
+          )}
+          {onHerbClick && (
+            <button
+              onClick={() => { onHerbClick(herb.id); onClose(); }}
+              className={`mt-2 text-xs ${cfg.text} hover:underline`}
+            >
+              View herb <ArrowRightIcon className="w-3 h-3 inline ml-0.5" />
+            </button>
+          )}
+        </div>
+      );
+    };
+
+    return (
+      <div className="max-w-lg mx-auto space-y-5 py-2">
+        <div>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
+            Formula for {selectedDisorder!.name}
+          </h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400">{selectedSystem!.name} System · 4-Part Formula</p>
+        </div>
+
+        {/* Proportions pills */}
+        <div className="flex gap-2 flex-wrap">
+          {FOUR_ROLES.filter((r) => fourSelected[r]).map((r) => (
+            <span key={r} className={`text-xs px-2 py-0.5 rounded-full border font-medium ${FOUR_ROLE_CFG[r].text} border-current`}>
+              {FOUR_ROLE_CFG[r].parts} — {fourSelected[r]!.common_name}
+            </span>
+          ))}
+        </div>
+
+        {/* Cards: Tier 2 + Tier 3 on top, Tier 1 spanning below, Tier 4 optional */}
+        <div className="space-y-2">
+          <div className="grid grid-cols-2 gap-3">
+            {fourSelected.specific  && herbCard4(fourSelected.specific,  'specific')}
+            {fourSelected.corollary && herbCard4(fourSelected.corollary, 'corollary')}
+          </div>
+
+          <div className="flex justify-center items-center gap-1 text-gray-300 dark:text-gray-600 select-none py-0.5">
+            <div className="h-px flex-1 bg-gradient-to-r from-transparent to-gray-300 dark:to-gray-600" />
+            <span className="text-xs text-gray-400 dark:text-gray-500 px-2">▼ tonic</span>
+            <div className="h-px flex-1 bg-gradient-to-l from-transparent to-gray-300 dark:to-gray-600" />
+          </div>
+
+          {fourSelected.tonic && herbCard4(fourSelected.tonic, 'tonic')}
+
+          {fourSelected.vehicle ? (
+            <>
+              <div className="flex justify-center items-center gap-1 text-gray-200 dark:text-gray-700 select-none py-0.5">
+                <div className="h-px flex-1 bg-gradient-to-r from-transparent to-gray-200 dark:to-gray-700" />
+                <span className="text-xs text-gray-400 dark:text-gray-500 px-2">vehicle</span>
+                <div className="h-px flex-1 bg-gradient-to-l from-transparent to-gray-200 dark:to-gray-700" />
+              </div>
+              {herbCard4(fourSelected.vehicle, 'vehicle')}
+            </>
+          ) : (
+            <p className="text-xs text-center text-gray-400 dark:text-gray-600 italic pt-1">No vehicle herb selected</p>
+          )}
+        </div>
+
+        {/* Patient constitution */}
+        {constitutionSet && (
+          <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-3 bg-gray-50 dark:bg-gray-800/50">
+            <div className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">Patient constitution</div>
+            <div className="flex gap-2 flex-wrap">
+              {constitution.temperature !== 'neutral' && (
+                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${constitution.temperature === 'hot' ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300' : 'bg-sky-100 text-sky-800 dark:bg-sky-900/30 dark:text-sky-300'}`}>
+                  {constitution.temperature === 'hot' ? '🔥' : '❄️'} {constitution.temperature}
+                </span>
+              )}
+              {constitution.moisture !== 'neutral' && (
+                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${constitution.moisture === 'damp' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300' : 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300'}`}>
+                  {constitution.moisture === 'damp' ? '💧' : '🌵'} {constitution.moisture}
+                </span>
+              )}
+              {constitution.tone !== 'neutral' && (
+                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${constitution.tone === 'tense' ? 'bg-violet-100 text-violet-800 dark:bg-violet-900/30 dark:text-violet-300' : 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'}`}>
+                  {constitution.tone === 'tense' ? '⚡' : '🌊'} {constitution.tone}
+                </span>
+              )}
+            </div>
+          </div>
+        )}
+
+        {onTransferToDosing && transferHerbs.length > 0 && (
+          <button
+            onClick={() => { onTransferToDosing(transferHerbs); onClose(); }}
+            className="w-full py-2 rounded-lg border border-sky-400 text-sm text-sky-700 dark:text-sky-300 hover:bg-sky-50 dark:hover:bg-sky-900/20 transition-colors flex items-center justify-center gap-2"
+          >
+            <ArrowRightIcon className="w-4 h-4" /> Transfer to Dosing Calculator
+          </button>
+        )}
+
+        <div className="flex gap-3">
+          <button onClick={reset} className="flex-1 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+            Start over
+          </button>
+          <button onClick={() => setStage('build')} className="flex-1 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+            <ArrowLeftIcon className="w-4 h-4 inline mr-0.5" /> Adjust
+          </button>
+          <button onClick={onClose} className="flex-1 py-2 rounded-lg bg-sky-600 hover:bg-sky-700 text-white text-sm font-medium transition-colors">
+            Done
+          </button>
+        </div>
+      </div>
+    );
+  };
+
   // --- Main render ---
 
   const isBuild = stage === 'build';
@@ -953,11 +1442,11 @@ export function FormulaBuilderModal({ isOpen, onClose, onHerbClick, onTransferTo
 
         {/* Content */}
         <div className={`flex-1 min-h-0 px-6 pb-6 ${(isBuild && !showInfo) ? 'flex flex-col overflow-hidden' : 'overflow-y-auto'}`}>
-          {showInfo ? renderInfo() : (
+          {showInfo ? (formulaType === '4part' ? renderFourInfo() : renderInfo()) : (
             <>
               {stage === 'context' && renderContext()}
-              {stage === 'build'   && renderBuild()}
-              {stage === 'review'  && renderReview()}
+              {stage === 'build'   && (formulaType === '4part' ? renderFourBuild() : renderBuild())}
+              {stage === 'review'  && (formulaType === '4part' ? renderFourReview() : renderReview())}
             </>
           )}
         </div>
