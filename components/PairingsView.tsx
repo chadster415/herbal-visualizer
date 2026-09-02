@@ -77,7 +77,7 @@ export function PairingsView({ onHerbClick, onFocusChange, initialFocusId }: Pai
     async function load() {
       const [duiYaoRes, westernRes, herbsRes] = await Promise.all([
         supabase.from('dui_yao_pairs').select('herb1_id, herb2_id, combined_summary, dui_yao_indications(indication, sort_order)'),
-        supabase.from('herb_pairs').select('herb1_id, herb2_id, source, combined_summary'),
+        supabase.from('herb_pairs').select('herb1_id, herb2_id, source, combined_summary, herb_pair_herb_properties(herb_id, property, sort_order)'),
         supabase.from('herbs').select('id, common_name'),
       ]);
 
@@ -111,10 +111,16 @@ export function PairingsView({ onHerbClick, onFocusChange, initialFocusId }: Pai
         links.push({ source: herb1_id, target: herb2_id, pairType: 'dui_yao', tooltip: tooltipParts.join('\n\n') || undefined });
       }
 
-      for (const { herb1_id, herb2_id, source, combined_summary } of westernRes.data ?? []) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      for (const { herb1_id, herb2_id, source, combined_summary, herb_pair_herb_properties } of (westernRes.data ?? []) as any[]) {
         touch(herb1_id, 'western');
         touch(herb2_id, 'western');
-        links.push({ source: herb1_id, target: herb2_id, pairType: 'western', pairSource: source ?? undefined, tooltip: combined_summary || undefined });
+        const propText = (herb_pair_herb_properties as { herb_id: number; property: string; sort_order: number }[] ?? [])
+          .sort((a, b) => a.sort_order - b.sort_order)
+          .map((p) => p.property)
+          .join('\n');
+        const tooltip = combined_summary || propText || undefined;
+        links.push({ source: herb1_id, target: herb2_id, pairType: 'western', pairSource: source ?? undefined, tooltip });
       }
 
       setGraphData({ nodes: Array.from(nodeMap.values()), links });
