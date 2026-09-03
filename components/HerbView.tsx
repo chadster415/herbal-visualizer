@@ -717,10 +717,21 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
         setConstituentIndex(idx);
       });
 
-    // Fetch constituent profiles in background
-    supabase.from('constituent_profiles')
-      .select('*').not('herb_id', 'is', null).order('herb_id').range(0, 4999)
-      .then(({ data }) => { if (data) setAllProfiles(data as ConstituentProfile[]); });
+    // Fetch all constituent profiles in background, paginating past PostgREST's 1000-row cap
+    (async () => {
+      const PAGE = 1000;
+      let from = 0;
+      const accumulated: ConstituentProfile[] = [];
+      while (true) {
+        const { data } = await supabase.from('constituent_profiles')
+          .select('*').not('herb_id', 'is', null).order('herb_id').range(from, from + PAGE - 1);
+        if (!data || data.length === 0) break;
+        accumulated.push(...(data as ConstituentProfile[]));
+        if (data.length < PAGE) break;
+        from += PAGE;
+      }
+      if (accumulated.length > 0) setAllProfiles(accumulated);
+    })();
   }
 
   async function fetchHerbDetail(herbId: number) {
