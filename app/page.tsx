@@ -13,6 +13,7 @@ import { EnergeticsQuizModal } from '@/components/EnergeticsQuizModal';
 import { HerbFilterPanel } from '@/components/HerbFilterPanel';
 import { FormulaBuilderModal } from '@/components/FormulaBuilderModal';
 import { DosingCalculatorModal } from '@/components/DosingCalculatorModal';
+import { DoubleExtractionCalculatorModal } from '@/components/DoubleExtractionCalculatorModal';
 import { IntakeFormModal } from '@/components/IntakeFormModal';
 import { BodyDiagramModal } from '@/components/BodyDiagramModal';
 import { HelpModal } from '@/components/HelpModal';
@@ -96,6 +97,7 @@ export default function Home() {
   const [herbFilterOpen, setHerbFilterOpen] = useState(false);
   const [formulaBuilderOpen, setFormulaBuilderOpen] = useState(false);
   const [dosingCalculatorOpen, setDosingCalculatorOpen] = useState(false);
+  const [doubleExtractionOpen, setDoubleExtractionOpen] = useState(false);
   const [dosingInitialHerbs, setDosingInitialHerbs] = useState<{ id: number; common_name: string; latin_name: string; plant_part: string | null }[]>([]);
   const [intakeFormOpen, setIntakeFormOpen] = useState(false);
   const [bodyDiagramOpen, setBodyDiagramOpen] = useState(false);
@@ -306,6 +308,12 @@ export default function Home() {
                       <CalculatorIcon className="w-4 h-4 shrink-0" /> Dosing Calculator
                     </button>
                     <button
+                      onClick={() => { setDoubleExtractionOpen(true); setOpenDropdown(null); }}
+                      className="w-full text-left px-4 py-2.5 text-green-800 hover:bg-green-50 transition-all flex items-center gap-2"
+                    >
+                      <BeakerIcon className="w-4 h-4 shrink-0" /> Double Extraction
+                    </button>
+                    <button
                       onClick={() => { switchTab('pairings'); setOpenDropdown(null); }}
                       className="w-full text-left px-4 py-2.5 text-green-800 hover:bg-green-50 transition-all flex items-center gap-2"
                     >
@@ -375,6 +383,12 @@ export default function Home() {
                     className="w-full text-left px-4 py-2.5 text-green-800 hover:bg-green-50 transition-all whitespace-nowrap flex items-center gap-2"
                   >
                     <CalculatorIcon className="w-5 h-5 shrink-0" /> Dosing Calculator
+                  </button>
+                  <button
+                    onClick={() => { setDoubleExtractionOpen(true); setOpenDropdown(null); }}
+                    className="w-full text-left px-4 py-2.5 text-green-800 hover:bg-green-50 transition-all whitespace-nowrap flex items-center gap-2"
+                  >
+                    <BeakerIcon className="w-5 h-5 shrink-0" /> Double Extraction
                   </button>
                   <div className="border-t border-green-100" />
                   <button
@@ -578,6 +592,7 @@ export default function Home() {
       <IntakeFormModal isOpen={intakeFormOpen} onClose={() => setIntakeFormOpen(false)} onHerbSelect={(herbId) => { handleHerbClick(herbId); if (typeof window !== 'undefined' && window.innerWidth < 640) setIntakeFormOpen(false); }} />
       <FlowerEssenceQuizModal isOpen={flowerEssenceQuizOpen} onClose={() => setFlowerEssenceQuizOpen(false)} onEssenceSelect={handleQuizEssenceSelect} />
       <ClassQuizModal isOpen={classQuizOpen} onClose={() => setClassQuizOpen(false)} />
+      <DoubleExtractionCalculatorModal isOpen={doubleExtractionOpen} onClose={() => setDoubleExtractionOpen(false)} />
       <BodyDiagramModal
         open={bodyDiagramOpen}
         onClose={() => setBodyDiagramOpen(false)}
