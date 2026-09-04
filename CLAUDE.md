@@ -56,6 +56,23 @@ A Next.js app backed by a local Supabase instance that visualizes herbal medicin
 | `herb_menstruum` | One row per herb — recommended menstruum (alcohol %, glycerin %, vinegar %, water); `primary_label` short string for UI |
 | `constituent_profiles` | Flat import from Herb Constituent Database CSV — `herb_id` (nullable), `common_name`, `latin_name`, `plant_part`, `constituent`, `class`, `subclass`, `importance`, `status` (Marker/Major/Present/Reported), `notes`, `editorial_note` |
 
+### Two constituent systems — critical distinction
+
+The herb detail page has **two separate constituent sections** backed by different tables with different data ownership:
+
+| UI section | Table | Data source | What it holds |
+|---|---|---|---|
+| **Constituent Profile Markers** (amber cards) | `constituent_profiles` | **User-provided** from Herb Constituent Database CSV | Flat import: one row per compound per herb; `status` (Marker/Major/Present/Reported), `class`, `subclass`, `importance`, `notes`, `editorial_note`. Also drives the Ranked Alternates feature. |
+| **General Constituents** (colored pills) | `herb_constituents` + `constituents` | **Claude researches** from web (PubChem, PhytoHub, literature) | Normalized compound dictionary (`constituents`) + per-herb concentration level join (`herb_constituents`). The same compound (e.g. quercetin) links to many herbs, enabling cross-herb comparison. |
+
+**Never substitute one for the other.** If the user provides `constituent_profiles` data, take it as authoritative — do not second-guess it from web sources. Claude only researches `herb_constituents` (General Constituents) data.
+
+`constituent_profiles.status` values (controls sort order and badge color):
+- `Marker` — chemotaxonomic marker / defining compound
+- `Major` — consistently present in significant quantity
+- `Present` — reliably found but not defining
+- `Reported` — found in at least one study; may not be consistent
+
 ### TCM / Dui Yao tables
 
 | Table | Purpose |

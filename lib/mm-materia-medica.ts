@@ -1344,6 +1344,12 @@ export const MM_MATERIA_MEDICA: Record<number, string> = {
   FRESH PLANT.  Poultice as needed.  Fresh Plant Tincture, [1:2], as needed.
   STATUS : W/A`,
 
+  // Spikenard (Aralia racemosa)
+  2479: `ARALIA RACEMOSA  [including A. californica]  (Spikenard, California Spikenard)
+  ROOT.Tincture [Fresh Root,1:2, Recent Dry Root,1:5, 50% alcohol] 10-30 drops.
+  Strong Decoction or Cold Infusion, 2-4 ounces.
+  STATUS : W/LA`,
+
   // Black Pepper (Piper nigrum)
   2498: `PIPER NIGRUM  (Black Pepper)
   PEPPERCORNS.  Tincture [1:5, 65% alcohol] 5-15 drops.

@@ -279,7 +279,7 @@ SYNONYM_MAP = {
     'angelica sinensis':     ['angelica sinensis'],
     'anthemis nobilis':      ['chamaemelum nobile'],  # old name for Roman chamomile
     'apium':                 ['apium graveolens'],
-    'aralia racemosa':       ['aralia californica'],  # includes californica
+    'aralia racemosa':       ['aralia californica', 'aralia racemosa'],  # includes californica
     'armoracia':             ['armoracia rusticana'],
     'artemisia tridentata':  [],  # sagebrush — not in DB
     'asclepias tuberosa':    ['asclepias tuberosa'],
