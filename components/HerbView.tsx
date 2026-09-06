@@ -319,6 +319,1345 @@ function SectionHeader({ title, open, onToggle }: { title: string; open: boolean
   );
 }
 
+// ─── HerbDetailPanel ──────────────────────────────────────────────────────────
+
+interface HerbDetailPanelProps {
+  herb: HerbData;
+  profiles: ConstituentProfile[];
+  classNoteSnippets: ClassNoteSnippet[];
+  duiYaoPairs: DuiYaoPair[];
+  duiYaoLoading: boolean;
+  herbPairs: HerbPair[];
+  herbPairsLoading: boolean;
+  constituentIndex: Map<number, ConstituentHerbRef[]>;
+  allHerbs: HerbData[];
+  allProfiles: ConstituentProfile[];
+  detailLoading: boolean;
+  frozen?: boolean;
+  isLoggedIn?: boolean;
+  onActionClick?: (actionId: number) => void;
+  onActionNameClick?: (name: string) => void;
+  onDisorderClick?: (disorderId: number, systemId: number) => void;
+  onNavigateToHerb?: (herbId: number) => void;
+  onMonographLinkAdded?: (newLink: { id: number; url: string; label: string | null; sort_order: number }) => void;
+}
+
+function HerbDetailPanel({
+  herb,
+  profiles,
+  classNoteSnippets,
+  duiYaoPairs,
+  duiYaoLoading,
+  herbPairs,
+  herbPairsLoading,
+  constituentIndex,
+  allHerbs,
+  allProfiles,
+  detailLoading,
+  frozen,
+  isLoggedIn,
+  onActionClick,
+  onActionNameClick,
+  onDisorderClick,
+  onNavigateToHerb,
+  onMonographLinkAdded,
+}: HerbDetailPanelProps) {
+  const [alternatesOpen, setAlternatesOpen] = useState(false);
+  const [sectionsOpen, setSectionsOpen] = useState({
+    primaryActions: true, secondaryActions: true,
+    constituentProfile: true, constituents: true, disorders: true, pairings: true,
+    contraindications: true, mmMateriaMedica: true, herbContraindications: true,
+    classNotes: true, sourceNotes: true,
+  });
+  const toggleSection = (key: keyof typeof sectionsOpen) =>
+    setSectionsOpen((prev) => ({ ...prev, [key]: !prev[key] }));
+
+  const [contraindicationsOpen, setContraindicationsOpen] = useState(false);
+  const [inferredEnergeticsOpen, setInferredEnergeticsOpen] = useState(false);
+  const [inferredTasteOpen, setInferredTasteOpen] = useState(false);
+  const [monographDropdownOpen, setMonographDropdownOpen] = useState(false);
+  const [addLinkOpen, setAddLinkOpen] = useState(false);
+  const [newLinkUrl, setNewLinkUrl] = useState('');
+  const [addLinkSaving, setAddLinkSaving] = useState(false);
+
+  const [hoveredConstituentId, setHoveredConstituentId] = useState<number | null>(null);
+  const [tooltipPos, setTooltipPos] = useState<{ x: number; y: number } | null>(null);
+  const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const monographDropdownRef = useRef<HTMLDivElement>(null);
+  const sectionRefs = useRef<Partial<Record<keyof typeof sectionsOpen, HTMLDivElement | null>>>({});
+
+  // Reset per-herb UI state when the herb changes
+  useEffect(() => {
+    setSectionsOpen({ primaryActions: true, secondaryActions: true, constituentProfile: true, constituents: true, disorders: true, pairings: true, contraindications: true, mmMateriaMedica: true, herbContraindications: true, classNotes: true, sourceNotes: true });
+    setAlternatesOpen(false);
+    setHoveredConstituentId(null);
+    setTooltipPos(null);
+  }, [herb.id]);
+
+  useEffect(() => {
+    if (!monographDropdownOpen) return;
+    function handleClickOutside(e: MouseEvent) {
+      if (monographDropdownRef.current && !monographDropdownRef.current.contains(e.target as Node)) {
+        setMonographDropdownOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [monographDropdownOpen]);
+
+  const scrollToSection = (key: keyof typeof sectionsOpen) => {
+    setSectionsOpen((prev) => ({ ...prev, [key]: true }));
+    setTimeout(() => {
+      sectionRefs.current[key]?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 50);
+  };
+
+  const VINEGAR_SKIP_SUBCLASSES = new Set([
+    'Purine alkaloid', 'Pyrrolizidine alkaloid', 'Capsaicinoid',
+  ]);
+  const herbHasExtractableAlkaloids = profiles.some(
+    (p) => p.class === 'Alkaloid' && !VINEGAR_SKIP_SUBCLASSES.has(p.subclass ?? '')
+  );
+
+  // Alternates computation
+  const computedAlternates = (() => {
+    if (profiles.length === 0) return [];
+    let selfScore = 0;
+    for (const p of profiles) {
+      selfScore += (STATUS_WEIGHT[p.status ?? ''] ?? 1) * (IMP_WEIGHT[p.importance ?? ''] ?? 1) * 100;
+    }
+    if (selfScore === 0) return [];
+
+    const byName    = new Map<string, ConstituentProfile[]>();
+    const bySubclass = new Map<string, ConstituentProfile[]>();
+    const byClass   = new Map<string, ConstituentProfile[]>();
+
+    for (const p of allProfiles) {
+      if (p.herb_id == null || p.herb_id === herb.id) continue;
+      const nk = p.constituent.toLowerCase();
+      if (!byName.has(nk)) byName.set(nk, []);
+      byName.get(nk)!.push(p);
+      if (p.subclass) {
+        const sk = p.subclass.toLowerCase();
+        if (!bySubclass.has(sk)) bySubclass.set(sk, []);
+        bySubclass.get(sk)!.push(p);
+      }
+      if (p.class) {
+        const ck = p.class.toLowerCase();
+        if (!byClass.has(ck)) byClass.set(ck, []);
+        byClass.get(ck)!.push(p);
+      }
+    }
+
+    const scores      = new Map<number, number>();
+    const exactMap    = new Map<number, Set<string>>();
+    const subclassMap = new Map<number, Set<string>>();
+    const classMap    = new Map<number, Set<string>>();
+
+    for (const p of profiles) {
+      const W = (STATUS_WEIGHT[p.status ?? ''] ?? 1) * (IMP_WEIGHT[p.importance ?? ''] ?? 1);
+      const nk = p.constituent.toLowerCase();
+
+      const exactHerbs    = new Set<number>();
+      const subclassHerbs = new Set<number>();
+
+      for (const q of byName.get(nk) ?? []) {
+        if (q.herb_id == null) continue;
+        exactHerbs.add(q.herb_id);
+        scores.set(q.herb_id, (scores.get(q.herb_id) ?? 0) + W * 100);
+        if (!exactMap.has(q.herb_id)) exactMap.set(q.herb_id, new Set());
+        exactMap.get(q.herb_id)!.add(p.constituent);
+      }
+
+      if (p.subclass) {
+        for (const q of bySubclass.get(p.subclass.toLowerCase()) ?? []) {
+          if (q.herb_id == null || exactHerbs.has(q.herb_id) || subclassHerbs.has(q.herb_id)) continue;
+          subclassHerbs.add(q.herb_id);
+          scores.set(q.herb_id, (scores.get(q.herb_id) ?? 0) + W * 50);
+          if (!subclassMap.has(q.herb_id)) subclassMap.set(q.herb_id, new Set());
+          subclassMap.get(q.herb_id)!.add(p.subclass);
+        }
+      }
+
+      if (p.class) {
+        const classHerbs = new Set<number>();
+        for (const q of byClass.get(p.class.toLowerCase()) ?? []) {
+          if (q.herb_id == null || exactHerbs.has(q.herb_id) || subclassHerbs.has(q.herb_id) || classHerbs.has(q.herb_id)) continue;
+          classHerbs.add(q.herb_id);
+          scores.set(q.herb_id, (scores.get(q.herb_id) ?? 0) + W * 15);
+          if (!classMap.has(q.herb_id)) classMap.set(q.herb_id, new Set());
+          classMap.get(q.herb_id)!.add(p.class);
+        }
+      }
+    }
+
+    return [...scores.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 8)
+      .map(([herbId, score]) => ({
+        herb: allHerbs.find((h) => h.id === herbId),
+        similarity: Math.min(100, Math.round((score / selfScore) * 100)),
+        exactConstituents: [...(exactMap.get(herbId) ?? [])],
+        sharedSubclasses:  [...(subclassMap.get(herbId) ?? [])],
+        sharedClasses:     [...(classMap.get(herbId) ?? [])],
+      }))
+      .filter((a) => a.herb != null);
+  })();
+
+  // Tooltip herb list for hovered constituent
+  const tooltipHerbs = (() => {
+    if (hoveredConstituentId == null) return [];
+    return (constituentIndex.get(hoveredConstituentId) ?? [])
+      .filter((r) => r.herb_id !== herb.id && r.concentration_level !== 'trace')
+      .sort((a, b) => LEVEL_WEIGHT[b.concentration_level] - LEVEL_WEIGHT[a.concentration_level])
+      .map((r) => ({ herb: allHerbs.find((h) => h.id === r.herb_id), level: r.concentration_level }))
+      .filter((x) => x.herb != null);
+  })();
+
+  function calcTooltipPos(el: HTMLElement) {
+    const rect = el.getBoundingClientRect();
+    const POPUP_W = 272;
+    const x = Math.min(rect.left, window.innerWidth - POPUP_W - 8);
+    const spaceBelow = window.innerHeight - rect.bottom - 6;
+    const y = spaceBelow > 200 ? rect.bottom + 6 : Math.max(8, rect.top - 300);
+    return { x, y };
+  }
+
+  function handlePillMouseEnter(constituentId: number, e: React.MouseEvent) {
+    if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
+    setTooltipPos(calcTooltipPos(e.currentTarget as HTMLElement));
+    hoverTimerRef.current = setTimeout(() => setHoveredConstituentId(constituentId), 120);
+  }
+
+  function handlePillClick(constituentId: number, e: React.MouseEvent) {
+    e.stopPropagation();
+    if (hoveredConstituentId === constituentId) {
+      setHoveredConstituentId(null);
+      setTooltipPos(null);
+    } else {
+      setTooltipPos(calcTooltipPos(e.currentTarget as HTMLElement));
+      setHoveredConstituentId(constituentId);
+    }
+  }
+
+  function handlePillMouseLeave() {
+    if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
+    hoverTimerRef.current = setTimeout(() => {
+      setHoveredConstituentId(null);
+      setTooltipPos(null);
+    }, 200);
+  }
+
+  function handleTooltipMouseEnter() {
+    if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
+  }
+
+  function handleTooltipMouseLeave() {
+    setHoveredConstituentId(null);
+    setTooltipPos(null);
+  }
+
+  async function handleAddLink() {
+    if (!newLinkUrl.trim()) return;
+    setAddLinkSaving(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch('/api/monograph-links', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(session ? { Authorization: `Bearer ${session.access_token}` } : {}),
+        },
+        body: JSON.stringify({ herb_id: herb.id, url: newLinkUrl.trim() }),
+      });
+      if (!res.ok) throw new Error('Failed to add link');
+      const newLink = await res.json();
+      onMonographLinkAdded?.(newLink);
+      setAddLinkOpen(false);
+      setNewLinkUrl('');
+    } catch (err) {
+      console.error('Error adding monograph link:', err);
+    } finally {
+      setAddLinkSaving(false);
+    }
+  }
+
+  return (
+    <div onClick={() => { if (hoveredConstituentId != null) { setHoveredConstituentId(null); setTooltipPos(null); } }}>
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-3">
+        <div>
+          <h2 className="text-3xl font-bold text-green-800">{herb.common_name}{herb.plant_part ? ` (${herb.plant_part})` : ''}</h2>
+          {herb.pinyin_name && (
+            <p className="text-lg text-gray-500 mt-0.5">{herb.pinyin_name}</p>
+          )}
+          <p className="text-xl italic text-gray-600">{herb.latin_name}</p>
+        </div>
+        <div className="flex flex-col items-end gap-1.5 mt-2 sm:mt-0 sm:ml-4 sm:mr-7 shrink-0">
+          {/* Monograph links */}
+          {(() => {
+            const sorted = (herb.herb_monograph_links ?? []).slice().sort((a, b) => a.sort_order - b.sort_order);
+            const addBtn = isLoggedIn && !frozen ? (
+              <button
+                onClick={() => { setNewLinkUrl(''); setAddLinkOpen(true); }}
+                className="px-3 py-1 text-green-700 border border-green-300 rounded hover:bg-green-50 transition-colors text-sm font-bold leading-none shrink-0"
+                title="Add monograph link"
+              >
+                +
+              </button>
+            ) : null;
+            if (sorted.length === 0) return addBtn ? <div className="flex items-center gap-1.5">{addBtn}</div> : null;
+            if (sorted.length === 1) {
+              return (
+                <div className="flex items-center gap-1.5">
+                  <a href={sorted[0].url} target="_blank" rel="noopener noreferrer"
+                    className="px-4 py-2 bg-green-700 text-white text-sm font-bold rounded hover:bg-green-800 transition-colors">
+                    {sorted[0].label || 'MONOGRAPH'}
+                  </a>
+                  {addBtn}
+                </div>
+              );
+            }
+            return (
+              <div ref={monographDropdownRef} className="flex items-center gap-1.5">
+                <div className="relative">
+                  <button
+                    onClick={() => setMonographDropdownOpen((v) => !v)}
+                    className="flex items-center gap-2 px-4 py-2 bg-green-700 text-white text-sm font-bold rounded hover:bg-green-800 transition-colors"
+                  >
+                    MONOGRAPHS
+                    <svg className={`w-3 h-3 transition-transform ${monographDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+                  {monographDropdownOpen && (
+                    <div className="absolute top-full right-0 mt-1 bg-white rounded-lg shadow-lg border border-gray-200 z-50 min-w-full">
+                      {sorted.map((link) => (
+                        <a
+                          key={link.id}
+                          href={link.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={() => setMonographDropdownOpen(false)}
+                          className="block px-4 py-2 text-sm text-green-700 font-semibold hover:bg-green-50 first:rounded-t-lg last:rounded-b-lg whitespace-nowrap"
+                        >
+                          {link.label || 'MONOGRAPH'}
+                        </a>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                {addBtn}
+              </div>
+            );
+          })()}
+          {/* Energetics badges */}
+          {(() => {
+            const badges: { emoji: string; label: string; inferred: boolean; isTaste: boolean }[] = [];
+            if (herb.temperature === 'warming')  badges.push({ emoji: '🔥', label: 'Warming',      inferred: !!herb.temperature_inferred, isTaste: false });
+            if (herb.temperature === 'cooling')  badges.push({ emoji: '❄️', label: 'Cooling',      inferred: !!herb.temperature_inferred, isTaste: false });
+            if (herb.moisture === 'moistening')  badges.push({ emoji: '💧', label: 'Moistening',   inferred: !!herb.moisture_inferred,     isTaste: false });
+            if (herb.moisture === 'drying')      badges.push({ emoji: '🌵', label: 'Drying',       inferred: !!herb.moisture_inferred,     isTaste: false });
+            if (herb.tone === 'toning')          badges.push({ emoji: '⚡', label: 'Toning',       inferred: !!herb.tone_inferred,         isTaste: false });
+            if (herb.tone === 'relaxing')        badges.push({ emoji: '🌊', label: 'Relaxing',     inferred: !!herb.tone_inferred,         isTaste: false });
+            if (herb.taste === 'sweet')          badges.push({ emoji: '🍯', label: 'Sweet taste',  inferred: !!herb.taste_inferred,        isTaste: true });
+            if (herb.taste === 'bitter')         badges.push({ emoji: '☕', label: 'Bitter taste', inferred: !!herb.taste_inferred,        isTaste: true });
+            if (herb.taste === 'pungent')        badges.push({ emoji: '🌶️', label: 'Pungent taste', inferred: !!herb.taste_inferred,      isTaste: true });
+            if (herb.taste === 'salty')          badges.push({ emoji: '🧂', label: 'Salty taste',  inferred: !!herb.taste_inferred,        isTaste: true });
+            if (herb.taste === 'sour')           badges.push({ emoji: '🍋', label: 'Sour taste',   inferred: !!herb.taste_inferred,        isTaste: true });
+            if (badges.length === 0) return null;
+            const anyEnergeticsInferred = badges.some((b) => b.inferred && !b.isTaste);
+            const tasteInferred = badges.some((b) => b.inferred && b.isTaste);
+            return (
+              <div className="flex items-center gap-1.5 flex-wrap justify-end mt-2">
+                {badges.map(({ emoji, label, inferred }) => (
+                  <span
+                    key={label}
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-sm font-medium ${
+                      inferred
+                        ? 'border-gray-200 bg-gray-50 text-gray-400'
+                        : 'border-green-200 bg-green-50 text-green-700'
+                    }`}
+                  >
+                    <span>{emoji}</span>
+                    <span>{label}</span>
+                    {inferred && <span className="text-xs opacity-60 italic">inferred</span>}
+                  </span>
+                ))}
+                {anyEnergeticsInferred && (
+                  <button
+                    onClick={() => setInferredEnergeticsOpen(true)}
+                    className="w-5 h-5 rounded-full border border-gray-300 text-gray-400 text-xs flex items-center justify-center hover:border-gray-500 hover:text-gray-600 transition-colors font-serif italic leading-none shrink-0"
+                    title="How were these energetics inferred?"
+                  >
+                    i
+                  </button>
+                )}
+                {tasteInferred && (
+                  <button
+                    onClick={() => setInferredTasteOpen(true)}
+                    className="w-5 h-5 rounded-full border border-amber-300 text-amber-500 text-xs flex items-center justify-center hover:border-amber-500 hover:text-amber-700 transition-colors font-serif italic leading-none shrink-0"
+                    title="How was this taste inferred?"
+                  >
+                    i
+                  </button>
+                )}
+              </div>
+            );
+          })()}
+        </div>
+      </div>
+
+      {/* Section nav + expand/collapse all */}
+      <div className="flex flex-wrap gap-1.5 mb-2 text-xs">
+        {[
+          { key: 'primaryActions' as const, label: 'Primary Actions', pink: false },
+          ...(herb.herb_secondary_actions.length > 0 ? [{ key: 'secondaryActions' as const, label: 'Secondary Actions', pink: false }] : []),
+          ...((herb.herb_source_notes?.length ?? 0) > 0 ? [{ key: 'sourceNotes' as const, label: 'Clinical References', pink: false }] : []),
+          ...(classNoteSnippets.length > 0 ? [{ key: 'classNotes' as const, label: 'Class Notes', pink: false }] : []),
+          ...(profiles.length > 0 ? [{ key: 'constituentProfile' as const, label: 'Constituents', pink: false }] : []),
+          ...(((herb.herb_constituents?.length ?? 0) > 0 || herb.herb_menstruum) ? [{ key: 'constituents' as const, label: 'General Constituents', pink: false }] : []),
+          ...((((herb.disorder_action_herbs?.length ?? 0) > 0) || ((herb.disorder_specific_remedies?.length ?? 0) > 0)) ? [{ key: 'disorders' as const, label: 'Disorders', pink: false }] : []),
+          ...((duiYaoPairs.length > 0 || herbPairs.length > 0) ? [{ key: 'pairings' as const, label: 'Pairings', pink: false }] : []),
+          ...(MM_MATERIA_MEDICA[herb.id] ? [{ key: 'mmMateriaMedica' as const, label: 'MM Materia Medica', pink: false }] : []),
+          ...(CONTRAINDICATIONS[herb.id] ? [{ key: 'contraindications' as const, label: 'Drug Interactions', pink: true }] : []),
+          ...(herb.contraindications ? [{ key: 'herbContraindications' as const, label: 'Contraindications', pink: true }] : []),
+        ].map(({ key, label, pink }) => (
+          <button
+            key={key}
+            onClick={() => scrollToSection(key)}
+            className={pink
+              ? 'px-2.5 py-1 rounded-full border border-red-200 text-red-400 bg-red-50 hover:border-red-400 hover:text-red-600 transition-colors'
+              : 'px-2.5 py-1 rounded-full border border-gray-300 text-gray-500 hover:border-green-500 hover:text-green-700 transition-colors'}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {/* Herb image — only in active (non-frozen) pane */}
+      {!frozen && <HerbImageUpload herbId={herb.id} isLoggedIn={isLoggedIn} />}
+
+      <div className="flex justify-end mb-5">
+        <button
+          onClick={() => {
+            const allOpen = Object.values(sectionsOpen).every(Boolean);
+            setSectionsOpen({ primaryActions: !allOpen, secondaryActions: !allOpen, constituentProfile: !allOpen, constituents: !allOpen, disorders: !allOpen, pairings: !allOpen, contraindications: !allOpen, mmMateriaMedica: !allOpen, herbContraindications: !allOpen, classNotes: !allOpen, sourceNotes: !allOpen });
+          }}
+          className="flex items-center gap-1.5 px-3 py-1 rounded-full border border-gray-300 text-xs text-gray-500 hover:border-gray-400 hover:text-gray-700 transition-colors"
+        >
+          <svg className={`w-3 h-3 transition-transform ${Object.values(sectionsOpen).every(Boolean) ? '' : '-rotate-90'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+          {Object.values(sectionsOpen).every(Boolean) ? 'Collapse all' : 'Expand all'}
+        </button>
+      </div>
+
+      {/* Primary Actions & Body Systems */}
+      <div className="mb-6" ref={(el) => { sectionRefs.current.primaryActions = el; }}>
+        <SectionHeader title="Primary Actions & Body Systems" open={sectionsOpen.primaryActions} onToggle={() => toggleSection('primaryActions')} />
+        {sectionsOpen.primaryActions && (
+          herb.herb_primary_actions.length > 0
+            ? (() => {
+                const bySystem = new Map<string, typeof herb.herb_primary_actions>();
+                herb.herb_primary_actions.forEach((action) => {
+                  const sysName = action.body_systems?.name ?? 'General';
+                  if (!bySystem.has(sysName)) bySystem.set(sysName, []);
+                  bySystem.get(sysName)!.push(action);
+                });
+                const sortedSystems = [...bySystem.entries()].sort(([a], [b]) => {
+                  if (a === 'General') return 1;
+                  if (b === 'General') return -1;
+                  return a.localeCompare(b);
+                });
+                return (
+                  <div className="space-y-6 pl-4 border-l-2 border-green-100">
+                    {sortedSystems.map(([sysName, actions]) => (
+                      <div key={sysName}>
+                        <h4 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-2 border-b border-gray-100 pb-1">
+                          {sysName}
+                        </h4>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                          {[...actions].sort((a, b) => a.primary_actions.name.localeCompare(b.primary_actions.name)).map((action, idx) => (
+                            <button
+                              key={idx}
+                              onClick={() => onActionClick?.(action.primary_actions.id)}
+                              className="w-full bg-gray-50 border border-gray-200 rounded-lg py-1.5 px-4 hover:border-green-400 hover:shadow-sm hover:scale-[1.02] transition-all cursor-pointer text-left"
+                            >
+                              <div className="flex items-start justify-between">
+                                <h5 className="text-base font-semibold text-green-700">{action.primary_actions.name}</h5>
+                                {action.relative_strength && (
+                                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStrengthColor(action.relative_strength)}`}>
+                                    {action.relative_strength.replace('_', ' ')}
+                                  </span>
+                                )}
+                              </div>
+                              {action.body_system_note && (
+                                <p className="text-sm text-gray-700 mt-1">{action.body_system_note}</p>
+                              )}
+                              {action.sources && (
+                                <span className="inline-block mt-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-100 text-amber-700 border border-amber-200">P&amp;P</span>
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()
+            : <p className="text-gray-500 italic">No primary actions recorded for this herb.</p>
+        )}
+      </div>
+
+      {/* Secondary Actions */}
+      {herb.herb_secondary_actions.length > 0 && (
+        <div className="mb-6" ref={(el) => { sectionRefs.current.secondaryActions = el; }}>
+          <SectionHeader title="Secondary Actions" open={sectionsOpen.secondaryActions} onToggle={() => toggleSection('secondaryActions')} />
+          {sectionsOpen.secondaryActions && (
+            <div className="flex flex-wrap gap-2">
+              {[...new Map(herb.herb_secondary_actions.map(i => [i.secondary_actions.name, i])).values()].sort((a, b) => a.secondary_actions.name.localeCompare(b.secondary_actions.name)).map((item, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => onActionNameClick?.(item.secondary_actions.name)}
+                  className="px-3 py-1.5 bg-teal-50 text-teal-800 border border-teal-200 rounded-full text-sm hover:bg-teal-100 hover:border-teal-400 transition-colors cursor-pointer"
+                >
+                  {item.secondary_actions.name}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Clinical References */}
+      {(herb.herb_source_notes?.length ?? 0) > 0 && (
+        <div className="mb-6" ref={(el) => { sectionRefs.current.sourceNotes = el; }}>
+          <SectionHeader title="Clinical References" open={sectionsOpen.sourceNotes} onToggle={() => toggleSection('sourceNotes')} />
+          {sectionsOpen.sourceNotes && (() => {
+            const SECTION_ORDER = ['special_characteristics', 'individual_indications', 'combinations_technique'];
+            const SECTION_LABELS: Record<string, string> = {
+              special_characteristics: 'Clinical Profile',
+              individual_indications: 'Indications',
+              combinations_technique: 'Formulation & Technique',
+            };
+            const bySource = new Map<number, SourceNote[]>();
+            (herb.herb_source_notes ?? []).forEach((note) => {
+              if (!bySource.has(note.source_id)) bySource.set(note.source_id, []);
+              bySource.get(note.source_id)!.push(note);
+            });
+            return (
+              <div className="space-y-6 pl-4 border-l-2 border-amber-100">
+                {[...bySource.values()].map((notes) => {
+                  const src = notes[0].sources;
+                  const sorted = [...notes].sort((a, b) =>
+                    SECTION_ORDER.indexOf(a.section_type) - SECTION_ORDER.indexOf(b.section_type)
+                  );
+                  return (
+                    <div key={src.id}>
+                      <div className="mb-3">
+                        <h4 className="text-sm font-semibold text-amber-800">{src.display_name}</h4>
+                        {src.full_title && (
+                          <p className="text-xs text-gray-500 italic">{src.full_title}{src.authors ? ` — ${src.authors}` : ''}{src.year ? ` (${src.year})` : ''}</p>
+                        )}
+                      </div>
+                      <div className="space-y-3">
+                        {sorted.map((note) => (
+                          <div key={note.id}>
+                            <h5 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
+                              {SECTION_LABELS[note.section_type] ?? note.section_type}
+                            </h5>
+                            <div className="text-sm text-gray-700 whitespace-pre-line leading-relaxed bg-amber-50 border border-amber-100 rounded-lg px-3 py-2">
+                              {note.content}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })()}
+        </div>
+      )}
+
+      {/* Detail loading indicator */}
+      {detailLoading && !herb.herb_constituents && (
+        <div className="text-sm text-gray-400 py-4 text-center">Loading constituents…</div>
+      )}
+
+      {/* Class Notes */}
+      {classNoteSnippets.length > 0 && (
+        <div className="mb-6" ref={(el) => { sectionRefs.current.classNotes = el; }}>
+          <SectionHeader title="Class Notes" open={sectionsOpen.classNotes} onToggle={() => toggleSection('classNotes')} />
+          {sectionsOpen.classNotes && (
+            <div className="pl-4 border-l-2 border-teal-100 space-y-2">
+              {classNoteSnippets.map((snippet) => (
+                <div key={snippet.id} className="border border-teal-200 rounded-lg px-4 py-3 bg-teal-50/50">
+                  <p className="text-sm text-gray-800">{snippet.snippet_text}</p>
+                  <div className="flex flex-wrap items-center gap-2 mt-1.5">
+                    <a
+                      href="https://1drv.ms/f/c/2C944FF46704ED09/IgDp6eLOYY2nSqOl4q-5M-MjAXgrqOPXRbJsZZFM8nCRBeA?e=YPDjNw"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-teal-700 font-medium hover:text-teal-900 hover:underline"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {snippet.class_name}
+                    </a>
+                    {snippet.section_header && (
+                      <>
+                        <span className="text-xs text-teal-300">·</span>
+                        <span className="text-xs text-teal-600">{snippet.section_header}</span>
+                      </>
+                    )}
+                    <span className={`ml-auto text-[10px] px-1.5 py-0.5 rounded-full border font-semibold ${
+                      snippet.note_type === 'personal'
+                        ? 'bg-purple-50 border-purple-200 text-purple-700'
+                        : 'bg-sky-50 border-sky-200 text-sky-700'
+                    }`}>
+                      {snippet.note_type === 'personal' ? 'personal' : 'generated'}
+                    </span>
+                  </div>
+                  {snippet.source_block && (
+                    <details className="mt-2">
+                      <summary className="text-xs text-teal-500 cursor-pointer select-none hover:text-teal-700">
+                        View in context
+                      </summary>
+                      <blockquote className="mt-1.5 pl-3 border-l-2 border-teal-300 text-xs text-gray-600 whitespace-pre-wrap font-mono leading-relaxed">
+                        {highlightHerbName(snippet.source_block, [
+                          herb.common_name,
+                          herb.latin_name,
+                          herb.latin_name.split(' ')[0],
+                          ...(herb.synonyms ?? []),
+                        ])}
+                      </blockquote>
+                    </details>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Constituent Profile Markers */}
+      {profiles.length > 0 && (
+        <div className="mb-6" ref={(el) => { sectionRefs.current.constituentProfile = el; }}>
+          <SectionHeader title="Constituent Profile Markers" open={sectionsOpen.constituentProfile} onToggle={() => toggleSection('constituentProfile')} />
+          {sectionsOpen.constituentProfile && (
+            <div>
+              <div className="flex flex-col gap-2 mb-4">
+                {[...profiles]
+                  .sort((a, b) => {
+                    const SO: Record<string, number> = { Marker: 0, Major: 1, Present: 2, Reported: 3 };
+                    const IO: Record<string, number> = { High: 0, Moderate: 1, 'Low-Moderate': 2, 'Low–Moderate': 2, Low: 3 };
+                    const s = (SO[a.status ?? ''] ?? 4) - (SO[b.status ?? ''] ?? 4);
+                    return s !== 0 ? s : (IO[a.importance ?? ''] ?? 4) - (IO[b.importance ?? ''] ?? 4);
+                  })
+                  .map((p) => (
+                    <div
+                      key={p.id}
+                      className="flex flex-col px-3 py-1.5 rounded-lg border bg-amber-50 border-amber-300 cursor-default select-none"
+                    >
+                      <span className="text-base font-semibold text-amber-900">{p.constituent}</span>
+                      <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-1 sm:gap-1.5 mt-0.5">
+                        {(p.class || p.subclass) && (
+                          <div className="flex items-center gap-1.5">
+                            {p.class && <span className="text-xs text-gray-500">{p.class}</span>}
+                            {p.class && p.subclass && <span className="text-xs text-gray-400">›</span>}
+                            {p.subclass && <span className="text-xs text-amber-700 font-medium">{p.subclass}</span>}
+                          </div>
+                        )}
+                        {(p.status || p.importance) && (
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            {p.status && (
+                              <span className={`text-xs px-1.5 py-0.5 rounded-full border font-medium ${statusBadgeColor(p.status)}`}>
+                                {p.status}
+                              </span>
+                            )}
+                            {p.importance && (
+                              <span className={`text-xs px-1.5 py-0.5 rounded-full border font-medium ${importanceBadgeColor(p.importance)}`}>
+                                {p.importance}
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                      {p.notes && (
+                        <p className="text-xs text-gray-600 italic mt-1 leading-snug">{p.notes}</p>
+                      )}
+                    </div>
+                  ))}
+              </div>
+
+              {/* Editorial note(s) */}
+              {(() => {
+                const notes = [...new Set(
+                  profiles.map((p) => p.editorial_note?.trim()).filter(Boolean) as string[]
+                )];
+                if (notes.length === 0) return null;
+                return (
+                  <div className="mb-4 space-y-2">
+                    {notes.map((note, i) => (
+                      <p key={i} className="text-sm italic text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                        {note}
+                      </p>
+                    ))}
+                  </div>
+                );
+              })()}
+
+              {/* Alternates */}
+              {computedAlternates.length > 0 && (
+                <div>
+                  <button
+                    onClick={() => setAlternatesOpen((o) => !o)}
+                    className="flex items-center gap-2 text-sm font-semibold text-gray-600 hover:text-amber-700 transition-colors"
+                  >
+                    <svg
+                      className={`w-4 h-4 transition-transform ${alternatesOpen ? '' : '-rotate-90'}`}
+                      fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                    <span className="hidden sm:inline">Ranked Alternates Based on Markers ({computedAlternates.length})</span>
+                    <span className="sm:hidden">Ranked Alternates ({computedAlternates.length})</span>
+                  </button>
+                  {alternatesOpen && (
+                    <div className="mt-3 space-y-2">
+                      {computedAlternates.map(({ herb: altHerb, similarity, exactConstituents, sharedSubclasses, sharedClasses }) => {
+                        if (!altHerb) return null;
+                        const simColor = similarity >= 50
+                          ? 'bg-emerald-100 text-emerald-700 border-emerald-300'
+                          : similarity >= 25
+                          ? 'bg-amber-100 text-amber-700 border-amber-300'
+                          : 'bg-gray-100 text-gray-500 border-gray-200';
+                        return (
+                          <button
+                            key={altHerb.id}
+                            onClick={() => onNavigateToHerb?.(altHerb.id)}
+                            className={`w-full text-left border rounded-lg px-4 py-2.5 transition-all hover:shadow-md hover:scale-[1.005] ${
+                              altHerb.temperature === 'warming' ? 'bg-amber-50 border-amber-200 hover:bg-amber-100' :
+                              altHerb.temperature === 'cooling' ? 'bg-sky-50 border-sky-200 hover:bg-sky-100' :
+                              'bg-gray-50 border-gray-200 hover:bg-gray-100'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between gap-2 mb-1.5">
+                              <div>
+                                <span className="font-medium text-gray-900 text-sm">{altHerb.common_name}{altHerb.plant_part ? ` (${altHerb.plant_part})` : ''}</span>
+                                <span className="text-xs italic text-gray-500 ml-2">{altHerb.latin_name}</span>
+                              </div>
+                              <div className="flex items-center gap-1.5 shrink-0">
+                                <span className={`text-xs px-2 py-0.5 rounded-full border font-semibold ${simColor}`}>
+                                  {similarity}%
+                                </span>
+                              </div>
+                            </div>
+                            <div className="flex flex-wrap gap-1">
+                              {exactConstituents.map((name) => (
+                                <span key={name} className="text-xs px-1.5 py-0.5 rounded border bg-amber-50 text-amber-800 border-amber-300">
+                                  {name}
+                                </span>
+                              ))}
+                              {sharedSubclasses.map((sub) => (
+                                <span key={sub} className="text-xs px-1.5 py-0.5 rounded border bg-yellow-50 text-yellow-700 border-yellow-300 italic">
+                                  {sub}
+                                </span>
+                              ))}
+                              {exactConstituents.length === 0 && sharedSubclasses.length === 0 && sharedClasses.map((cls) => (
+                                <span key={cls} className="text-xs px-1.5 py-0.5 rounded border bg-gray-50 text-gray-500 border-gray-200 italic">
+                                  {cls}
+                                </span>
+                              ))}
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* General Constituents */}
+      {((herb.herb_constituents?.length ?? 0) > 0 || herb.herb_menstruum) && (
+        <div className="mb-6" ref={(el) => { sectionRefs.current.constituents = el; }}>
+          <SectionHeader title="General Constituents" open={sectionsOpen.constituents} onToggle={() => toggleSection('constituents')} />
+          {sectionsOpen.constituents && (
+            <div>
+              <div className="flex flex-wrap gap-2 mb-4">
+                {(herb.herb_constituents ?? []).slice()
+                  .sort((a, b) => {
+                    const w = LEVEL_WEIGHT[a.concentration_level] - LEVEL_WEIGHT[b.concentration_level];
+                    return w !== 0 ? -w : a.sort_order - b.sort_order;
+                  })
+                  .map((hc) => {
+                    const refs = constituentIndex.get(hc.constituent_id) ?? [];
+                    const otherHerbCount = refs.filter(
+                      (r) => r.herb_id !== herb.id && r.concentration_level !== 'trace'
+                    ).length;
+                    return (
+                      <div
+                        key={hc.constituent_id}
+                        className="relative cursor-pointer"
+                        onMouseEnter={(e) => handlePillMouseEnter(hc.constituent_id, e)}
+                        onMouseLeave={handlePillMouseLeave}
+                        onClick={(e) => handlePillClick(hc.constituent_id, e)}
+                      >
+                        <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium border cursor-default select-none ${LEVEL_COLOR[hc.concentration_level as ConcentrationLevel]}`}>
+                          {hc.constituents.name}
+                          {hc.needs_review && <span title="Data needs review" className="opacity-60">*</span>}
+                          {otherHerbCount > 0 && <span className="opacity-50 text-[10px]">({otherHerbCount})</span>}
+                        </span>
+                      </div>
+                    );
+                  })}
+              </div>
+              {herb.herb_menstruum && (
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                  <div className="flex items-center gap-1.5 mb-2">
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Best Menstruum</p>
+                    <span className="relative group cursor-help">
+                      <span className="w-3.5 h-3.5 rounded-full bg-gray-300 hover:bg-gray-400 text-gray-600 text-[9px] font-bold flex items-center justify-center leading-none transition-colors select-none">i</span>
+                      <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-64 bg-gray-900 text-white text-xs rounded-lg p-3 shadow-xl pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity z-50 text-left normal-case tracking-normal font-normal">
+                        <p className="font-semibold mb-2 text-gray-200">Constituent Solubility</p>
+                        <ul className="space-y-1 text-gray-300">
+                          <li><span className="text-white font-medium">Mucilage</span> — cold water only; alcohol destroys it</li>
+                          <li><span className="text-white font-medium">Polysaccharides</span> — hot water or very dilute alcohol</li>
+                          <li><span className="text-white font-medium">Tannins</span> — water or low alcohol + 5–10% glycerin</li>
+                          <li><span className="text-white font-medium">Volatile oils</span> — glycerite preserves best; degrade in alcohol over time</li>
+                          <li><span className="text-white font-medium">Resins</span> — high alcohol (70–90%) only; not water-soluble</li>
+                          <li><span className="text-white font-medium">Alkaloids</span> — min 45% alcohol + 5–10% vinegar</li>
+                          <li><span className="text-white font-medium">Saponins</span> — typically water-soluble</li>
+                          <li><span className="text-white font-medium">Flavonoids / Glycosides</span> — water and alcohol</li>
+                        </ul>
+                        <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-l-[5px] border-r-[5px] border-t-[5px] border-l-transparent border-r-transparent border-t-gray-900" />
+                      </div>
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap gap-2 mb-2">
+                    {menstruumBadges(herb.herb_menstruum).map((b) => (
+                      <span key={b.label} className={`px-3 py-1 rounded-full text-xs font-medium border ${b.color}`}>
+                        {b.label}
+                      </span>
+                    ))}
+                    {herbHasExtractableAlkaloids && (
+                      <span className="px-3 py-1 rounded-full text-xs font-medium border bg-amber-50 text-amber-800 border-amber-300">
+                        + 5–10% vinegar
+                      </span>
+                    )}
+                  </div>
+                  {herb.herb_menstruum.notes && (
+                    <p className="text-xs text-gray-600 mt-1 italic">{herb.herb_menstruum.notes}</p>
+                  )}
+                  {herb.herb_menstruum.powder_effective && (
+                    <p className="text-xs text-yellow-700 mt-2 italic">
+                      Powder effective — {powderEffectiveReason(herb.herb_constituents)} work better ingested whole than extracted into a menstruum.
+                    </p>
+                  )}
+                  {herb.herb_menstruum.oil_effective && (
+                    <p className="text-xs text-orange-700 mt-2 italic">
+                      Oil effective — key constituents are lipophilic and extract well into a fixed oil (infused or cold-pressed).
+                    </p>
+                  )}
+                  {herbHasExtractableAlkaloids && (
+                    <p className="text-xs text-amber-700 mt-2 italic">
+                      Alkaloids present — adding 5–10% apple cider vinegar improves their extraction.
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Disorders */}
+      {((herb.disorder_action_herbs?.length ?? 0) > 0 ||
+        (herb.disorder_specific_remedies?.length ?? 0) > 0) && (
+        <div ref={(el) => { sectionRefs.current.disorders = el; }}>
+          <SectionHeader title="Used for Disorders" open={sectionsOpen.disorders} onToggle={() => toggleSection('disorders')} />
+          {sectionsOpen.disorders && (
+            <div className="space-y-4">
+              {(() => {
+                const disorderMap = new Map<number, {
+                  disorder: Disorder & { body_systems: BodySystem };
+                  actions: PrimaryAction[];
+                  specificRemedy?: string;
+                  ppRemedy?: string;
+                }>();
+                herb.disorder_action_herbs?.forEach((item) => {
+                  if (!disorderMap.has(item.disorders.id)) {
+                    disorderMap.set(item.disorders.id, { disorder: item.disorders, actions: [] });
+                  }
+                  disorderMap.get(item.disorders.id)!.actions.push(item.primary_actions);
+                });
+                herb.disorder_specific_remedies?.forEach((item) => {
+                  if (!disorderMap.has(item.disorders.id)) {
+                    disorderMap.set(item.disorders.id, { disorder: item.disorders, actions: [] });
+                  }
+                  const entry = disorderMap.get(item.disorders.id)!;
+                  if (item.source_id === 1) {
+                    entry.ppRemedy = item.description;
+                  } else {
+                    entry.specificRemedy = item.description;
+                  }
+                });
+                return Array.from(disorderMap.values()).sort((a, b) => a.disorder.name.localeCompare(b.disorder.name)).map((item) => (
+                  <div key={item.disorder.id} className="border border-gray-200 rounded-lg py-1.5 px-4 bg-gray-50">
+                    <button
+                      onClick={() => onDisorderClick?.(item.disorder.id, item.disorder.body_systems.id)}
+                      className="text-left w-full group"
+                    >
+                      <div className="flex items-center gap-2 font-semibold text-base text-blue-700 group-hover:text-blue-900 group-hover:underline transition-colors">
+                        {item.disorder.name}
+                        {item.ppRemedy && (
+                          <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-100 text-amber-700 border border-amber-200 no-underline">P&amp;P</span>
+                        )}
+                      </div>
+                      <div className="text-sm text-gray-600">{item.disorder.body_systems.name}</div>
+                    </button>
+                    {item.specificRemedy && (
+                      <div className="mt-1 mb-2 p-2 bg-green-50 border border-green-200 rounded">
+                        <span className="text-xs font-semibold text-green-800">SPECIFIC REMEDY</span>
+                        <p className="text-sm text-gray-700 mt-1">{item.specificRemedy}</p>
+                      </div>
+                    )}
+                    {item.ppRemedy && (
+                      <div className="mt-1 mb-2 p-2 bg-amber-50 border border-amber-200 rounded">
+                        <span className="text-xs font-semibold text-amber-700">P&amp;P</span>
+                        <p className="text-sm text-gray-700 mt-1">{item.ppRemedy}</p>
+                      </div>
+                    )}
+                    {item.actions.length > 0 && (
+                      <div className="mt-1">
+                        <span className="text-sm font-medium text-gray-700">Actions:</span>
+                        <div className="flex flex-wrap gap-2 mt-1">
+                          {item.actions.map((action, idx) => (
+                            <button
+                              key={idx}
+                              onClick={() => onActionClick?.(action.id)}
+                              className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded hover:bg-blue-200 transition-all"
+                            >
+                              {action.name}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ));
+              })()}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Pairings (Dui Yao + Western Herb Pairs) */}
+      {(duiYaoPairs.length > 0 || duiYaoLoading || herbPairs.length > 0 || herbPairsLoading) && (
+        <div className="mt-6" ref={(el) => { sectionRefs.current.pairings = el; }}>
+          <SectionHeader title="Pairings" open={sectionsOpen.pairings} onToggle={() => toggleSection('pairings')} />
+          {sectionsOpen.pairings && (
+            <div className="space-y-6">
+              {/* Dui Yao */}
+              {(duiYaoPairs.length > 0 || duiYaoLoading) && (
+                <div>
+                  <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-3 px-1">Dui Yao</p>
+                  {duiYaoLoading ? (
+                    <p className="text-gray-400 text-sm italic">Loading pairings…</p>
+                  ) : (
+                    <div className="space-y-4">
+                      {duiYaoPairs.map((pair) => {
+                        const partner = pair.herb1_id === herb.id ? pair.herb2 : pair.herb1;
+                        const myProps = pair.dui_yao_herb_properties
+                          .filter((p) => p.herb_id === herb.id)
+                          .sort((a, b) => a.sort_order - b.sort_order);
+                        const partnerProps = pair.dui_yao_herb_properties
+                          .filter((p) => p.herb_id === partner.id)
+                          .sort((a, b) => a.sort_order - b.sort_order);
+                        const indications = [...pair.dui_yao_indications].sort((a, b) => a.sort_order - b.sort_order);
+                        return (
+                          <div key={pair.id} className="border border-gray-200 rounded-lg overflow-hidden">
+                            <div className="bg-gray-50 px-4 py-2.5 flex items-start justify-between gap-2">
+                              <button
+                                onClick={() => onNavigateToHerb?.(partner.id)}
+                                className="text-left group"
+                              >
+                                <div className="font-semibold text-sm text-green-700 group-hover:text-green-900 group-hover:underline transition-colors">
+                                  Paired with: {partner.common_name}
+                                  {partner.pinyin_name && (
+                                    <span className="ml-1.5 font-normal text-gray-500 group-hover:text-gray-700">({partner.pinyin_name})</span>
+                                  )}
+                                </div>
+                                <div className="text-xs italic text-gray-500">{partner.latin_name}</div>
+                              </button>
+                              {pair.book_page && (
+                                <span className="shrink-0 text-xs text-gray-400 mt-0.5">p. {pair.book_page}</span>
+                              )}
+                            </div>
+                            {(myProps.length > 0 || partnerProps.length > 0) && (
+                              <div className="grid grid-cols-2 gap-3 px-4 py-3 border-t border-gray-100">
+                                {myProps.length > 0 && (
+                                  <div>
+                                    <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-1">{herb.common_name}</p>
+                                    <ul className="space-y-0.5">
+                                      {myProps.map((prop, i) => (
+                                        <li key={i} className="text-xs text-gray-700 flex gap-1.5">
+                                          <span className="text-gray-400 shrink-0">•</span>{prop.property}
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                )}
+                                {partnerProps.length > 0 && (
+                                  <div>
+                                    <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-1">{partner.common_name}</p>
+                                    <ul className="space-y-0.5">
+                                      {partnerProps.map((prop, i) => (
+                                        <li key={i} className="text-xs text-gray-700 flex gap-1.5">
+                                          <span className="text-gray-400 shrink-0">•</span>{prop.property}
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                            {pair.combined_summary && (
+                              <div className="px-4 py-3 border-t border-gray-100">
+                                <p className="text-sm text-gray-700 leading-relaxed">{pair.combined_summary}</p>
+                              </div>
+                            )}
+                            {indications.length > 0 && (
+                              <div className="px-4 py-3 border-t border-gray-100">
+                                <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-1.5">Indications</p>
+                                <ol className="space-y-0.5 list-decimal list-inside">
+                                  {indications.map((ind, i) => (
+                                    <li key={i} className="text-xs text-gray-700">{ind.indication}</li>
+                                  ))}
+                                </ol>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+              {/* Western Herb Pairs */}
+              {(herbPairs.length > 0 || herbPairsLoading) && (
+                <div className={duiYaoPairs.length > 0 ? 'border-t border-gray-100 pt-6' : ''}>
+                  <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-3 px-1">Western Pairs</p>
+                  {herbPairsLoading ? (
+                    <p className="text-gray-400 text-sm italic">Loading pairings…</p>
+                  ) : (
+                    <div className="space-y-4">
+                      {herbPairs.map((pair) => {
+                        const partner = pair.herb1_id === herb.id ? pair.herb2 : pair.herb1;
+                        const myProps = pair.herb_pair_herb_properties
+                          .filter((p) => p.herb_id === herb.id)
+                          .sort((a, b) => a.sort_order - b.sort_order);
+                        const partnerProps = pair.herb_pair_herb_properties
+                          .filter((p) => p.herb_id === partner.id)
+                          .sort((a, b) => a.sort_order - b.sort_order);
+                        const indications = [...pair.herb_pair_indications].sort((a, b) => a.sort_order - b.sort_order);
+                        return (
+                          <div key={pair.id} className="border border-amber-200 rounded-lg overflow-hidden">
+                            <div className="bg-amber-50 px-4 py-2.5 flex items-start justify-between gap-2">
+                              <button onClick={() => onNavigateToHerb?.(partner.id)} className="text-left group">
+                                <div className="font-semibold text-sm text-amber-800 group-hover:text-amber-950 group-hover:underline transition-colors">
+                                  Paired with: {partner.common_name}
+                                </div>
+                                <div className="text-xs italic text-gray-500">{partner.latin_name}</div>
+                              </button>
+                              <span className="shrink-0 text-[10px] text-amber-600 mt-0.5 text-right leading-tight max-w-[140px]">{pair.source}</span>
+                            </div>
+                            {(myProps.length > 0 || partnerProps.length > 0) && (
+                              <div className="grid grid-cols-2 gap-3 px-4 py-3 border-t border-amber-100">
+                                {myProps.length > 0 && (
+                                  <div>
+                                    <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-1">{herb.common_name}</p>
+                                    <ul className="space-y-0.5">
+                                      {myProps.map((prop, i) => (
+                                        <li key={i} className="text-xs text-gray-700 flex gap-1.5">
+                                          <span className="text-gray-400 shrink-0">•</span>{prop.property}
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                )}
+                                {partnerProps.length > 0 && (
+                                  <div>
+                                    <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-1">{partner.common_name}</p>
+                                    <ul className="space-y-0.5">
+                                      {partnerProps.map((prop, i) => (
+                                        <li key={i} className="text-xs text-gray-700 flex gap-1.5">
+                                          <span className="text-gray-400 shrink-0">•</span>{prop.property}
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                            {pair.combined_summary && (
+                              <div className="px-4 py-3 border-t border-amber-100">
+                                <p className="text-sm text-gray-700 leading-relaxed">{pair.combined_summary}</p>
+                              </div>
+                            )}
+                            {indications.length > 0 && (
+                              <div className="px-4 py-3 border-t border-amber-100">
+                                <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-1.5">Indications</p>
+                                <ol className="space-y-0.5 list-decimal list-inside">
+                                  {indications.map((ind, i) => (
+                                    <li key={i} className="text-xs text-gray-700">{ind.indication}</li>
+                                  ))}
+                                </ol>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Michael Moore Materia Medica */}
+      {MM_MATERIA_MEDICA[herb.id] && (() => {
+        const rawText = MM_MATERIA_MEDICA[herb.id];
+        const isPregnancyContraindicated = rawText.startsWith('*');
+        const lines = rawText.split('\n');
+        const header = lines[0].replace(/^\*/, '').trim();
+        const bodyLines = lines.slice(1);
+        const statusLine = bodyLines.find((l) => l.trim().startsWith('STATUS'));
+        const statusCode = statusLine ? statusLine.replace(/.*STATUS\s*:\s*/, '').trim() : null;
+        const bodyText = bodyLines
+          .filter((l) => !l.trim().startsWith('STATUS'))
+          .join('\n')
+          .trim();
+        const STATUS_LABELS: Record<string, string> = {
+          'W': 'Wildcrafted', 'C': 'Cultivated', 'A': 'Abundant',
+          'LA': 'Limited', 'Rare': 'Rare', 'E': 'Endangered', 'U': 'Unknown',
+        };
+        const statusParts = statusCode
+          ? statusCode.split('/').map((s) => STATUS_LABELS[s.trim()] ?? s.trim())
+          : [];
+        return (
+          <div className="mt-6" ref={(el) => { sectionRefs.current.mmMateriaMedica = el; }}>
+            <SectionHeader title="Michael Moore Materia Medica" open={sectionsOpen.mmMateriaMedica} onToggle={() => toggleSection('mmMateriaMedica')} />
+            {sectionsOpen.mmMateriaMedica && (
+              <div className="pl-4 border-l-2 border-green-100 space-y-3">
+                {isPregnancyContraindicated && (
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 border border-amber-200 rounded-lg w-fit">
+                    <svg className="w-3.5 h-3.5 text-amber-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+                    </svg>
+                    <span className="text-xs font-semibold text-amber-800">Avoid in pregnancy</span>
+                  </div>
+                )}
+                <p className="text-xs text-gray-400 italic">{header}</p>
+                <pre className="text-sm text-gray-700 whitespace-pre-wrap font-sans leading-relaxed">{bodyText}</pre>
+                {statusParts.length > 0 && (
+                  <div className="flex items-center gap-2 flex-wrap pt-1">
+                    <span className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Ecological status</span>
+                    {statusParts.map((part) => (
+                      <span key={part} className="text-xs px-2 py-0.5 rounded-full bg-green-50 border border-green-200 text-green-800 font-medium">
+                        {part}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                <p className="text-xs text-gray-400 pt-1">
+                  Source: <span className="italic">Herbal Materia Medica 5.0</span> © Michael Moore (1995)
+                </p>
+              </div>
+            )}
+          </div>
+        );
+      })()}
+
+      {/* Drug Interactions */}
+      {CONTRAINDICATIONS[herb.id] && (
+        <div className="mt-6" ref={(el) => { sectionRefs.current.contraindications = el; }}>
+          <SectionHeader title="Drug Interactions" open={sectionsOpen.contraindications} onToggle={() => toggleSection('contraindications')} />
+          {sectionsOpen.contraindications && (
+            <div className="pl-4 border-l-2 border-red-100">
+              <button
+                onClick={() => setContraindicationsOpen(true)}
+                className="flex items-center gap-3 w-full text-left border border-red-200 rounded-lg px-4 py-3 bg-red-50 hover:bg-red-100 hover:border-red-300 transition-all group"
+              >
+                <svg className="w-5 h-5 text-red-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+                </svg>
+                <div>
+                  <p className="text-sm font-semibold text-red-800">View Drug Interactions</p>
+                  <p className="text-xs text-red-600 mt-0.5">
+                    {CONTRAINDICATIONS[herb.id]} page{CONTRAINDICATIONS[herb.id] === 1 ? '' : 's'} · Stockley&rsquo;s Herbal Medicines Interactions
+                  </p>
+                </div>
+                <svg className="w-4 h-4 text-red-400 ml-auto group-hover:text-red-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Contraindications */}
+      {herb.contraindications && (
+        <div className="mt-6" ref={(el) => { sectionRefs.current.herbContraindications = el; }}>
+          <SectionHeader title="Contraindications" open={sectionsOpen.herbContraindications} onToggle={() => toggleSection('herbContraindications')} />
+          {sectionsOpen.herbContraindications && (
+            <div className="pl-4 border-l-2 border-red-100">
+              <div className="border border-red-200 rounded-lg px-4 py-3 bg-red-50">
+                <div className="flex items-start gap-3">
+                  <svg className="w-5 h-5 text-red-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+                  </svg>
+                  <div>
+                    <p className="text-sm text-red-800">{herb.contraindications}</p>
+                    {herb.contraindications_source && (
+                      <p className="text-xs text-red-400 mt-1">Source: {herb.contraindications_source}</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Inferred energetics modal */}
+      <InferredEnergeticsModal
+        isOpen={inferredEnergeticsOpen}
+        onClose={() => setInferredEnergeticsOpen(false)}
+        herbName={`${herb.common_name}${herb.plant_part ? ` (${herb.plant_part})` : ''}`}
+        temperatureInferred={!!herb.temperature_inferred}
+        moistureInferred={!!herb.moisture_inferred}
+        herbConstituents={herb.herb_constituents ?? []}
+        profiles={profiles}
+      />
+
+      {/* Inferred taste modal */}
+      {herb.taste_inferred && (
+        <InferredTasteModal
+          isOpen={inferredTasteOpen}
+          onClose={() => setInferredTasteOpen(false)}
+          herbName={`${herb.common_name}${herb.plant_part ? ` (${herb.plant_part})` : ''}`}
+          herbConstituents={herb.herb_constituents ?? []}
+          profiles={profiles}
+        />
+      )}
+
+      {/* Drug interactions modal */}
+      {CONTRAINDICATIONS[herb.id] && (
+        <ContraindicationsModal
+          isOpen={contraindicationsOpen}
+          onClose={() => setContraindicationsOpen(false)}
+          herbId={herb.id}
+          pageCount={CONTRAINDICATIONS[herb.id]}
+          herbName={herb.common_name}
+        />
+      )}
+
+      {/* Add monograph link modal */}
+      {addLinkOpen && (
+        <div
+          className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center"
+          onClick={() => setAddLinkOpen(false)}
+        >
+          <div
+            className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md mx-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-lg font-bold text-gray-800 mb-4">Add Monograph Link</h3>
+            <input
+              type="url"
+              value={newLinkUrl}
+              onChange={(e) => setNewLinkUrl(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') handleAddLink(); }}
+              placeholder="https://docs.google.com/..."
+              className="w-full border border-gray-300 rounded px-3 py-2 text-sm mb-4 focus:outline-none focus:border-green-500"
+              autoFocus
+            />
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setAddLinkOpen(false)}
+                className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleAddLink}
+                disabled={!newLinkUrl.trim() || addLinkSaving}
+                className="px-4 py-2 text-sm font-bold bg-green-700 text-white rounded hover:bg-green-800 disabled:opacity-50 transition-colors"
+              >
+                {addLinkSaving ? 'Adding...' : 'Add'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Constituent hover tooltip */}
+      {hoveredConstituentId != null && tooltipPos != null && tooltipHerbs.length > 0 && (() => {
+        const con = herb.herb_constituents?.find((c) => c.constituent_id === hoveredConstituentId);
+        return (
+          <div
+            onMouseEnter={handleTooltipMouseEnter}
+            onMouseLeave={handleTooltipMouseLeave}
+            onClick={(e) => e.stopPropagation()}
+            style={{ position: 'fixed', left: tooltipPos.x, top: tooltipPos.y, zIndex: 9999 }}
+            className="bg-white border border-gray-200 rounded-lg shadow-xl p-3 w-64 max-h-96 overflow-y-auto"
+          >
+            <p className="text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wide">
+              {con?.constituents.name}
+            </p>
+            {con?.constituents.category && (
+              <p className="text-xs text-gray-400 italic mb-2">{con.constituents.category}</p>
+            )}
+            {con?.constituents.description && (
+              <p className="text-xs text-gray-600 mb-2">{con.constituents.description}</p>
+            )}
+            <p className="text-xs font-medium text-gray-600 mb-1">Also found in:</p>
+            <div className="space-y-1">
+              {tooltipHerbs.map(({ herb: tooltipHerb, level }) => (
+                <button
+                  key={tooltipHerb!.id}
+                  onClick={() => {
+                    setHoveredConstituentId(null);
+                    setTooltipPos(null);
+                    onNavigateToHerb?.(tooltipHerb!.id);
+                  }}
+                  className="w-full text-left flex items-center justify-between gap-2 px-2 py-1 rounded hover:bg-gray-50 transition-colors"
+                >
+                  <span className="text-xs text-gray-800 font-medium">{tooltipHerb!.common_name}{tooltipHerb!.plant_part ? ` (${tooltipHerb!.plant_part})` : ''}</span>
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full border ${LEVEL_COLOR[level]}`}>
+                    {level}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
+    </div>
+  );
+}
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onActionClick, onActionNameClick, onDisorderClick, selectedSupplementId, onSupplementClick, selectedEssenceId, onEssenceClick, onSoulConditionClick, pairingsMode, onShowPairings, onFocusChange, pairingsInitialFocusId, isLoggedIn }: HerbViewProps) {
@@ -354,29 +1693,13 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
   }>>({});
   const [detailLoading, setDetailLoading] = useState(false);
 
-  // hover tooltip state
-  const [hoveredConstituentId, setHoveredConstituentId] = useState<number | null>(null);
-  const [tooltipPos, setTooltipPos] = useState<{ x: number; y: number } | null>(null);
-  const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  // section open/closed
-  const [alternatesOpen, setAlternatesOpen] = useState(false);
-  const [sectionsOpen, setSectionsOpen] = useState({
-    primaryActions: true, secondaryActions: true,
-    constituentProfile: true, constituents: true, disorders: true, pairings: true,
-    contraindications: true, mmMateriaMedica: true, herbContraindications: true,
-    classNotes: true, sourceNotes: true,
-  });
-  const toggleSection = (key: keyof typeof sectionsOpen) =>
-    setSectionsOpen((prev) => ({ ...prev, [key]: !prev[key] }));
-
-  const [contraindicationsOpen, setContraindicationsOpen] = useState(false);
-  const [inferredEnergeticsOpen, setInferredEnergeticsOpen] = useState(false);
-  const [inferredTasteOpen, setInferredTasteOpen] = useState(false);
-  const [monographDropdownOpen, setMonographDropdownOpen] = useState(false);
-  const [addLinkOpen, setAddLinkOpen] = useState(false);
-  const [newLinkUrl, setNewLinkUrl] = useState('');
-  const [addLinkSaving, setAddLinkSaving] = useState(false);
+  const [frozenPanes, setFrozenPanes] = useState<Array<{
+    herb: HerbData;
+    profiles: ConstituentProfile[];
+    classNoteSnippets: ClassNoteSnippet[];
+    duiYaoPairs: DuiYaoPair[];
+    herbPairs: HerbPair[];
+  }>>([]);
 
   const herbRefs = useRef<Map<number, HTMLButtonElement>>(new Map());
   const supplementRefs = useRef<Map<number, HTMLButtonElement>>(new Map());
@@ -384,15 +1707,6 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
   const vitaminsSectionRef = useRef<HTMLDivElement | null>(null);
   const essenceSectionRef = useRef<HTMLDivElement | null>(null);
   const detailPanelRef = useRef<HTMLDivElement>(null);
-  const monographDropdownRef = useRef<HTMLDivElement>(null);
-  const sectionRefs = useRef<Partial<Record<keyof typeof sectionsOpen, HTMLDivElement | null>>>({});
-
-  const scrollToSection = (key: keyof typeof sectionsOpen) => {
-    setSectionsOpen((prev) => ({ ...prev, [key]: true }));
-    setTimeout(() => {
-      sectionRefs.current[key]?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 50);
-  };
 
   // Scroll an element into view within the sidebar's overflow-y container
   function scrollItemInSidebar(el: HTMLElement) {
@@ -474,17 +1788,6 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
       }
     }
   }, [highlightedIndex, filteredHerbs, keywordMatchedHerbs, filteredSupplements, filteredEssences]);
-
-  useEffect(() => {
-    if (!monographDropdownOpen) return;
-    function handleClickOutside(e: MouseEvent) {
-      if (monographDropdownRef.current && !monographDropdownRef.current.contains(e.target as Node)) {
-        setMonographDropdownOpen(false);
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [monographDropdownOpen]);
 
   useEffect(() => { fetchHerbs(); }, []);
 
@@ -670,9 +1973,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
       const herb = herbs.find((h) => h.id === selectedHerbId);
       if (herb) {
         setSelectedSupplement(null);
-        setAlternatesOpen(false);
         setMobileListOpen(false);
-        setSectionsOpen({ primaryActions: true, secondaryActions: true, constituentProfile: true, constituents: true, disorders: true, pairings: true, contraindications: true, mmMateriaMedica: true, herbContraindications: true, classNotes: true, sourceNotes: true });
         setTimeout(() => { scrollHerbInSidebar(selectedHerbId); }, 100);
         fetchHerbDetail(selectedHerbId);
       }
@@ -780,217 +2081,46 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
     setDetailLoading(false);
   }
 
-  async function handleAddLink() {
-    if (!selectedHerb || !newLinkUrl.trim()) return;
-    setAddLinkSaving(true);
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const res = await fetch('/api/monograph-links', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(session ? { Authorization: `Bearer ${session.access_token}` } : {}),
-        },
-        body: JSON.stringify({ herb_id: selectedHerb.id, url: newLinkUrl.trim() }),
-      });
-      if (!res.ok) throw new Error('Failed to add link');
-      const newLink = await res.json();
-      const updatedLinks = [...(selectedHerb.herb_monograph_links ?? []), newLink];
-      const updated = { ...selectedHerb, herb_monograph_links: updatedLinks };
-      setSelectedHerb(updated);
-      setHerbDetailCache(prev => ({
-        ...prev,
-        [selectedHerb.id]: {
-          ...prev[selectedHerb.id],
-          herb_monograph_links: updatedLinks,
-        }
-      }));
-      setAddLinkOpen(false);
-      setNewLinkUrl('');
-    } catch (err) {
-      console.error('Error adding monograph link:', err);
-    } finally {
-      setAddLinkSaving(false);
-    }
-  }
-
   const navigateToHerb = useCallback((herbId: number) => {
     const herb = herbs.find((h) => h.id === herbId);
     if (!herb) return;
     setSelectedSupplement(null);
-    setAlternatesOpen(false);
-    setSectionsOpen({ primaryActions: true, secondaryActions: true, constituentProfile: true, constituents: true, disorders: true, pairings: true, contraindications: true, mmMateriaMedica: true, herbContraindications: true, classNotes: true, sourceNotes: true });
     onHerbClick?.(herbId);
     fetchHerbDetail(herbId);
     window.scrollTo({ top: 0, behavior: 'smooth' });
     scrollHerbInSidebar(herbId);
   }, [herbs, onHerbClick, herbDetailCache]);
 
-  // All profiles for the selected herb (used for both marker display and alternates)
+  // All profiles for the selected herb
   const selectedProfiles = selectedHerb
     ? allProfiles.filter((p) => p.herb_id === selectedHerb.id)
     : [];
 
-  // True if the herb has alkaloids that benefit from acid extraction (excludes purines,
-  // pyrrolizidines, and capsaicinoids where vinegar is unhelpful or counterproductive)
-  const VINEGAR_SKIP_SUBCLASSES = new Set([
-    'Purine alkaloid', 'Pyrrolizidine alkaloid', 'Capsaicinoid',
-  ]);
-  const herbHasExtractableAlkaloids = selectedProfiles.some(
-    (p) => p.class === 'Alkaloid' && !VINEGAR_SKIP_SUBCLASSES.has(p.subclass ?? '')
-  );
-
-  // Alternates: multi-level chemical similarity scored against all profiles
-  // Levels: exact constituent (×100) → same subclass (×50) → same class (×15)
-  // Each weighted by Status × Importance; normalized against selected herb's self-score
-  const computedAlternates = (() => {
-    if (!selectedHerb || selectedProfiles.length === 0) return [];
-
-    // Self-score: maximum possible score if everything matched exactly
-    let selfScore = 0;
-    for (const p of selectedProfiles) {
-      selfScore += (STATUS_WEIGHT[p.status ?? ''] ?? 1) * (IMP_WEIGHT[p.importance ?? ''] ?? 1) * 100;
-    }
-    if (selfScore === 0) return [];
-
-    // Build lookup indices over all other herbs' profiles
-    const byName    = new Map<string, ConstituentProfile[]>();
-    const bySubclass = new Map<string, ConstituentProfile[]>();
-    const byClass   = new Map<string, ConstituentProfile[]>();
-
-    for (const p of allProfiles) {
-      if (p.herb_id == null || p.herb_id === selectedHerb.id) continue;
-      const nk = p.constituent.toLowerCase();
-      if (!byName.has(nk)) byName.set(nk, []);
-      byName.get(nk)!.push(p);
-      if (p.subclass) {
-        const sk = p.subclass.toLowerCase();
-        if (!bySubclass.has(sk)) bySubclass.set(sk, []);
-        bySubclass.get(sk)!.push(p);
-      }
-      if (p.class) {
-        const ck = p.class.toLowerCase();
-        if (!byClass.has(ck)) byClass.set(ck, []);
-        byClass.get(ck)!.push(p);
-      }
-    }
-
-    const scores      = new Map<number, number>();
-    const exactMap    = new Map<number, Set<string>>();
-    const subclassMap = new Map<number, Set<string>>();
-    const classMap    = new Map<number, Set<string>>();
-
-    for (const p of selectedProfiles) {
-      const W = (STATUS_WEIGHT[p.status ?? ''] ?? 1) * (IMP_WEIGHT[p.importance ?? ''] ?? 1);
-      const nk = p.constituent.toLowerCase();
-
-      const exactHerbs    = new Set<number>();
-      const subclassHerbs = new Set<number>();
-
-      // Level 1: exact constituent name
-      for (const q of byName.get(nk) ?? []) {
-        if (q.herb_id == null) continue;
-        exactHerbs.add(q.herb_id);
-        scores.set(q.herb_id, (scores.get(q.herb_id) ?? 0) + W * 100);
-        if (!exactMap.has(q.herb_id)) exactMap.set(q.herb_id, new Set());
-        exactMap.get(q.herb_id)!.add(p.constituent);
-      }
-
-      // Level 2: same subclass (skip herbs already matched at level 1 for this p)
-      if (p.subclass) {
-        for (const q of bySubclass.get(p.subclass.toLowerCase()) ?? []) {
-          if (q.herb_id == null || exactHerbs.has(q.herb_id) || subclassHerbs.has(q.herb_id)) continue;
-          subclassHerbs.add(q.herb_id);
-          scores.set(q.herb_id, (scores.get(q.herb_id) ?? 0) + W * 50);
-          if (!subclassMap.has(q.herb_id)) subclassMap.set(q.herb_id, new Set());
-          subclassMap.get(q.herb_id)!.add(p.subclass);
-        }
-      }
-
-      // Level 3: same class (skip herbs already matched at level 1 or 2 for this p)
-      if (p.class) {
-        const classHerbs = new Set<number>();
-        for (const q of byClass.get(p.class.toLowerCase()) ?? []) {
-          if (q.herb_id == null || exactHerbs.has(q.herb_id) || subclassHerbs.has(q.herb_id) || classHerbs.has(q.herb_id)) continue;
-          classHerbs.add(q.herb_id);
-          scores.set(q.herb_id, (scores.get(q.herb_id) ?? 0) + W * 15);
-          if (!classMap.has(q.herb_id)) classMap.set(q.herb_id, new Set());
-          classMap.get(q.herb_id)!.add(p.class);
-        }
-      }
-    }
-
-    return [...scores.entries()]
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 8)
-      .map(([herbId, score]) => ({
-        herb: herbs.find((h) => h.id === herbId),
-        similarity: Math.min(100, Math.round((score / selfScore) * 100)),
-        exactConstituents: [...(exactMap.get(herbId) ?? [])],
-        sharedSubclasses:  [...(subclassMap.get(herbId) ?? [])],
-        sharedClasses:     [...(classMap.get(herbId) ?? [])],
-      }))
-      .filter((a) => a.herb != null);
-  })();
-
-  // Tooltip herb list for hovered constituent (existing Constituents section)
-  const tooltipHerbs = (() => {
-    if (hoveredConstituentId == null) return [];
-    return (constituentIndex.get(hoveredConstituentId) ?? [])
-      .filter((r) => r.herb_id !== selectedHerb?.id && r.concentration_level !== 'trace')
-      .sort((a, b) => LEVEL_WEIGHT[b.concentration_level] - LEVEL_WEIGHT[a.concentration_level])
-      .map((r) => ({ herb: herbs.find((h) => h.id === r.herb_id), level: r.concentration_level }))
-      .filter((x) => x.herb != null);
-  })();
-
-
-  function calcTooltipPos(el: HTMLElement) {
-    const rect = el.getBoundingClientRect();
-    const POPUP_W = 272;
-    const x = Math.min(rect.left, window.innerWidth - POPUP_W - 8);
-    const spaceBelow = window.innerHeight - rect.bottom - 6;
-    const y = spaceBelow > 200 ? rect.bottom + 6 : Math.max(8, rect.top - 300);
-    return { x, y };
+  function handleSplit() {
+    if (!selectedHerb || frozenPanes.length >= 2) return;
+    setFrozenPanes(prev => [{
+      herb: selectedHerb,
+      profiles: selectedProfiles,
+      classNoteSnippets,
+      duiYaoPairs,
+      herbPairs,
+    }, ...prev]);
   }
 
-  function handlePillMouseEnter(constituentId: number, e: React.MouseEvent) {
-    if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
-    setTooltipPos(calcTooltipPos(e.currentTarget as HTMLElement));
-    hoverTimerRef.current = setTimeout(() => setHoveredConstituentId(constituentId), 120);
-  }
-
-  function handlePillClick(constituentId: number, e: React.MouseEvent) {
-    e.stopPropagation();
-    if (hoveredConstituentId === constituentId) {
-      setHoveredConstituentId(null);
-      setTooltipPos(null);
-    } else {
-      setTooltipPos(calcTooltipPos(e.currentTarget as HTMLElement));
-      setHoveredConstituentId(constituentId);
-    }
-  }
-
-  function handlePillMouseLeave() {
-    if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
-    hoverTimerRef.current = setTimeout(() => {
-      setHoveredConstituentId(null);
-      setTooltipPos(null);
-    }, 200);
-  }
-
-  function handleTooltipMouseEnter() {
-    if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
-  }
-
-  function handleTooltipMouseLeave() {
-    setHoveredConstituentId(null);
-    setTooltipPos(null);
+  function handleMonographLinkAdded(newLink: { id: number; url: string; label: string | null; sort_order: number }) {
+    if (!selectedHerb) return;
+    const updatedLinks = [...(selectedHerb.herb_monograph_links ?? []), newLink];
+    setSelectedHerb({ ...selectedHerb, herb_monograph_links: updatedLinks });
+    setHerbDetailCache(prev => ({
+      ...prev,
+      [selectedHerb.id]: { ...prev[selectedHerb.id], herb_monograph_links: updatedLinks },
+    }));
   }
 
   if (loading) return <div className="text-center py-8">Loading herbs...</div>;
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start" onClick={() => { if (hoveredConstituentId != null) { setHoveredConstituentId(null); setTooltipPos(null); } }}>
+    <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
       {/* Herb List */}
       <div className="lg:col-span-1 bg-white rounded-lg shadow-lg p-6">
         <div className="flex gap-2 items-center mb-4">
@@ -1017,15 +2147,11 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
                   if (highlightedIndex < filteredHerbs.length) {
                     const herb = filteredHerbs[highlightedIndex];
                     setSelectedSupplement(null);
-                    setAlternatesOpen(false);
-                    setSectionsOpen({ primaryActions: true, secondaryActions: true, constituentProfile: true, constituents: true, disorders: true, pairings: true, contraindications: true, mmMateriaMedica: true, herbContraindications: true, classNotes: true, sourceNotes: true });
                     fetchHerbDetail(herb.id);
                     onHerbIdChange?.(herb.id);
                   } else if (highlightedIndex < herbCount) {
                     const herb = keywordMatchedHerbs[highlightedIndex - filteredHerbs.length];
                     setSelectedSupplement(null);
-                    setAlternatesOpen(false);
-                    setSectionsOpen({ primaryActions: true, secondaryActions: true, constituentProfile: true, constituents: true, disorders: true, pairings: true, contraindications: true, mmMateriaMedica: true, herbContraindications: true, classNotes: true, sourceNotes: true });
                     fetchHerbDetail(herb.id);
                     onHerbIdChange?.(herb.id);
                   } else {
@@ -1150,8 +2276,6 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
                   onHerbClick?.(herb.id);
                 } else {
                   setSelectedSupplement(null);
-                  setAlternatesOpen(false);
-                  setSectionsOpen({ primaryActions: true, secondaryActions: true, constituentProfile: true, constituents: true, disorders: true, pairings: true, contraindications: true, mmMateriaMedica: true, herbContraindications: true, classNotes: true, sourceNotes: true });
                   fetchHerbDetail(herb.id);
                   onHerbIdChange?.(herb.id);
                   if (typeof window !== 'undefined' && window.innerWidth < 1024) {
@@ -1215,8 +2339,6 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
                     setHighlightedIndex(-1);
                     setMobileListOpen(false);
                     setSelectedSupplement(null);
-                    setAlternatesOpen(false);
-                    setSectionsOpen({ primaryActions: true, secondaryActions: true, constituentProfile: true, constituents: true, disorders: true, pairings: true, contraindications: true, mmMateriaMedica: true, herbContraindications: true, classNotes: true, sourceNotes: true });
                     fetchHerbDetail(herb.id);
                     onHerbIdChange?.(herb.id);
                     if (typeof window !== 'undefined' && window.innerWidth < 1024) {
@@ -1350,1099 +2472,94 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
 
       {/* Herb / Supplement / Essence Details — or Pairings graph */}
       {pairingsMode ? (
-        <div className="lg:col-span-2 bg-white rounded-lg shadow-lg overflow-hidden flex flex-col" style={{ height: 'calc(100vh - 11rem)' }}>
+        <div className="lg:col-span-3 bg-white rounded-lg shadow-lg overflow-hidden flex flex-col" style={{ height: 'calc(100vh - 11rem)' }}>
           <PairingsView onHerbClick={(id) => onHerbClick?.(id)} onFocusChange={onFocusChange} initialFocusId={pairingsInitialFocusId} />
         </div>
       ) : null}
-      <div ref={detailPanelRef} className={`lg:col-span-2 bg-white rounded-lg shadow-lg p-6${pairingsMode ? ' hidden' : ''}`}>
-        {selectedSupplement && !selectedHerb && !selectedEssence ? (
-          <SupplementDetail
-            supplement={selectedSupplement}
-            onDisorderClick={onDisorderClick}
-          />
-        ) : selectedEssence && !selectedHerb && !selectedSupplement ? (
-          <FlowerEssenceDetail
-            essence={selectedEssence}
-            onSoulConditionClick={onSoulConditionClick}
-          />
-        ) : selectedHerb ? (
-          <div>
-            {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-3">
-              <div>
-                <h2 className="text-3xl font-bold text-green-800">{selectedHerb.common_name}{selectedHerb.plant_part ? ` (${selectedHerb.plant_part})` : ''}</h2>
-                {selectedHerb.pinyin_name && (
-                  <p className="text-lg text-gray-500 mt-0.5">{selectedHerb.pinyin_name}</p>
-                )}
-                <p className="text-xl italic text-gray-600">{selectedHerb.latin_name}</p>
-              </div>
-              <div className="flex flex-col items-end gap-1.5 mt-2 sm:mt-0 sm:ml-4 shrink-0">
-                {/* Monograph links — single link shown directly; multiple collapse into a dropdown */}
-                {(() => {
-                  const sorted = (selectedHerb.herb_monograph_links ?? []).slice().sort((a, b) => a.sort_order - b.sort_order);
-                  const addBtn = isLoggedIn ? (
-                    <button
-                      onClick={() => { setNewLinkUrl(''); setAddLinkOpen(true); }}
-                      className="px-3 py-1 text-green-700 border border-green-300 rounded hover:bg-green-50 transition-colors text-sm font-bold leading-none shrink-0"
-                      title="Add monograph link"
-                    >
-                      +
-                    </button>
-                  ) : null;
-                  if (sorted.length === 0) return addBtn ? <div className="flex items-center gap-1.5">{addBtn}</div> : null;
-                  if (sorted.length === 1) {
-                    return (
-                      <div className="flex items-center gap-1.5">
-                        <a href={sorted[0].url} target="_blank" rel="noopener noreferrer"
-                          className="px-4 py-2 bg-green-700 text-white text-sm font-bold rounded hover:bg-green-800 transition-colors">
-                          {sorted[0].label || 'MONOGRAPH'}
-                        </a>
-                        {addBtn}
-                      </div>
-                    );
-                  }
-                  // Multiple links → dropdown
-                  return (
-                    <div ref={monographDropdownRef} className="flex items-center gap-1.5">
-                      <div className="relative">
-                        <button
-                          onClick={() => setMonographDropdownOpen((v) => !v)}
-                          className="flex items-center gap-2 px-4 py-2 bg-green-700 text-white text-sm font-bold rounded hover:bg-green-800 transition-colors"
-                        >
-                          MONOGRAPHS
-                          <svg className={`w-3 h-3 transition-transform ${monographDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                          </svg>
-                        </button>
-                        {monographDropdownOpen && (
-                          <div className="absolute top-full right-0 mt-1 bg-white rounded-lg shadow-lg border border-gray-200 z-50 min-w-full">
-                            {sorted.map((link) => (
-                              <a
-                                key={link.id}
-                                href={link.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                onClick={() => setMonographDropdownOpen(false)}
-                                className="block px-4 py-2 text-sm text-green-700 font-semibold hover:bg-green-50 first:rounded-t-lg last:rounded-b-lg whitespace-nowrap"
-                              >
-                                {link.label || 'MONOGRAPH'}
-                              </a>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                      {addBtn}
-                    </div>
-                  );
-                })()}
-                {/* Energetics badges — all in one row, inferred ones get inline i buttons; extra top spacing from monograph */}
-                {(() => {
-                  const badges: { emoji: string; label: string; inferred: boolean; isTaste: boolean }[] = [];
-                  if (selectedHerb.temperature === 'warming')  badges.push({ emoji: '🔥', label: 'Warming',      inferred: !!selectedHerb.temperature_inferred, isTaste: false });
-                  if (selectedHerb.temperature === 'cooling')  badges.push({ emoji: '❄️', label: 'Cooling',      inferred: !!selectedHerb.temperature_inferred, isTaste: false });
-                  if (selectedHerb.moisture === 'moistening')  badges.push({ emoji: '💧', label: 'Moistening',   inferred: !!selectedHerb.moisture_inferred,     isTaste: false });
-                  if (selectedHerb.moisture === 'drying')      badges.push({ emoji: '🌵', label: 'Drying',       inferred: !!selectedHerb.moisture_inferred,     isTaste: false });
-                  if (selectedHerb.tone === 'toning')          badges.push({ emoji: '⚡', label: 'Toning',       inferred: !!selectedHerb.tone_inferred,         isTaste: false });
-                  if (selectedHerb.tone === 'relaxing')        badges.push({ emoji: '🌊', label: 'Relaxing',     inferred: !!selectedHerb.tone_inferred,         isTaste: false });
-                  if (selectedHerb.taste === 'sweet')          badges.push({ emoji: '🍯', label: 'Sweet taste',  inferred: !!selectedHerb.taste_inferred,        isTaste: true });
-                  if (selectedHerb.taste === 'bitter')         badges.push({ emoji: '☕', label: 'Bitter taste', inferred: !!selectedHerb.taste_inferred,        isTaste: true });
-                  if (selectedHerb.taste === 'pungent')        badges.push({ emoji: '🌶️', label: 'Pungent taste', inferred: !!selectedHerb.taste_inferred,      isTaste: true });
-                  if (selectedHerb.taste === 'salty')          badges.push({ emoji: '🧂', label: 'Salty taste',  inferred: !!selectedHerb.taste_inferred,        isTaste: true });
-                  if (selectedHerb.taste === 'sour')           badges.push({ emoji: '🍋', label: 'Sour taste',   inferred: !!selectedHerb.taste_inferred,        isTaste: true });
-                  if (badges.length === 0) return null;
-                  const anyEnergeticsInferred = badges.some((b) => b.inferred && !b.isTaste);
-                  const tasteInferred = badges.some((b) => b.inferred && b.isTaste);
-                  return (
-                    <div className="flex items-center gap-1.5 flex-wrap justify-end mt-2">
-                      {badges.map(({ emoji, label, inferred }) => (
-                        <span
-                          key={label}
-                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-sm font-medium ${
-                            inferred
-                              ? 'border-gray-200 bg-gray-50 text-gray-400'
-                              : 'border-green-200 bg-green-50 text-green-700'
-                          }`}
-                        >
-                          <span>{emoji}</span>
-                          <span>{label}</span>
-                          {inferred && <span className="text-xs opacity-60 italic">inferred</span>}
-                        </span>
-                      ))}
-                      {anyEnergeticsInferred && (
-                        <button
-                          onClick={() => setInferredEnergeticsOpen(true)}
-                          className="w-5 h-5 rounded-full border border-gray-300 text-gray-400 text-xs flex items-center justify-center hover:border-gray-500 hover:text-gray-600 transition-colors font-serif italic leading-none shrink-0"
-                          title="How were these energetics inferred?"
-                        >
-                          i
-                        </button>
-                      )}
-                      {tasteInferred && (
-                        <button
-                          onClick={() => setInferredTasteOpen(true)}
-                          className="w-5 h-5 rounded-full border border-amber-300 text-amber-500 text-xs flex items-center justify-center hover:border-amber-500 hover:text-amber-700 transition-colors font-serif italic leading-none shrink-0"
-                          title="How was this taste inferred?"
-                        >
-                          i
-                        </button>
-                      )}
-                    </div>
-                  );
-                })()}
-              </div>
-            </div>
-
-            {/* Section nav + expand/collapse all */}
-            <div className="flex flex-wrap gap-1.5 mb-2 text-xs">
-              {[
-                { key: 'primaryActions' as const, label: 'Primary Actions', pink: false },
-                ...(selectedHerb.herb_secondary_actions.length > 0 ? [{ key: 'secondaryActions' as const, label: 'Secondary Actions', pink: false }] : []),
-                ...((selectedHerb.herb_source_notes?.length ?? 0) > 0 ? [{ key: 'sourceNotes' as const, label: 'Clinical References', pink: false }] : []),
-                ...(classNoteSnippets.length > 0 ? [{ key: 'classNotes' as const, label: 'Class Notes', pink: false }] : []),
-                ...(selectedProfiles.length > 0 ? [{ key: 'constituentProfile' as const, label: 'Constituents', pink: false }] : []),
-                ...(((selectedHerb.herb_constituents?.length ?? 0) > 0 || selectedHerb.herb_menstruum) ? [{ key: 'constituents' as const, label: 'General Constituents', pink: false }] : []),
-                ...((((selectedHerb.disorder_action_herbs?.length ?? 0) > 0) || ((selectedHerb.disorder_specific_remedies?.length ?? 0) > 0)) ? [{ key: 'disorders' as const, label: 'Disorders', pink: false }] : []),
-                ...((duiYaoPairs.length > 0 || herbPairs.length > 0) ? [{ key: 'pairings' as const, label: 'Pairings', pink: false }] : []),
-                ...(MM_MATERIA_MEDICA[selectedHerb.id] ? [{ key: 'mmMateriaMedica' as const, label: 'MM Materia Medica', pink: false }] : []),
-                ...(CONTRAINDICATIONS[selectedHerb.id] ? [{ key: 'contraindications' as const, label: 'Drug Interactions', pink: true }] : []),
-                ...(selectedHerb.contraindications ? [{ key: 'herbContraindications' as const, label: 'Contraindications', pink: true }] : []),
-              ].map(({ key, label, pink }) => (
-                <button
-                  key={key}
-                  onClick={() => scrollToSection(key)}
-                  className={pink
-                    ? 'px-2.5 py-1 rounded-full border border-red-200 text-red-400 bg-red-50 hover:border-red-400 hover:text-red-600 transition-colors'
-                    : 'px-2.5 py-1 rounded-full border border-gray-300 text-gray-500 hover:border-green-500 hover:text-green-700 transition-colors'}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-
-            {/* Herb image — paste ⌘V to upload */}
-            <HerbImageUpload herbId={selectedHerb.id} isLoggedIn={isLoggedIn} />
-
-            <div className="flex justify-end mb-5">
-              <button
-                onClick={() => {
-                  const allOpen = Object.values(sectionsOpen).every(Boolean);
-                  setSectionsOpen({ primaryActions: !allOpen, secondaryActions: !allOpen, constituentProfile: !allOpen, constituents: !allOpen, disorders: !allOpen, pairings: !allOpen, contraindications: !allOpen, mmMateriaMedica: !allOpen, herbContraindications: !allOpen, classNotes: !allOpen, sourceNotes: !allOpen });
-                }}
-                className="flex items-center gap-1.5 px-3 py-1 rounded-full border border-gray-300 text-xs text-gray-500 hover:border-gray-400 hover:text-gray-700 transition-colors"
-              >
-                <svg className={`w-3 h-3 transition-transform ${Object.values(sectionsOpen).every(Boolean) ? '' : '-rotate-90'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-                {Object.values(sectionsOpen).every(Boolean) ? 'Collapse all' : 'Expand all'}
-              </button>
-            </div>
-
-            {/* Primary Actions & Body Systems */}
-            <div className="mb-6" ref={(el) => { sectionRefs.current.primaryActions = el; }}>
-              <SectionHeader title="Primary Actions & Body Systems" open={sectionsOpen.primaryActions} onToggle={() => toggleSection('primaryActions')} />
-              {sectionsOpen.primaryActions && (
-                selectedHerb.herb_primary_actions.length > 0
-                  ? (() => {
-                      const bySystem = new Map<string, typeof selectedHerb.herb_primary_actions>();
-                      selectedHerb.herb_primary_actions.forEach((action) => {
-                        const sysName = action.body_systems?.name ?? 'General';
-                        if (!bySystem.has(sysName)) bySystem.set(sysName, []);
-                        bySystem.get(sysName)!.push(action);
-                      });
-                      const sortedSystems = [...bySystem.entries()].sort(([a], [b]) => {
-                        if (a === 'General') return 1;
-                        if (b === 'General') return -1;
-                        return a.localeCompare(b);
-                      });
-                      return (
-                        <div className="space-y-6 pl-4 border-l-2 border-green-100">
-                          {sortedSystems.map(([sysName, actions]) => (
-                            <div key={sysName}>
-                              <h4 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-2 border-b border-gray-100 pb-1">
-                                {sysName}
-                              </h4>
-                              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                                {[...actions].sort((a, b) => a.primary_actions.name.localeCompare(b.primary_actions.name)).map((action, idx) => (
-                                  <button
-                                    key={idx}
-                                    onClick={() => onActionClick?.(action.primary_actions.id)}
-                                    className="w-full bg-gray-50 border border-gray-200 rounded-lg py-1.5 px-4 hover:border-green-400 hover:shadow-sm hover:scale-[1.02] transition-all cursor-pointer text-left"
-                                  >
-                                    <div className="flex items-start justify-between">
-                                      <h5 className="text-base font-semibold text-green-700">{action.primary_actions.name}</h5>
-                                      {action.relative_strength && (
-                                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStrengthColor(action.relative_strength)}`}>
-                                          {action.relative_strength.replace('_', ' ')}
-                                        </span>
-                                      )}
-                                    </div>
-                                    {action.body_system_note && (
-                                      <p className="text-sm text-gray-700 mt-1">{action.body_system_note}</p>
-                                    )}
-                                    {action.sources && (
-                                      <span className="inline-block mt-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-100 text-amber-700 border border-amber-200">P&amp;P</span>
-                                    )}
-                                  </button>
-                                ))}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      );
-                    })()
-                  : <p className="text-gray-500 italic">No primary actions recorded for this herb.</p>
-              )}
-            </div>
-
-            {/* Secondary Actions */}
-            {selectedHerb.herb_secondary_actions.length > 0 && (
-              <div className="mb-6" ref={(el) => { sectionRefs.current.secondaryActions = el; }}>
-                <SectionHeader title="Secondary Actions" open={sectionsOpen.secondaryActions} onToggle={() => toggleSection('secondaryActions')} />
-                {sectionsOpen.secondaryActions && (
-                  <div className="flex flex-wrap gap-2">
-                    {[...new Map(selectedHerb.herb_secondary_actions.map(i => [i.secondary_actions.name, i])).values()].sort((a, b) => a.secondary_actions.name.localeCompare(b.secondary_actions.name)).map((item, idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => onActionNameClick?.(item.secondary_actions.name)}
-                        className="px-3 py-1.5 bg-teal-50 text-teal-800 border border-teal-200 rounded-full text-sm hover:bg-teal-100 hover:border-teal-400 transition-colors cursor-pointer"
-                      >
-                        {item.secondary_actions.name}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* ── Clinical References ────────────────────────────────────── */}
-            {(selectedHerb.herb_source_notes?.length ?? 0) > 0 && (
-              <div className="mb-6" ref={(el) => { sectionRefs.current.sourceNotes = el; }}>
-                <SectionHeader title="Clinical References" open={sectionsOpen.sourceNotes} onToggle={() => toggleSection('sourceNotes')} />
-                {sectionsOpen.sourceNotes && (() => {
-                  const SECTION_ORDER = ['special_characteristics', 'individual_indications', 'combinations_technique'];
-                  const SECTION_LABELS: Record<string, string> = {
-                    special_characteristics: 'Clinical Profile',
-                    individual_indications: 'Indications',
-                    combinations_technique: 'Formulation & Technique',
-                  };
-                  const bySource = new Map<number, SourceNote[]>();
-                  (selectedHerb.herb_source_notes ?? []).forEach((note) => {
-                    if (!bySource.has(note.source_id)) bySource.set(note.source_id, []);
-                    bySource.get(note.source_id)!.push(note);
-                  });
-                  return (
-                    <div className="space-y-6 pl-4 border-l-2 border-amber-100">
-                      {[...bySource.values()].map((notes) => {
-                        const src = notes[0].sources;
-                        const sorted = [...notes].sort((a, b) =>
-                          SECTION_ORDER.indexOf(a.section_type) - SECTION_ORDER.indexOf(b.section_type)
-                        );
-                        return (
-                          <div key={src.id}>
-                            <div className="mb-3">
-                              <h4 className="text-sm font-semibold text-amber-800">{src.display_name}</h4>
-                              {src.full_title && (
-                                <p className="text-xs text-gray-500 italic">{src.full_title}{src.authors ? ` — ${src.authors}` : ''}{src.year ? ` (${src.year})` : ''}</p>
-                              )}
-                            </div>
-                            <div className="space-y-3">
-                              {sorted.map((note) => (
-                                <div key={note.id}>
-                                  <h5 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
-                                    {SECTION_LABELS[note.section_type] ?? note.section_type}
-                                  </h5>
-                                  <div className="text-sm text-gray-700 whitespace-pre-line leading-relaxed bg-amber-50 border border-amber-100 rounded-lg px-3 py-2">
-                                    {note.content}
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  );
-                })()}
-              </div>
-            )}
-
-            {/* ── Detail loading indicator ─────────────────────────────────── */}
-            {detailLoading && !selectedHerb.herb_constituents && (
-              <div className="text-sm text-gray-400 py-4 text-center">Loading constituents…</div>
-            )}
-
-            {/* ── Class Notes ────────────────────────────────────────────── */}
-            {classNoteSnippets.length > 0 && (
-              <div className="mb-6" ref={(el) => { sectionRefs.current.classNotes = el; }}>
-                <SectionHeader title="Class Notes" open={sectionsOpen.classNotes} onToggle={() => toggleSection('classNotes')} />
-                {sectionsOpen.classNotes && (
-                  <div className="pl-4 border-l-2 border-teal-100 space-y-2">
-                    {classNoteSnippets.map((snippet) => (
-                      <div key={snippet.id} className="border border-teal-200 rounded-lg px-4 py-3 bg-teal-50/50">
-                        <p className="text-sm text-gray-800">{snippet.snippet_text}</p>
-                        <div className="flex flex-wrap items-center gap-2 mt-1.5">
-                          <a
-                            href="https://1drv.ms/f/c/2C944FF46704ED09/IgDp6eLOYY2nSqOl4q-5M-MjAXgrqOPXRbJsZZFM8nCRBeA?e=YPDjNw"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-xs text-teal-700 font-medium hover:text-teal-900 hover:underline"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            {snippet.class_name}
-                          </a>
-                          {snippet.section_header && (
-                            <>
-                              <span className="text-xs text-teal-300">·</span>
-                              <span className="text-xs text-teal-600">{snippet.section_header}</span>
-                            </>
-                          )}
-                          <span className={`ml-auto text-[10px] px-1.5 py-0.5 rounded-full border font-semibold ${
-                            snippet.note_type === 'personal'
-                              ? 'bg-purple-50 border-purple-200 text-purple-700'
-                              : 'bg-sky-50 border-sky-200 text-sky-700'
-                          }`}>
-                            {snippet.note_type === 'personal' ? 'personal' : 'generated'}
-                          </span>
-                        </div>
-                        {snippet.source_block && (
-                          <details className="mt-2">
-                            <summary className="text-xs text-teal-500 cursor-pointer select-none hover:text-teal-700">
-                              View in context
-                            </summary>
-                            <blockquote className="mt-1.5 pl-3 border-l-2 border-teal-300 text-xs text-gray-600 whitespace-pre-wrap font-mono leading-relaxed">
-                              {highlightHerbName(snippet.source_block, [
-                                selectedHerb.common_name,
-                                selectedHerb.latin_name,
-                                selectedHerb.latin_name.split(' ')[0],
-                                ...(selectedHerb.synonyms ?? []),
-                              ])}
-                            </blockquote>
-                          </details>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* ── Constituent Profile ───────────────────────────────────────── */}
-            {selectedProfiles.length > 0 && (
-              <div className="mb-6" ref={(el) => { sectionRefs.current.constituentProfile = el; }}>
-                <SectionHeader title="Constituent Profile Markers" open={sectionsOpen.constituentProfile} onToggle={() => toggleSection('constituentProfile')} />
-                {sectionsOpen.constituentProfile && (
-                  <div>
-                    <div className="flex flex-col gap-2 mb-4">
-                      {[...selectedProfiles]
-                        .sort((a, b) => {
-                          const SO: Record<string, number> = { Marker: 0, Major: 1, Present: 2, Reported: 3 };
-                          const IO: Record<string, number> = { High: 0, Moderate: 1, 'Low-Moderate': 2, 'Low–Moderate': 2, Low: 3 };
-                          const s = (SO[a.status ?? ''] ?? 4) - (SO[b.status ?? ''] ?? 4);
-                          return s !== 0 ? s : (IO[a.importance ?? ''] ?? 4) - (IO[b.importance ?? ''] ?? 4);
-                        })
-                        .map((p) => (
-                          <div
-                            key={p.id}
-                            className="flex flex-col px-3 py-1.5 rounded-lg border bg-amber-50 border-amber-300 cursor-default select-none"
-                          >
-                            <span className="text-base font-semibold text-amber-900">{p.constituent}</span>
-                            <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-1 sm:gap-1.5 mt-0.5">
-                              {(p.class || p.subclass) && (
-                                <div className="flex items-center gap-1.5">
-                                  {p.class && <span className="text-xs text-gray-500">{p.class}</span>}
-                                  {p.class && p.subclass && <span className="text-xs text-gray-400">›</span>}
-                                  {p.subclass && <span className="text-xs text-amber-700 font-medium">{p.subclass}</span>}
-                                </div>
-                              )}
-                              {(p.status || p.importance) && (
-                                <div className="flex flex-wrap items-center gap-1.5">
-                                  {p.status && (
-                                    <span className={`text-xs px-1.5 py-0.5 rounded-full border font-medium ${statusBadgeColor(p.status)}`}>
-                                      {p.status}
-                                    </span>
-                                  )}
-                                  {p.importance && (
-                                    <span className={`text-xs px-1.5 py-0.5 rounded-full border font-medium ${importanceBadgeColor(p.importance)}`}>
-                                      {p.importance}
-                                    </span>
-                                  )}
-                                </div>
-                              )}
-                            </div>
-                            {p.notes && (
-                              <p className="text-xs text-gray-600 italic mt-1 leading-snug">{p.notes}</p>
-                            )}
-                          </div>
-                        ))}
-                    </div>
-
-                    {/* Editorial note(s) */}
-                    {(() => {
-                      const notes = [...new Set(
-                        selectedProfiles.map((p) => p.editorial_note?.trim()).filter(Boolean) as string[]
-                      )];
-                      if (notes.length === 0) return null;
-                      return (
-                        <div className="mb-4 space-y-2">
-                          {notes.map((note, i) => (
-                            <p key={i} className="text-sm italic text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
-                              {note}
-                            </p>
-                          ))}
-                        </div>
-                      );
-                    })()}
-
-                    {/* Alternates */}
-                    {computedAlternates.length > 0 && (
-                      <div>
-                        <button
-                          onClick={() => setAlternatesOpen((o) => !o)}
-                          className="flex items-center gap-2 text-sm font-semibold text-gray-600 hover:text-amber-700 transition-colors"
-                        >
-                          <svg
-                            className={`w-4 h-4 transition-transform ${alternatesOpen ? '' : '-rotate-90'}`}
-                            fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                          >
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                          </svg>
-                          <span className="hidden sm:inline">Ranked Alternates Based on Markers ({computedAlternates.length})</span>
-                          <span className="sm:hidden">Ranked Alternates ({computedAlternates.length})</span>
-                        </button>
-                        {alternatesOpen && (
-                          <div className="mt-3 space-y-2">
-                            {computedAlternates.map(({ herb, similarity, exactConstituents, sharedSubclasses, sharedClasses }) => {
-                              if (!herb) return null;
-                              const simColor = similarity >= 50
-                                ? 'bg-emerald-100 text-emerald-700 border-emerald-300'
-                                : similarity >= 25
-                                ? 'bg-amber-100 text-amber-700 border-amber-300'
-                                : 'bg-gray-100 text-gray-500 border-gray-200';
-                              return (
-                                <button
-                                  key={herb.id}
-                                  onClick={() => navigateToHerb(herb.id)}
-                                  className={`w-full text-left border rounded-lg px-4 py-2.5 transition-all hover:shadow-md hover:scale-[1.005] ${
-                                    herb.temperature === 'warming' ? 'bg-amber-50 border-amber-200 hover:bg-amber-100' :
-                                    herb.temperature === 'cooling' ? 'bg-sky-50 border-sky-200 hover:bg-sky-100' :
-                                    'bg-gray-50 border-gray-200 hover:bg-gray-100'
-                                  }`}
-                                >
-                                  <div className="flex items-center justify-between gap-2 mb-1.5">
-                                    <div>
-                                      <span className="font-medium text-gray-900 text-sm">{herb.common_name}{herb.plant_part ? ` (${herb.plant_part})` : ''}</span>
-                                      <span className="text-xs italic text-gray-500 ml-2">{herb.latin_name}</span>
-                                    </div>
-                                    <div className="flex items-center gap-1.5 shrink-0">
-                                      <span className={`text-xs px-2 py-0.5 rounded-full border font-semibold ${simColor}`}>
-                                        {similarity}%
-                                      </span>
-                                    </div>
-                                  </div>
-                                  <div className="flex flex-wrap gap-1">
-                                    {exactConstituents.map((name) => (
-                                      <span key={name} className="text-xs px-1.5 py-0.5 rounded border bg-amber-50 text-amber-800 border-amber-300">
-                                        {name}
-                                      </span>
-                                    ))}
-                                    {sharedSubclasses.map((sub) => (
-                                      <span key={sub} className="text-xs px-1.5 py-0.5 rounded border bg-yellow-50 text-yellow-700 border-yellow-300 italic">
-                                        {sub}
-                                      </span>
-                                    ))}
-                                    {exactConstituents.length === 0 && sharedSubclasses.length === 0 && sharedClasses.map((cls) => (
-                                      <span key={cls} className="text-xs px-1.5 py-0.5 rounded border bg-gray-50 text-gray-500 border-gray-200 italic">
-                                        {cls}
-                                      </span>
-                                    ))}
-                                  </div>
-                                </button>
-                              );
-                            })}
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* ── Constituents ─────────────────────────────────────────────── */}
-            {((selectedHerb.herb_constituents?.length ?? 0) > 0 || selectedHerb.herb_menstruum) && (
-              <div className="mb-6" ref={(el) => { sectionRefs.current.constituents = el; }}>
-                <SectionHeader title="General Constituents" open={sectionsOpen.constituents} onToggle={() => toggleSection('constituents')} />
-                {sectionsOpen.constituents && (
-                  <div>
-                    <div className="flex flex-wrap gap-2 mb-4">
-                      {(selectedHerb.herb_constituents ?? []).slice()
-                        .sort((a, b) => {
-                          const w = LEVEL_WEIGHT[a.concentration_level] - LEVEL_WEIGHT[b.concentration_level];
-                          return w !== 0 ? -w : a.sort_order - b.sort_order;
-                        })
-                        .map((hc) => {
-                          const refs = constituentIndex.get(hc.constituent_id) ?? [];
-                          const otherHerbCount = refs.filter(
-                            (r) => r.herb_id !== selectedHerb.id && r.concentration_level !== 'trace'
-                          ).length;
-                          return (
-                            <div
-                              key={hc.constituent_id}
-                              className="relative cursor-pointer"
-                              onMouseEnter={(e) => handlePillMouseEnter(hc.constituent_id, e)}
-                              onMouseLeave={handlePillMouseLeave}
-                              onClick={(e) => handlePillClick(hc.constituent_id, e)}
-                            >
-                              <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium border cursor-default select-none ${LEVEL_COLOR[hc.concentration_level as ConcentrationLevel]}`}>
-                                {hc.constituents.name}
-                                {hc.needs_review && <span title="Data needs review" className="opacity-60">*</span>}
-                                {otherHerbCount > 0 && <span className="opacity-50 text-[10px]">({otherHerbCount})</span>}
-                              </span>
-                            </div>
-                          );
-                        })}
-                    </div>
-                    {selectedHerb.herb_menstruum && (
-                      <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                        <div className="flex items-center gap-1.5 mb-2">
-                          <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Best Menstruum</p>
-                          <span className="relative group cursor-help">
-                            <span className="w-3.5 h-3.5 rounded-full bg-gray-300 hover:bg-gray-400 text-gray-600 text-[9px] font-bold flex items-center justify-center leading-none transition-colors select-none">i</span>
-                            <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-64 bg-gray-900 text-white text-xs rounded-lg p-3 shadow-xl pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity z-50 text-left normal-case tracking-normal font-normal">
-                              <p className="font-semibold mb-2 text-gray-200">Constituent Solubility</p>
-                              <ul className="space-y-1 text-gray-300">
-                                <li><span className="text-white font-medium">Mucilage</span> — cold water only; alcohol destroys it</li>
-                                <li><span className="text-white font-medium">Polysaccharides</span> — hot water or very dilute alcohol</li>
-                                <li><span className="text-white font-medium">Tannins</span> — water or low alcohol + 5–10% glycerin</li>
-                                <li><span className="text-white font-medium">Volatile oils</span> — glycerite preserves best; degrade in alcohol over time</li>
-                                <li><span className="text-white font-medium">Resins</span> — high alcohol (70–90%) only; not water-soluble</li>
-                                <li><span className="text-white font-medium">Alkaloids</span> — min 45% alcohol + 5–10% vinegar</li>
-                                <li><span className="text-white font-medium">Saponins</span> — typically water-soluble</li>
-                                <li><span className="text-white font-medium">Flavonoids / Glycosides</span> — water and alcohol</li>
-                              </ul>
-                              <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-l-[5px] border-r-[5px] border-t-[5px] border-l-transparent border-r-transparent border-t-gray-900" />
-                            </div>
-                          </span>
-                        </div>
-                        <div className="flex flex-wrap gap-2 mb-2">
-                          {menstruumBadges(selectedHerb.herb_menstruum).map((b) => (
-                            <span key={b.label} className={`px-3 py-1 rounded-full text-xs font-medium border ${b.color}`}>
-                              {b.label}
-                            </span>
-                          ))}
-                          {herbHasExtractableAlkaloids && (
-                            <span className="px-3 py-1 rounded-full text-xs font-medium border bg-amber-50 text-amber-800 border-amber-300">
-                              + 5–10% vinegar
-                            </span>
-                          )}
-                        </div>
-                        {selectedHerb.herb_menstruum.notes && (
-                          <p className="text-xs text-gray-600 mt-1 italic">{selectedHerb.herb_menstruum.notes}</p>
-                        )}
-                        {selectedHerb.herb_menstruum.powder_effective && (
-                          <p className="text-xs text-yellow-700 mt-2 italic">
-                            Powder effective — {powderEffectiveReason(selectedHerb.herb_constituents)} work better ingested whole than extracted into a menstruum.
-                          </p>
-                        )}
-                        {selectedHerb.herb_menstruum.oil_effective && (
-                          <p className="text-xs text-orange-700 mt-2 italic">
-                            Oil effective — key constituents are lipophilic and extract well into a fixed oil (infused or cold-pressed).
-                          </p>
-                        )}
-                        {herbHasExtractableAlkaloids && (
-                          <p className="text-xs text-amber-700 mt-2 italic">
-                            Alkaloids present — adding 5–10% apple cider vinegar improves their extraction.
-                          </p>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* ── Disorders ────────────────────────────────────────────────── */}
-            {((selectedHerb.disorder_action_herbs?.length ?? 0) > 0 ||
-              (selectedHerb.disorder_specific_remedies?.length ?? 0) > 0) && (
-              <div ref={(el) => { sectionRefs.current.disorders = el; }}>
-                <SectionHeader title="Used for Disorders" open={sectionsOpen.disorders} onToggle={() => toggleSection('disorders')} />
-                {sectionsOpen.disorders && (
-                  <div className="space-y-4">
-                    {(() => {
-                      const disorderMap = new Map<number, {
-                        disorder: Disorder & { body_systems: BodySystem };
-                        actions: PrimaryAction[];
-                        specificRemedy?: string;
-                        ppRemedy?: string;
-                      }>();
-                      selectedHerb.disorder_action_herbs?.forEach((item) => {
-                        if (!disorderMap.has(item.disorders.id)) {
-                          disorderMap.set(item.disorders.id, { disorder: item.disorders, actions: [] });
-                        }
-                        disorderMap.get(item.disorders.id)!.actions.push(item.primary_actions);
-                      });
-                      selectedHerb.disorder_specific_remedies?.forEach((item) => {
-                        if (!disorderMap.has(item.disorders.id)) {
-                          disorderMap.set(item.disorders.id, { disorder: item.disorders, actions: [] });
-                        }
-                        const entry = disorderMap.get(item.disorders.id)!;
-                        if (item.source_id === 1) {
-                          entry.ppRemedy = item.description;
-                        } else {
-                          entry.specificRemedy = item.description;
-                        }
-                      });
-                      return Array.from(disorderMap.values()).sort((a, b) => a.disorder.name.localeCompare(b.disorder.name)).map((item) => (
-                        <div key={item.disorder.id} className="border border-gray-200 rounded-lg py-1.5 px-4 bg-gray-50">
-                          <button
-                            onClick={() => onDisorderClick?.(item.disorder.id, item.disorder.body_systems.id)}
-                            className="text-left w-full group"
-                          >
-                            <div className="flex items-center gap-2 font-semibold text-base text-blue-700 group-hover:text-blue-900 group-hover:underline transition-colors">
-                              {item.disorder.name}
-                              {item.ppRemedy && (
-                                <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-100 text-amber-700 border border-amber-200 no-underline">P&amp;P</span>
-                              )}
-                            </div>
-                            <div className="text-sm text-gray-600">{item.disorder.body_systems.name}</div>
-                          </button>
-                          {item.specificRemedy && (
-                            <div className="mt-1 mb-2 p-2 bg-green-50 border border-green-200 rounded">
-                              <span className="text-xs font-semibold text-green-800">SPECIFIC REMEDY</span>
-                              <p className="text-sm text-gray-700 mt-1">{item.specificRemedy}</p>
-                            </div>
-                          )}
-                          {item.ppRemedy && (
-                            <div className="mt-1 mb-2 p-2 bg-amber-50 border border-amber-200 rounded">
-                              <span className="text-xs font-semibold text-amber-700">P&amp;P</span>
-                              <p className="text-sm text-gray-700 mt-1">{item.ppRemedy}</p>
-                            </div>
-                          )}
-                          {item.actions.length > 0 && (
-                            <div className="mt-1">
-                              <span className="text-sm font-medium text-gray-700">Actions:</span>
-                              <div className="flex flex-wrap gap-2 mt-1">
-                                {item.actions.map((action, idx) => (
-                                  <button
-                                    key={idx}
-                                    onClick={() => onActionClick?.(action.id)}
-                                    className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded hover:bg-blue-200 transition-all"
-                                  >
-                                    {action.name}
-                                  </button>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      ));
-                    })()}
-                  </div>
-                )}
-              </div>
-            )}
-            {/* ── Pairings (Dui Yao + Western Herb Pairs) ──────────────── */}
-            {(duiYaoPairs.length > 0 || duiYaoLoading || herbPairs.length > 0 || herbPairsLoading) && (
-              <div className="mt-6" ref={(el) => { sectionRefs.current.pairings = el; }}>
-                <SectionHeader title="Pairings" open={sectionsOpen.pairings} onToggle={() => toggleSection('pairings')} />
-                {sectionsOpen.pairings && (
-                  <div className="space-y-6">
-                    {/* ── Dui Yao ── */}
-                    {(duiYaoPairs.length > 0 || duiYaoLoading) && (
-                      <div>
-                        <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-3 px-1">Dui Yao</p>
-                        {duiYaoLoading ? (
-                          <p className="text-gray-400 text-sm italic">Loading pairings…</p>
-                        ) : (
-                          <div className="space-y-4">
-                            {duiYaoPairs.map((pair) => {
-                              const partner = pair.herb1_id === selectedHerb!.id ? pair.herb2 : pair.herb1;
-                              const myProps = pair.dui_yao_herb_properties
-                                .filter((p) => p.herb_id === selectedHerb!.id)
-                                .sort((a, b) => a.sort_order - b.sort_order);
-                              const partnerProps = pair.dui_yao_herb_properties
-                                .filter((p) => p.herb_id === partner.id)
-                                .sort((a, b) => a.sort_order - b.sort_order);
-                              const indications = [...pair.dui_yao_indications].sort((a, b) => a.sort_order - b.sort_order);
-                              return (
-                                <div key={pair.id} className="border border-gray-200 rounded-lg overflow-hidden">
-                                  <div className="bg-gray-50 px-4 py-2.5 flex items-start justify-between gap-2">
-                                    <button
-                                      onClick={() => navigateToHerb(partner.id)}
-                                      className="text-left group"
-                                    >
-                                      <div className="font-semibold text-sm text-green-700 group-hover:text-green-900 group-hover:underline transition-colors">
-                                        Paired with: {partner.common_name}
-                                        {partner.pinyin_name && (
-                                          <span className="ml-1.5 font-normal text-gray-500 group-hover:text-gray-700">({partner.pinyin_name})</span>
-                                        )}
-                                      </div>
-                                      <div className="text-xs italic text-gray-500">{partner.latin_name}</div>
-                                    </button>
-                                    {pair.book_page && (
-                                      <span className="shrink-0 text-xs text-gray-400 mt-0.5">p. {pair.book_page}</span>
-                                    )}
-                                  </div>
-                                  {(myProps.length > 0 || partnerProps.length > 0) && (
-                                    <div className="grid grid-cols-2 gap-3 px-4 py-3 border-t border-gray-100">
-                                      {myProps.length > 0 && (
-                                        <div>
-                                          <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-1">{selectedHerb!.common_name}</p>
-                                          <ul className="space-y-0.5">
-                                            {myProps.map((prop, i) => (
-                                              <li key={i} className="text-xs text-gray-700 flex gap-1.5">
-                                                <span className="text-gray-400 shrink-0">•</span>{prop.property}
-                                              </li>
-                                            ))}
-                                          </ul>
-                                        </div>
-                                      )}
-                                      {partnerProps.length > 0 && (
-                                        <div>
-                                          <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-1">{partner.common_name}</p>
-                                          <ul className="space-y-0.5">
-                                            {partnerProps.map((prop, i) => (
-                                              <li key={i} className="text-xs text-gray-700 flex gap-1.5">
-                                                <span className="text-gray-400 shrink-0">•</span>{prop.property}
-                                              </li>
-                                            ))}
-                                          </ul>
-                                        </div>
-                                      )}
-                                    </div>
-                                  )}
-                                  {pair.combined_summary && (
-                                    <div className="px-4 py-3 border-t border-gray-100">
-                                      <p className="text-sm text-gray-700 leading-relaxed">{pair.combined_summary}</p>
-                                    </div>
-                                  )}
-                                  {indications.length > 0 && (
-                                    <div className="px-4 py-3 border-t border-gray-100">
-                                      <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-1.5">Indications</p>
-                                      <ol className="space-y-0.5 list-decimal list-inside">
-                                        {indications.map((ind, i) => (
-                                          <li key={i} className="text-xs text-gray-700">{ind.indication}</li>
-                                        ))}
-                                      </ol>
-                                    </div>
-                                  )}
-                                </div>
-                              );
-                            })}
-                          </div>
-                        )}
-                      </div>
-                    )}
-                    {/* ── Western Herb Pairs ── */}
-                    {(herbPairs.length > 0 || herbPairsLoading) && (
-                      <div className={duiYaoPairs.length > 0 ? 'border-t border-gray-100 pt-6' : ''}>
-                        <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-3 px-1">Western Pairs</p>
-                        {herbPairsLoading ? (
-                          <p className="text-gray-400 text-sm italic">Loading pairings…</p>
-                        ) : (
-                          <div className="space-y-4">
-                            {herbPairs.map((pair) => {
-                              const partner = pair.herb1_id === selectedHerb!.id ? pair.herb2 : pair.herb1;
-                              const myProps = pair.herb_pair_herb_properties
-                                .filter((p) => p.herb_id === selectedHerb!.id)
-                                .sort((a, b) => a.sort_order - b.sort_order);
-                              const partnerProps = pair.herb_pair_herb_properties
-                                .filter((p) => p.herb_id === partner.id)
-                                .sort((a, b) => a.sort_order - b.sort_order);
-                              const indications = [...pair.herb_pair_indications].sort((a, b) => a.sort_order - b.sort_order);
-                              return (
-                                <div key={pair.id} className="border border-amber-200 rounded-lg overflow-hidden">
-                                  <div className="bg-amber-50 px-4 py-2.5 flex items-start justify-between gap-2">
-                                    <button onClick={() => navigateToHerb(partner.id)} className="text-left group">
-                                      <div className="font-semibold text-sm text-amber-800 group-hover:text-amber-950 group-hover:underline transition-colors">
-                                        Paired with: {partner.common_name}
-                                      </div>
-                                      <div className="text-xs italic text-gray-500">{partner.latin_name}</div>
-                                    </button>
-                                    <span className="shrink-0 text-[10px] text-amber-600 mt-0.5 text-right leading-tight max-w-[140px]">{pair.source}</span>
-                                  </div>
-                                  {(myProps.length > 0 || partnerProps.length > 0) && (
-                                    <div className="grid grid-cols-2 gap-3 px-4 py-3 border-t border-amber-100">
-                                      {myProps.length > 0 && (
-                                        <div>
-                                          <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-1">{selectedHerb!.common_name}</p>
-                                          <ul className="space-y-0.5">
-                                            {myProps.map((prop, i) => (
-                                              <li key={i} className="text-xs text-gray-700 flex gap-1.5">
-                                                <span className="text-gray-400 shrink-0">•</span>{prop.property}
-                                              </li>
-                                            ))}
-                                          </ul>
-                                        </div>
-                                      )}
-                                      {partnerProps.length > 0 && (
-                                        <div>
-                                          <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-1">{partner.common_name}</p>
-                                          <ul className="space-y-0.5">
-                                            {partnerProps.map((prop, i) => (
-                                              <li key={i} className="text-xs text-gray-700 flex gap-1.5">
-                                                <span className="text-gray-400 shrink-0">•</span>{prop.property}
-                                              </li>
-                                            ))}
-                                          </ul>
-                                        </div>
-                                      )}
-                                    </div>
-                                  )}
-                                  {pair.combined_summary && (
-                                    <div className="px-4 py-3 border-t border-amber-100">
-                                      <p className="text-sm text-gray-700 leading-relaxed">{pair.combined_summary}</p>
-                                    </div>
-                                  )}
-                                  {indications.length > 0 && (
-                                    <div className="px-4 py-3 border-t border-amber-100">
-                                      <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-1.5">Indications</p>
-                                      <ol className="space-y-0.5 list-decimal list-inside">
-                                        {indications.map((ind, i) => (
-                                          <li key={i} className="text-xs text-gray-700">{ind.indication}</li>
-                                        ))}
-                                      </ol>
-                                    </div>
-                                  )}
-                                </div>
-                              );
-                            })}
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
-            {/* ── Michael Moore Materia Medica ──────────────────────────── */}
-            {MM_MATERIA_MEDICA[selectedHerb.id] && (() => {
-              const rawText = MM_MATERIA_MEDICA[selectedHerb.id];
-              const isPregnancyContraindicated = rawText.startsWith('*');
-              const lines = rawText.split('\n');
-              const header = lines[0].replace(/^\*/, '').trim();
-              const bodyLines = lines.slice(1);
-              const statusLine = bodyLines.find((l) => l.trim().startsWith('STATUS'));
-              const statusCode = statusLine ? statusLine.replace(/.*STATUS\s*:\s*/, '').trim() : null;
-              const bodyText = bodyLines
-                .filter((l) => !l.trim().startsWith('STATUS'))
-                .join('\n')
-                .trim();
-              const STATUS_LABELS: Record<string, string> = {
-                'W': 'Wildcrafted', 'C': 'Cultivated', 'A': 'Abundant',
-                'LA': 'Limited', 'Rare': 'Rare', 'E': 'Endangered', 'U': 'Unknown',
-              };
-              const statusParts = statusCode
-                ? statusCode.split('/').map((s) => STATUS_LABELS[s.trim()] ?? s.trim())
-                : [];
-              return (
-                <div className="mt-6" ref={(el) => { sectionRefs.current.mmMateriaMedica = el; }}>
-                  <SectionHeader title="Michael Moore Materia Medica" open={sectionsOpen.mmMateriaMedica} onToggle={() => toggleSection('mmMateriaMedica')} />
-                  {sectionsOpen.mmMateriaMedica && (
-                    <div className="pl-4 border-l-2 border-green-100 space-y-3">
-                      {isPregnancyContraindicated && (
-                        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 border border-amber-200 rounded-lg w-fit">
-                          <svg className="w-3.5 h-3.5 text-amber-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
-                          </svg>
-                          <span className="text-xs font-semibold text-amber-800">Avoid in pregnancy</span>
-                        </div>
-                      )}
-                      <p className="text-xs text-gray-400 italic">{header}</p>
-                      <pre className="text-sm text-gray-700 whitespace-pre-wrap font-sans leading-relaxed">{bodyText}</pre>
-                      {statusParts.length > 0 && (
-                        <div className="flex items-center gap-2 flex-wrap pt-1">
-                          <span className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Ecological status</span>
-                          {statusParts.map((part) => (
-                            <span key={part} className="text-xs px-2 py-0.5 rounded-full bg-green-50 border border-green-200 text-green-800 font-medium">
-                              {part}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                      <p className="text-xs text-gray-400 pt-1">
-                        Source: <span className="italic">Herbal Materia Medica 5.0</span> © Michael Moore (1995)
-                      </p>
-                    </div>
-                  )}
-                </div>
-              );
-            })()}
-            {/* ── Drug Interactions ─────────────────────────────────────── */}
-            {CONTRAINDICATIONS[selectedHerb.id] && (
-              <div className="mt-6" ref={(el) => { sectionRefs.current.contraindications = el; }}>
-                <SectionHeader title="Drug Interactions" open={sectionsOpen.contraindications} onToggle={() => toggleSection('contraindications')} />
-                {sectionsOpen.contraindications && (
-                  <div className="pl-4 border-l-2 border-red-100">
-                    <button
-                      onClick={() => setContraindicationsOpen(true)}
-                      className="flex items-center gap-3 w-full text-left border border-red-200 rounded-lg px-4 py-3 bg-red-50 hover:bg-red-100 hover:border-red-300 transition-all group"
-                    >
-                      <svg className="w-5 h-5 text-red-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
-                      </svg>
-                      <div>
-                        <p className="text-sm font-semibold text-red-800">View Drug Interactions</p>
-                        <p className="text-xs text-red-600 mt-0.5">
-                          {CONTRAINDICATIONS[selectedHerb.id]} page{CONTRAINDICATIONS[selectedHerb.id] === 1 ? '' : 's'} · Stockley&rsquo;s Herbal Medicines Interactions
-                        </p>
-                      </div>
-                      <svg className="w-4 h-4 text-red-400 ml-auto group-hover:text-red-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
-            {/* ── Contraindications (MM Materia Medica) ─────────────────── */}
-            {selectedHerb.contraindications && (
-              <div className="mt-6" ref={(el) => { sectionRefs.current.herbContraindications = el; }}>
-                <SectionHeader title="Contraindications" open={sectionsOpen.herbContraindications} onToggle={() => toggleSection('herbContraindications')} />
-                {sectionsOpen.herbContraindications && (
-                  <div className="pl-4 border-l-2 border-red-100">
-                    <div className="border border-red-200 rounded-lg px-4 py-3 bg-red-50">
-                      <div className="flex items-start gap-3">
-                        <svg className="w-5 h-5 text-red-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
-                        </svg>
-                        <div>
-                          <p className="text-sm text-red-800">{selectedHerb.contraindications}</p>
-                          {selectedHerb.contraindications_source && (
-                            <p className="text-xs text-red-400 mt-1">Source: {selectedHerb.contraindications_source}</p>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
-          </div>
-        ) : (
-          <div className="flex items-center justify-center h-full text-gray-400">
-            <p className="text-lg">Select an herb, supplement, or flower essence to view details</p>
-          </div>
-        )}
-      </div>
-
-      {/* Inferred energetics explanation modal */}
-      {selectedHerb && (
-        <InferredEnergeticsModal
-          isOpen={inferredEnergeticsOpen}
-          onClose={() => setInferredEnergeticsOpen(false)}
-          herbName={`${selectedHerb.common_name}${selectedHerb.plant_part ? ` (${selectedHerb.plant_part})` : ''}`}
-          temperatureInferred={!!selectedHerb.temperature_inferred}
-          moistureInferred={!!selectedHerb.moisture_inferred}
-          herbConstituents={selectedHerb.herb_constituents ?? []}
-          profiles={selectedProfiles}
-        />
-      )}
-
-      {/* Inferred taste explanation modal */}
-      {selectedHerb && selectedHerb.taste_inferred && (
-        <InferredTasteModal
-          isOpen={inferredTasteOpen}
-          onClose={() => setInferredTasteOpen(false)}
-          herbName={`${selectedHerb.common_name}${selectedHerb.plant_part ? ` (${selectedHerb.plant_part})` : ''}`}
-          herbConstituents={selectedHerb.herb_constituents ?? []}
-          profiles={selectedProfiles}
-        />
-      )}
-
-      {/* Drug interactions modal */}
-      {selectedHerb && CONTRAINDICATIONS[selectedHerb.id] && (
-        <ContraindicationsModal
-          isOpen={contraindicationsOpen}
-          onClose={() => setContraindicationsOpen(false)}
-          herbId={selectedHerb.id}
-          pageCount={CONTRAINDICATIONS[selectedHerb.id]}
-          herbName={selectedHerb.common_name}
-        />
-      )}
-
-      {/* Add monograph link modal */}
-      {addLinkOpen && (
-        <div
-          className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center"
-          onClick={() => setAddLinkOpen(false)}
-        >
-          <div
-            className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md mx-4"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 className="text-lg font-bold text-gray-800 mb-4">Add Monograph Link</h3>
-            <input
-              type="url"
-              value={newLinkUrl}
-              onChange={(e) => setNewLinkUrl(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Enter') handleAddLink(); }}
-              placeholder="https://docs.google.com/..."
-              className="w-full border border-gray-300 rounded px-3 py-2 text-sm mb-4 focus:outline-none focus:border-green-500"
-              autoFocus
+      <div className={`lg:col-span-3 flex gap-4 items-start${pairingsMode ? ' hidden' : ''}`}>
+        {/* Active panel */}
+        <div ref={detailPanelRef} className="flex-1 bg-white rounded-lg shadow-lg p-6 relative min-w-0">
+          {/* Split button — desktop only */}
+          {selectedHerb && frozenPanes.length < 2 && (
+            <button
+              onClick={handleSplit}
+              className="hidden lg:flex absolute top-3 right-3 z-10 p-1.5 rounded-lg text-gray-300 hover:text-gray-500 hover:bg-gray-100 transition-colors"
+              title="Compare side by side"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <rect x="3" y="3" width="8" height="18" rx="1" strokeWidth="1.5"/>
+                <rect x="13" y="3" width="8" height="18" rx="1" strokeWidth="1.5"/>
+              </svg>
+            </button>
+          )}
+          {selectedSupplement && !selectedHerb && !selectedEssence ? (
+            <SupplementDetail
+              supplement={selectedSupplement}
+              onDisorderClick={onDisorderClick}
             />
-            <div className="flex justify-end gap-2">
-              <button
-                onClick={() => setAddLinkOpen(false)}
-                className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleAddLink}
-                disabled={!newLinkUrl.trim() || addLinkSaving}
-                className="px-4 py-2 text-sm font-bold bg-green-700 text-white rounded hover:bg-green-800 disabled:opacity-50 transition-colors"
-              >
-                {addLinkSaving ? 'Adding...' : 'Add'}
-              </button>
+          ) : selectedEssence && !selectedHerb && !selectedSupplement ? (
+            <FlowerEssenceDetail
+              essence={selectedEssence}
+              onSoulConditionClick={onSoulConditionClick}
+            />
+          ) : selectedHerb ? (
+            <HerbDetailPanel
+              herb={selectedHerb}
+              profiles={selectedProfiles}
+              classNoteSnippets={classNoteSnippets}
+              duiYaoPairs={duiYaoPairs}
+              duiYaoLoading={duiYaoLoading}
+              herbPairs={herbPairs}
+              herbPairsLoading={herbPairsLoading}
+              constituentIndex={constituentIndex}
+              allHerbs={herbs}
+              allProfiles={allProfiles}
+              detailLoading={detailLoading}
+              isLoggedIn={isLoggedIn}
+              onActionClick={onActionClick}
+              onActionNameClick={onActionNameClick}
+              onDisorderClick={onDisorderClick}
+              onNavigateToHerb={navigateToHerb}
+              onMonographLinkAdded={handleMonographLinkAdded}
+            />
+          ) : (
+            <div className="flex items-center justify-center h-full text-gray-400">
+              <p className="text-lg">Select an herb, supplement, or flower essence to view details</p>
             </div>
-          </div>
+          )}
         </div>
-      )}
-
-      {/* Constituent hover tooltip — rendered via fixed positioning */}
-      {hoveredConstituentId != null && tooltipPos != null && tooltipHerbs.length > 0 && (() => {
-        const con = selectedHerb?.herb_constituents?.find((c) => c.constituent_id === hoveredConstituentId);
-        return (
-          <div
-            onMouseEnter={handleTooltipMouseEnter}
-            onMouseLeave={handleTooltipMouseLeave}
-            onClick={(e) => e.stopPropagation()}
-            style={{ position: 'fixed', left: tooltipPos.x, top: tooltipPos.y, zIndex: 9999 }}
-            className="bg-white border border-gray-200 rounded-lg shadow-xl p-3 w-64 max-h-96 overflow-y-auto"
-          >
-            <p className="text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wide">
-              {con?.constituents.name}
-            </p>
-            {con?.constituents.category && (
-              <p className="text-xs text-gray-400 italic mb-2">{con.constituents.category}</p>
-            )}
-            {con?.constituents.description && (
-              <p className="text-xs text-gray-600 mb-2">{con.constituents.description}</p>
-            )}
-            <p className="text-xs font-medium text-gray-600 mb-1">Also found in:</p>
-            <div className="space-y-1">
-              {tooltipHerbs.map(({ herb, level }) => (
-                <button
-                  key={herb!.id}
-                  onClick={() => {
-                    setHoveredConstituentId(null);
-                    setTooltipPos(null);
-                    navigateToHerb(herb!.id);
-                  }}
-                  className="w-full text-left flex items-center justify-between gap-2 px-2 py-1 rounded hover:bg-gray-50 transition-colors"
-                >
-                  <span className="text-xs text-gray-800 font-medium">{herb!.common_name}{herb!.plant_part ? ` (${herb!.plant_part})` : ''}</span>
-                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full border ${LEVEL_COLOR[level]}`}>
-                    {level}
-                  </span>
-                </button>
-              ))}
+        {/* Frozen comparison panes */}
+        {frozenPanes.map((pane, idx) => (
+          <div key={`${pane.herb.id}-${idx}`} className="flex-1 relative min-w-0">
+            <button
+              onClick={() => setFrozenPanes(prev => prev.filter((_, i) => i !== idx))}
+              className="absolute top-3 right-3 z-10 p-1.5 rounded-lg bg-white shadow border border-gray-200 text-gray-400 hover:text-gray-700 hover:border-gray-400 transition-colors"
+              title="Close comparison"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/>
+              </svg>
+            </button>
+            <div className="bg-white rounded-lg shadow-lg p-6 opacity-70">
+              <HerbDetailPanel
+                herb={pane.herb}
+                profiles={pane.profiles}
+                classNoteSnippets={pane.classNoteSnippets}
+                duiYaoPairs={pane.duiYaoPairs}
+                duiYaoLoading={false}
+                herbPairs={pane.herbPairs}
+                herbPairsLoading={false}
+                constituentIndex={constituentIndex}
+                allHerbs={herbs}
+                allProfiles={allProfiles}
+                detailLoading={false}
+                frozen
+                onNavigateToHerb={navigateToHerb}
+              />
             </div>
           </div>
-        );
-      })()}
+        ))}
+      </div>
     </div>
   );
 }
