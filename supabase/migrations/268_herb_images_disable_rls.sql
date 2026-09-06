@@ -1,0 +1,1 @@
+ALTER TABLE herbal.herb_images DISABLE ROW LEVEL SECURITY;

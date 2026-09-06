@@ -9,6 +9,7 @@
     "restart-colima": "bash scripts/restart-colima.sh",
     "reset-db": "supabase db reset",
     "snapshot-db": "supabase db dump --local --data-only --schema herbal -f supabase/migrations/008_current_data_snapshot.sql",
+    "sync-images": "bash scripts/sync-images-to-prod.sh",
     "ingest": "ts-node scripts/ingest-secondary-actions.ts",
     "build": "./node_modules/.bin/next build",
     "start": "./node_modules/.bin/next start",
