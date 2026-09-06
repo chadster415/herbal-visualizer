@@ -25,10 +25,11 @@ export async function POST(req: NextRequest) {
   if (!herbId) return NextResponse.json({ error: 'herbId required' }, { status: 400 });
 
   const bucket = process.env.AWS_S3_BUCKET ?? 'herbal-herb-images';
-  const key = `herb-images/${herbId}.png`;
+  const imageId = crypto.randomUUID();
+  const key = `herb-images/${herbId}/${imageId}.png`;
 
   const command = new PutObjectCommand({ Bucket: bucket, Key: key, ContentType: 'image/png' });
   const uploadUrl = await getSignedUrl(s3, command, { expiresIn: 120 });
 
-  return NextResponse.json({ uploadUrl });
+  return NextResponse.json({ uploadUrl, imageKey: key });
 }

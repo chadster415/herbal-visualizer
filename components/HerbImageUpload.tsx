@@ -5,23 +5,45 @@ import { supabase } from '@/lib/supabase';
 
 const BASE_URL = process.env.NEXT_PUBLIC_HERB_IMAGES_BASE_URL ?? '';
 
+interface HerbImage {
+  key: string;
+  url: string;
+}
+
 interface Props {
   herbId: number;
   isLoggedIn?: boolean;
 }
 
 export function HerbImageUpload({ herbId, isLoggedIn }: Props) {
-  const imageUrl = `${BASE_URL}/herb-images/${herbId}.png`;
-  // null = still probing, true = exists, false = missing
-  const [exists, setExists] = useState<boolean | null>(null);
+  const [images, setImages] = useState<HerbImage[] | null>(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
   async function getToken(): Promise<string | null> {
     const { data: { session } } = await supabase.auth.getSession();
     return session?.access_token ?? null;
   }
+
+  // Load images directly from the browser Supabase client — no API round-trip needed
+  const loadImages = useCallback(async () => {
+    const { data: rows } = await supabase
+      .from('herb_images')
+      .select('image_key')
+      .eq('herb_id', herbId)
+      .order('created_at', { ascending: true });
+    setImages((rows ?? []).map(row => ({
+      key: row.image_key,
+      url: `${BASE_URL}/${row.image_key}`,
+    })));
+  }, [herbId]);
+
+  useEffect(() => {
+    setImages(null);
+    setError(null);
+    loadImages();
+  }, [herbId, loadImages]);
 
   const upload = useCallback(async (blob: Blob) => {
     setUploading(true);
@@ -37,7 +59,7 @@ export function HerbImageUpload({ herbId, isLoggedIn }: Props) {
         body: JSON.stringify({ herbId }),
       });
       if (!presignRes.ok) throw new Error('Failed to get upload URL');
-      const { uploadUrl } = await presignRes.json();
+      const { uploadUrl, imageKey } = await presignRes.json();
 
       const putRes = await fetch(uploadUrl, {
         method: 'PUT',
@@ -46,7 +68,13 @@ export function HerbImageUpload({ herbId, isLoggedIn }: Props) {
       });
       if (!putRes.ok) throw new Error('S3 upload failed');
 
-      setExists(true);
+      // Register in DB directly from browser client
+      await supabase.from('herb_images').insert({ herb_id: herbId, image_key: imageKey });
+
+      setImages(prev => [
+        ...(prev ?? []),
+        { key: imageKey, url: `${BASE_URL}/${imageKey}?v=${Date.now()}` },
+      ]);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Upload failed');
     } finally {
@@ -54,22 +82,26 @@ export function HerbImageUpload({ herbId, isLoggedIn }: Props) {
     }
   }, [herbId]);
 
-  const handleRemove = useCallback(async () => {
+  const handleRemove = useCallback(async (key: string) => {
     setError(null);
     try {
       const token = await getToken();
-      const res = await fetch(`/api/herb-image/${herbId}`, {
+      const res = await fetch(`/api/herb-image/${herbId}?key=${encodeURIComponent(key)}`, {
         method: 'DELETE',
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       if (!res.ok) throw new Error('Failed to remove image');
-      setExists(false);
+
+      // Remove from DB directly from browser client
+      await supabase.from('herb_images').delete().eq('herb_id', herbId).eq('image_key', key);
+
+      setImages(prev => (prev ?? []).filter(img => img.key !== key));
+      setLightboxIndex(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Remove failed');
     }
   }, [herbId]);
 
-  // Paste-to-upload — only active when logged in
   useEffect(() => {
     if (!isLoggedIn) return;
     function handlePaste(e: ClipboardEvent) {
@@ -90,95 +122,87 @@ export function HerbImageUpload({ herbId, isLoggedIn }: Props) {
     return () => document.removeEventListener('paste', handlePaste);
   }, [upload, isLoggedIn]);
 
-  // Reset probe when switching herbs
-  useEffect(() => { setExists(null); setError(null); }, [herbId]);
+  if (images === null) {
+    return <div className="mb-4 h-16 bg-gray-50 rounded-lg animate-pulse" />;
+  }
 
-  if (exists === true) {
-    const src = `${imageUrl}?v=${herbId}`;
-    return (
-      <>
-        <div className="relative mb-4 group">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={src}
-            alt="Herb reference"
-            onClick={() => setLightboxOpen(true)}
-            className="w-full max-h-72 object-contain rounded-lg border border-gray-200 bg-gray-50 cursor-zoom-in"
-          />
-          {isLoggedIn && (
-            <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-              <span className="text-xs text-gray-400 bg-white/90 px-2 py-1 rounded-full border border-gray-200">
-                ⌘V to replace
-              </span>
-              <button
-                onClick={handleRemove}
-                className="text-xs text-red-400 bg-white/90 px-2 py-1 rounded-full border border-red-200 hover:text-red-600 hover:border-red-400 transition-colors"
-              >
-                Remove
-              </button>
-            </div>
-          )}
-          {error && <p className="mt-1 text-xs text-red-400">{error}</p>}
-        </div>
-
-        {lightboxOpen && (
-          <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
-            onClick={() => setLightboxOpen(false)}
-          >
-            <button
-              onClick={() => setLightboxOpen(false)}
-              className="absolute top-4 right-4 text-white/80 hover:text-white bg-black/30 hover:bg-black/50 rounded-full w-9 h-9 flex items-center justify-center transition-colors"
-              aria-label="Close"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={src}
-              alt="Herb reference"
-              onClick={(e) => e.stopPropagation()}
-              className="max-w-[90vw] max-h-[90vh] object-contain rounded-lg shadow-2xl"
-            />
-          </div>
-        )}
-      </>
-    );
+  if (images.length === 0 && !isLoggedIn) {
+    return null;
   }
 
   return (
     <>
-      {/* Hidden probe image — sets exists based on whether S3 object is there */}
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={imageUrl} alt="" className="hidden" onLoad={() => setExists(true)} onError={() => setExists(false)} />
+      <div className="mb-4">
+        <div className="flex gap-3 overflow-x-auto pb-1">
+          {images.map((img, i) => (
+            <div key={img.key} className="relative flex-shrink-0 group">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={img.url}
+                alt={`Herb reference ${i + 1}`}
+                onClick={() => setLightboxIndex(i)}
+                className="h-48 w-auto max-w-xs object-cover rounded-lg border border-gray-200 bg-gray-50 cursor-zoom-in"
+              />
+              {isLoggedIn && (
+                <button
+                  onClick={() => handleRemove(img.key)}
+                  className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity text-xs text-red-400 bg-white/90 px-2 py-1 rounded-full border border-red-200 hover:text-red-600 hover:border-red-400"
+                >
+                  Remove
+                </button>
+              )}
+            </div>
+          ))}
 
-      {exists === false && isLoggedIn && (
-        <div className="mb-4">
-          <div
-            className={`border-2 border-dashed rounded-lg py-5 flex flex-col items-center justify-center gap-1.5 transition-colors ${
-              uploading
-                ? 'border-green-300 bg-green-50'
-                : 'border-gray-200 hover:border-green-300 hover:bg-green-50/40'
-            }`}
+          {isLoggedIn && (
+            <div
+              className={`flex-shrink-0 h-48 w-32 border-2 border-dashed rounded-lg flex flex-col items-center justify-center gap-1 transition-colors ${
+                uploading
+                  ? 'border-green-300 bg-green-50'
+                  : 'border-gray-200 hover:border-green-300 hover:bg-green-50/40'
+              }`}
+            >
+              {uploading ? (
+                <div className="flex flex-col items-center gap-2 text-green-600 text-sm">
+                  <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                  Uploading…
+                </div>
+              ) : (
+                <>
+                  <span className="text-4xl font-thin text-gray-300 leading-none">+</span>
+                  <span className="text-xs text-gray-400 text-center px-2">⌘V to add image</span>
+                </>
+              )}
+            </div>
+          )}
+        </div>
+        {error && <p className="mt-1 text-xs text-red-400">{error}</p>}
+      </div>
+
+      {lightboxIndex !== null && images[lightboxIndex] && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
+          onClick={() => setLightboxIndex(null)}
+        >
+          <button
+            onClick={() => setLightboxIndex(null)}
+            className="absolute top-4 right-4 text-white/80 hover:text-white bg-black/30 hover:bg-black/50 rounded-full w-9 h-9 flex items-center justify-center transition-colors"
+            aria-label="Close"
           >
-            {uploading ? (
-              <div className="flex items-center gap-2 text-green-600 text-sm">
-                <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                </svg>
-                Uploading…
-              </div>
-            ) : (
-              <>
-                <span className="text-4xl font-thin text-gray-300 leading-none">+</span>
-                <span className="text-xs text-gray-400">⌘V to add herb image</span>
-              </>
-            )}
-            {error && <span className="text-xs text-red-400 mt-1">{error}</span>}
-          </div>
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={images[lightboxIndex].url}
+            alt="Herb reference"
+            onClick={(e) => e.stopPropagation()}
+            className="max-w-[90vw] max-h-[90vh] object-contain rounded-lg shadow-2xl"
+          />
         </div>
       )}
     </>
