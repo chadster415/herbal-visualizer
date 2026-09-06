@@ -34,6 +34,7 @@ import {
   SparklesIcon,
   UserIcon,
   CalculatorIcon,
+  FunnelIcon,
 } from '@heroicons/react/24/outline';
 
 type ViewMode = 'herb' | 'action' | 'system' | 'soul_condition' | 'pairings' | 'class_notes';
@@ -299,7 +300,7 @@ export default function Home() {
                       onClick={() => { setFormulaBuilderOpen(true); setOpenDropdown(null); }}
                       className="w-full text-left px-4 py-2.5 text-green-800 hover:bg-green-50 transition-all flex items-center gap-2"
                     >
-                      <BeakerIcon className="w-4 h-4 shrink-0" /> Formula Builder
+                      <ClipboardDocumentListIcon className="w-4 h-4 shrink-0" /> Formula Builder
                     </button>
                     <button
                       onClick={() => { setDosingCalculatorOpen(true); setOpenDropdown(null); }}
@@ -311,7 +312,7 @@ export default function Home() {
                       onClick={() => { setDoubleExtractionOpen(true); setOpenDropdown(null); }}
                       className="w-full text-left px-4 py-2.5 text-green-800 hover:bg-green-50 transition-all flex items-center gap-2"
                     >
-                      <BeakerIcon className="w-4 h-4 shrink-0" /> Double Extraction
+                      <FunnelIcon className="w-4 h-4 shrink-0" /> Double Extraction
                     </button>
                     <button
                       onClick={() => { switchTab('pairings'); setOpenDropdown(null); }}
@@ -376,7 +377,7 @@ export default function Home() {
                     onClick={() => { setFormulaBuilderOpen(true); setOpenDropdown(null); }}
                     className="w-full text-left px-4 py-2.5 text-green-800 hover:bg-green-50 transition-all whitespace-nowrap flex items-center gap-2"
                   >
-                    <BeakerIcon className="w-5 h-5 shrink-0" /> Formula Builder
+                    <ClipboardDocumentListIcon className="w-5 h-5 shrink-0" /> Formula Builder
                   </button>
                   <button
                     onClick={() => { setDosingCalculatorOpen(true); setOpenDropdown(null); }}
@@ -388,7 +389,7 @@ export default function Home() {
                     onClick={() => { setDoubleExtractionOpen(true); setOpenDropdown(null); }}
                     className="w-full text-left px-4 py-2.5 text-green-800 hover:bg-green-50 transition-all whitespace-nowrap flex items-center gap-2"
                   >
-                    <BeakerIcon className="w-5 h-5 shrink-0" /> Double Extraction
+                    <FunnelIcon className="w-5 h-5 shrink-0" /> Double Extraction
                   </button>
                   <div className="border-t border-green-100" />
                   <button

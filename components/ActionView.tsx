@@ -16,6 +16,7 @@ interface ActionData extends PrimaryAction {
     herbs: Herb;
     body_systems: BodySystem | null;
     relative_strength: StrengthLevel | null;
+    source_id: number | null;
   }>;
   action_descriptions: ActionDescription[];
 }
@@ -72,7 +73,8 @@ export function ActionView({ onHerbClick, selectedActionId, onActionIdChange }: 
             herb_primary_actions (
               herbs (*),
               body_systems (*),
-              relative_strength
+              relative_strength,
+              source_id
             ),
             action_descriptions (
               id,
@@ -104,7 +106,7 @@ export function ActionView({ onHerbClick, selectedActionId, onActionIdChange }: 
   );
 
   const groupByBodySystem = (actionData: ActionData) => {
-    const grouped = new Map<string, Array<{ herb: Herb; strength: StrengthLevel | null }>>();
+    const grouped = new Map<string, Array<{ herb: Herb; strength: StrengthLevel | null; source_id: number | null }>>();
 
     actionData.herb_primary_actions.forEach((item) => {
       const systemName = item.body_systems?.name || 'General (No specific system)';
@@ -114,6 +116,7 @@ export function ActionView({ onHerbClick, selectedActionId, onActionIdChange }: 
       grouped.get(systemName)!.push({
         herb: item.herbs,
         strength: item.relative_strength,
+        source_id: item.source_id,
       });
     });
 
@@ -276,11 +279,16 @@ export function ActionView({ onHerbClick, selectedActionId, onActionIdChange }: 
                             </div>
                             <div className="flex items-center justify-between gap-1">
                               <span className="text-sm italic text-gray-600">{item.herb.latin_name}</span>
-                              {item.strength && getStrengthBadge(item.strength) && (
-                                <span className={`text-xs font-semibold px-1.5 py-0.5 rounded shrink-0 ${getStrengthBadge(item.strength)}`}>
-                                  {item.strength.replace('_', ' ')}
-                                </span>
-                              )}
+                              <div className="flex items-center gap-1 shrink-0">
+                                {item.source_id === 1 && (
+                                  <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-100 text-amber-700 border border-amber-200">P&amp;P</span>
+                                )}
+                                {item.strength && getStrengthBadge(item.strength) && (
+                                  <span className={`text-xs font-semibold px-1.5 py-0.5 rounded ${getStrengthBadge(item.strength)}`}>
+                                    {item.strength.replace('_', ' ')}
+                                  </span>
+                                )}
+                              </div>
                             </div>
                           </button>
                         ))}

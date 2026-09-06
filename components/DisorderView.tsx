@@ -57,6 +57,7 @@ interface DisorderData extends Disorder {
     id: number;
     description: string;
     sort_order: number;
+    source_id: number | null;
     herbs: Herb;
   }>;
   disorder_prescriptions: Array<
@@ -146,6 +147,7 @@ export function DisorderView({ bodySystemId, onHerbClick, onActionClick, onSuppl
               id,
               description,
               sort_order,
+              source_id,
               herbs (*)
             ),
             disorder_prescriptions (
@@ -185,7 +187,11 @@ export function DisorderView({ bodySystemId, onHerbClick, onActionClick, onSuppl
         disorder_notes: disorder.disorder_notes.sort((a: DisorderNote, b: DisorderNote) => a.sort_order - b.sort_order),
         disorder_actions_indicated: disorder.disorder_actions_indicated.sort((a: any, b: any) => a.sort_order - b.sort_order),
         disorder_action_herbs: disorder.disorder_action_herbs.sort((a: any, b: any) => a.sort_order - b.sort_order),
-        disorder_specific_remedies: disorder.disorder_specific_remedies.sort((a: any, b: any) => a.herbs.common_name.localeCompare(b.herbs.common_name)),
+        disorder_specific_remedies: disorder.disorder_specific_remedies.sort((a: any, b: any) => {
+          const nameOrder = a.herbs.common_name.localeCompare(b.herbs.common_name);
+          if (nameOrder !== 0) return nameOrder;
+          return (a.source_id ?? 0) - (b.source_id ?? 0);
+        }),
         disorder_prescriptions: disorder.disorder_prescriptions
           .sort((a: DisorderPrescription, b: DisorderPrescription) => a.sort_order - b.sort_order)
           .map((prescription: any) => ({
@@ -536,7 +542,12 @@ export function DisorderView({ bodySystemId, onHerbClick, onActionClick, onSuppl
                     >
                       <div className="flex items-center justify-between gap-2 mb-1">
                         <div className="font-semibold text-gray-900">{item.herbs.common_name}{item.herbs.plant_part ? ` (${item.herbs.plant_part})` : ''}</div>
-                        <EnergeticEmojis temperature={item.herbs.temperature} moisture={item.herbs.moisture} tone={item.herbs.tone} temperatureInferred={item.herbs.temperature_inferred} moistureInferred={item.herbs.moisture_inferred} toneInferred={item.herbs.tone_inferred} className="text-sm leading-none shrink-0" />
+                        <div className="flex items-center gap-1 shrink-0">
+                          {item.source_id === 1 && (
+                            <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-100 text-amber-700 border border-amber-200">P&amp;P</span>
+                          )}
+                          <EnergeticEmojis temperature={item.herbs.temperature} moisture={item.herbs.moisture} tone={item.herbs.tone} temperatureInferred={item.herbs.temperature_inferred} moistureInferred={item.herbs.moisture_inferred} toneInferred={item.herbs.tone_inferred} className="text-sm leading-none" />
+                        </div>
                       </div>
                       <div className="text-sm italic text-gray-600">{item.herbs.latin_name}</div>
                       {(() => {

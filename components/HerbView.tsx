@@ -44,13 +44,31 @@ interface ConstituentProfile {
   editorial_note: string | null;
 }
 
+interface SourceNote {
+  id: number;
+  source_id: number;
+  section_type: string;
+  content: string;
+  sources: {
+    id: number;
+    short_name: string;
+    display_name: string;
+    full_title: string | null;
+    authors: string | null;
+    year: number | null;
+  };
+}
+
 interface HerbData extends Herb {
   herb_primary_actions: Array<{
     primary_actions: PrimaryAction;
     body_systems: BodySystem | null;
     body_system_note: string | null;
     relative_strength: StrengthLevel | null;
+    source_id: number | null;
+    sources: { display_name: string } | null;
   }>;
+  herb_source_notes?: SourceNote[];
   disorder_action_herbs?: Array<{
     disorders: Disorder & { body_systems: BodySystem };
     primary_actions: PrimaryAction;
@@ -58,6 +76,7 @@ interface HerbData extends Herb {
   disorder_specific_remedies?: Array<{
     disorders: Disorder & { body_systems: BodySystem };
     description: string;
+    source_id: number | null;
   }>;
   herb_secondary_actions: Array<{ secondary_actions: SecondaryAction }>;
   herb_constituents?: Array<{
@@ -346,7 +365,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
     primaryActions: true, secondaryActions: true,
     constituentProfile: true, constituents: true, disorders: true, pairings: true,
     contraindications: true, mmMateriaMedica: true, herbContraindications: true,
-    classNotes: true,
+    classNotes: true, sourceNotes: true,
   });
   const toggleSection = (key: keyof typeof sectionsOpen) =>
     setSectionsOpen((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -653,7 +672,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
         setSelectedSupplement(null);
         setAlternatesOpen(false);
         setMobileListOpen(false);
-        setSectionsOpen({ primaryActions: true, secondaryActions: true, constituentProfile: true, constituents: true, disorders: true, pairings: true, contraindications: true, mmMateriaMedica: true, herbContraindications: true, classNotes: true });
+        setSectionsOpen({ primaryActions: true, secondaryActions: true, constituentProfile: true, constituents: true, disorders: true, pairings: true, contraindications: true, mmMateriaMedica: true, herbContraindications: true, classNotes: true, sourceNotes: true });
         setTimeout(() => { scrollHerbInSidebar(selectedHerbId); }, 100);
         fetchHerbDetail(selectedHerbId);
       }
@@ -679,7 +698,9 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
             primary_actions (*),
             body_systems (*),
             body_system_note,
-            relative_strength
+            relative_strength,
+            source_id,
+            sources ( display_name )
           ),
           disorder_action_herbs (
             disorders ( *, body_systems (*) ),
@@ -687,9 +708,14 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
           ),
           disorder_specific_remedies (
             disorders ( *, body_systems (*) ),
-            description
+            description,
+            source_id
           ),
-          herb_secondary_actions ( secondary_actions (*) )
+          herb_secondary_actions ( secondary_actions (*) ),
+          herb_source_notes (
+            id, source_id, section_type, content,
+            sources ( id, short_name, display_name, full_title, authors, year )
+          )
         `)
         .order('common_name');
 
@@ -793,7 +819,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
     if (!herb) return;
     setSelectedSupplement(null);
     setAlternatesOpen(false);
-    setSectionsOpen({ primaryActions: true, secondaryActions: true, constituentProfile: true, constituents: true, disorders: true, pairings: true, contraindications: true, mmMateriaMedica: true, herbContraindications: true, classNotes: true });
+    setSectionsOpen({ primaryActions: true, secondaryActions: true, constituentProfile: true, constituents: true, disorders: true, pairings: true, contraindications: true, mmMateriaMedica: true, herbContraindications: true, classNotes: true, sourceNotes: true });
     onHerbClick?.(herbId);
     fetchHerbDetail(herbId);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -992,14 +1018,14 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
                     const herb = filteredHerbs[highlightedIndex];
                     setSelectedSupplement(null);
                     setAlternatesOpen(false);
-                    setSectionsOpen({ primaryActions: true, secondaryActions: true, constituentProfile: true, constituents: true, disorders: true, pairings: true, contraindications: true, mmMateriaMedica: true, herbContraindications: true, classNotes: true });
+                    setSectionsOpen({ primaryActions: true, secondaryActions: true, constituentProfile: true, constituents: true, disorders: true, pairings: true, contraindications: true, mmMateriaMedica: true, herbContraindications: true, classNotes: true, sourceNotes: true });
                     fetchHerbDetail(herb.id);
                     onHerbIdChange?.(herb.id);
                   } else if (highlightedIndex < herbCount) {
                     const herb = keywordMatchedHerbs[highlightedIndex - filteredHerbs.length];
                     setSelectedSupplement(null);
                     setAlternatesOpen(false);
-                    setSectionsOpen({ primaryActions: true, secondaryActions: true, constituentProfile: true, constituents: true, disorders: true, pairings: true, contraindications: true, mmMateriaMedica: true, herbContraindications: true, classNotes: true });
+                    setSectionsOpen({ primaryActions: true, secondaryActions: true, constituentProfile: true, constituents: true, disorders: true, pairings: true, contraindications: true, mmMateriaMedica: true, herbContraindications: true, classNotes: true, sourceNotes: true });
                     fetchHerbDetail(herb.id);
                     onHerbIdChange?.(herb.id);
                   } else {
@@ -1125,7 +1151,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
                 } else {
                   setSelectedSupplement(null);
                   setAlternatesOpen(false);
-                  setSectionsOpen({ primaryActions: true, secondaryActions: true, constituentProfile: true, constituents: true, disorders: true, pairings: true, contraindications: true, mmMateriaMedica: true, herbContraindications: true, classNotes: true });
+                  setSectionsOpen({ primaryActions: true, secondaryActions: true, constituentProfile: true, constituents: true, disorders: true, pairings: true, contraindications: true, mmMateriaMedica: true, herbContraindications: true, classNotes: true, sourceNotes: true });
                   fetchHerbDetail(herb.id);
                   onHerbIdChange?.(herb.id);
                   if (typeof window !== 'undefined' && window.innerWidth < 1024) {
@@ -1190,7 +1216,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
                     setMobileListOpen(false);
                     setSelectedSupplement(null);
                     setAlternatesOpen(false);
-                    setSectionsOpen({ primaryActions: true, secondaryActions: true, constituentProfile: true, constituents: true, disorders: true, pairings: true, contraindications: true, mmMateriaMedica: true, herbContraindications: true, classNotes: true });
+                    setSectionsOpen({ primaryActions: true, secondaryActions: true, constituentProfile: true, constituents: true, disorders: true, pairings: true, contraindications: true, mmMateriaMedica: true, herbContraindications: true, classNotes: true, sourceNotes: true });
                     fetchHerbDetail(herb.id);
                     onHerbIdChange?.(herb.id);
                     if (typeof window !== 'undefined' && window.innerWidth < 1024) {
@@ -1471,6 +1497,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
               {[
                 { key: 'primaryActions' as const, label: 'Primary Actions', pink: false },
                 ...(selectedHerb.herb_secondary_actions.length > 0 ? [{ key: 'secondaryActions' as const, label: 'Secondary Actions', pink: false }] : []),
+                ...((selectedHerb.herb_source_notes?.length ?? 0) > 0 ? [{ key: 'sourceNotes' as const, label: 'Clinical References', pink: false }] : []),
                 ...(classNoteSnippets.length > 0 ? [{ key: 'classNotes' as const, label: 'Class Notes', pink: false }] : []),
                 ...(selectedProfiles.length > 0 ? [{ key: 'constituentProfile' as const, label: 'Constituents', pink: false }] : []),
                 ...(((selectedHerb.herb_constituents?.length ?? 0) > 0 || selectedHerb.herb_menstruum) ? [{ key: 'constituents' as const, label: 'General Constituents', pink: false }] : []),
@@ -1499,7 +1526,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
               <button
                 onClick={() => {
                   const allOpen = Object.values(sectionsOpen).every(Boolean);
-                  setSectionsOpen({ primaryActions: !allOpen, secondaryActions: !allOpen, constituentProfile: !allOpen, constituents: !allOpen, disorders: !allOpen, pairings: !allOpen, contraindications: !allOpen, mmMateriaMedica: !allOpen, herbContraindications: !allOpen, classNotes: !allOpen });
+                  setSectionsOpen({ primaryActions: !allOpen, secondaryActions: !allOpen, constituentProfile: !allOpen, constituents: !allOpen, disorders: !allOpen, pairings: !allOpen, contraindications: !allOpen, mmMateriaMedica: !allOpen, herbContraindications: !allOpen, classNotes: !allOpen, sourceNotes: !allOpen });
                 }}
                 className="flex items-center gap-1.5 px-3 py-1 rounded-full border border-gray-300 text-xs text-gray-500 hover:border-gray-400 hover:text-gray-700 transition-colors"
               >
@@ -1552,6 +1579,9 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
                                     {action.body_system_note && (
                                       <p className="text-sm text-gray-700 mt-1">{action.body_system_note}</p>
                                     )}
+                                    {action.sources && (
+                                      <span className="inline-block mt-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-100 text-amber-700 border border-amber-200">P&amp;P</span>
+                                    )}
                                   </button>
                                 ))}
                               </div>
@@ -1581,6 +1611,58 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
                     ))}
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* ── Clinical References ────────────────────────────────────── */}
+            {(selectedHerb.herb_source_notes?.length ?? 0) > 0 && (
+              <div className="mb-6" ref={(el) => { sectionRefs.current.sourceNotes = el; }}>
+                <SectionHeader title="Clinical References" open={sectionsOpen.sourceNotes} onToggle={() => toggleSection('sourceNotes')} />
+                {sectionsOpen.sourceNotes && (() => {
+                  const SECTION_ORDER = ['special_characteristics', 'individual_indications', 'combinations_technique'];
+                  const SECTION_LABELS: Record<string, string> = {
+                    special_characteristics: 'Clinical Profile',
+                    individual_indications: 'Indications',
+                    combinations_technique: 'Formulation & Technique',
+                  };
+                  const bySource = new Map<number, SourceNote[]>();
+                  (selectedHerb.herb_source_notes ?? []).forEach((note) => {
+                    if (!bySource.has(note.source_id)) bySource.set(note.source_id, []);
+                    bySource.get(note.source_id)!.push(note);
+                  });
+                  return (
+                    <div className="space-y-6 pl-4 border-l-2 border-amber-100">
+                      {[...bySource.values()].map((notes) => {
+                        const src = notes[0].sources;
+                        const sorted = [...notes].sort((a, b) =>
+                          SECTION_ORDER.indexOf(a.section_type) - SECTION_ORDER.indexOf(b.section_type)
+                        );
+                        return (
+                          <div key={src.id}>
+                            <div className="mb-3">
+                              <h4 className="text-sm font-semibold text-amber-800">{src.display_name}</h4>
+                              {src.full_title && (
+                                <p className="text-xs text-gray-500 italic">{src.full_title}{src.authors ? ` — ${src.authors}` : ''}{src.year ? ` (${src.year})` : ''}</p>
+                              )}
+                            </div>
+                            <div className="space-y-3">
+                              {sorted.map((note) => (
+                                <div key={note.id}>
+                                  <h5 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
+                                    {SECTION_LABELS[note.section_type] ?? note.section_type}
+                                  </h5>
+                                  <div className="text-sm text-gray-700 whitespace-pre-line leading-relaxed bg-amber-50 border border-amber-100 rounded-lg px-3 py-2">
+                                    {note.content}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
               </div>
             )}
 
@@ -1891,6 +1973,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
                         disorder: Disorder & { body_systems: BodySystem };
                         actions: PrimaryAction[];
                         specificRemedy?: string;
+                        ppRemedy?: string;
                       }>();
                       selectedHerb.disorder_action_herbs?.forEach((item) => {
                         if (!disorderMap.has(item.disorders.id)) {
@@ -1900,9 +1983,13 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
                       });
                       selectedHerb.disorder_specific_remedies?.forEach((item) => {
                         if (!disorderMap.has(item.disorders.id)) {
-                          disorderMap.set(item.disorders.id, { disorder: item.disorders, actions: [], specificRemedy: item.description });
+                          disorderMap.set(item.disorders.id, { disorder: item.disorders, actions: [] });
+                        }
+                        const entry = disorderMap.get(item.disorders.id)!;
+                        if (item.source_id === 1) {
+                          entry.ppRemedy = item.description;
                         } else {
-                          disorderMap.get(item.disorders.id)!.specificRemedy = item.description;
+                          entry.specificRemedy = item.description;
                         }
                       });
                       return Array.from(disorderMap.values()).sort((a, b) => a.disorder.name.localeCompare(b.disorder.name)).map((item) => (
@@ -1911,8 +1998,11 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
                             onClick={() => onDisorderClick?.(item.disorder.id, item.disorder.body_systems.id)}
                             className="text-left w-full group"
                           >
-                            <div className="font-semibold text-base text-blue-700 group-hover:text-blue-900 group-hover:underline transition-colors">
+                            <div className="flex items-center gap-2 font-semibold text-base text-blue-700 group-hover:text-blue-900 group-hover:underline transition-colors">
                               {item.disorder.name}
+                              {item.ppRemedy && (
+                                <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-100 text-amber-700 border border-amber-200 no-underline">P&amp;P</span>
+                              )}
                             </div>
                             <div className="text-sm text-gray-600">{item.disorder.body_systems.name}</div>
                           </button>
@@ -1920,6 +2010,12 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
                             <div className="mt-1 mb-2 p-2 bg-green-50 border border-green-200 rounded">
                               <span className="text-xs font-semibold text-green-800">SPECIFIC REMEDY</span>
                               <p className="text-sm text-gray-700 mt-1">{item.specificRemedy}</p>
+                            </div>
+                          )}
+                          {item.ppRemedy && (
+                            <div className="mt-1 mb-2 p-2 bg-amber-50 border border-amber-200 rounded">
+                              <span className="text-xs font-semibold text-amber-700">P&amp;P</span>
+                              <p className="text-sm text-gray-700 mt-1">{item.ppRemedy}</p>
                             </div>
                           )}
                           {item.actions.length > 0 && (
