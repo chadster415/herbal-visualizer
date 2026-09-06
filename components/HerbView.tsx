@@ -1534,7 +1534,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
                               <h4 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-2 border-b border-gray-100 pb-1">
                                 {sysName}
                               </h4>
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                                 {[...actions].sort((a, b) => a.primary_actions.name.localeCompare(b.primary_actions.name)).map((action, idx) => (
                                   <button
                                     key={idx}

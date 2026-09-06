@@ -119,4 +119,5 @@ export const DH_MATERIA_MEDICA: Record<number, { min: number; max: number }> = {
   1650: { min: 60, max: 120 },  // Comfrey (Symphytum officinale)
   2241: { min: 30, max: 60 },  // White Oak (Quercus alba)
   2250: { min: 30, max: 60 },  // Lesser Periwinkle (Vinca minor)
+  2602: { min: 60, max: 60 },  // Gravel Root (Eupatorium purpureum) — 2 ml fixed dose × 30 drops/ml
 };

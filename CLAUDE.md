@@ -1,10 +1,13 @@
 # Herbal Visualizer — Claude Context
 
+> **Project path**: `~/github/herbal-visualizer` (symlink to the iCloud App directory — both paths resolve identically)
+
 ## Guides
-- **[Adding herb data from books](docs/adding-herb-data-from-books.md)** — How to add contraindications, energetics, and body system actions from a printed materia medica source (Tilgner, Hoffmann, etc.). Covers all cases: herb already in DB, herb missing, batch imports, and terminology mapping.
+- **[Adding herb data from books](docs/adding-herb-data-from-books.md)** — How to add contraindications, energetics, and body system actions from a printed materia medica source (Tilgner, Hoffmann, etc.). Covers all cases: herb already in DB, herb missing, batch imports, and terminology mapping. Includes external reference checks: MM Materia Medica, Stockley's, Easley's Dispensatory (`lib/te-materia-medica.ts`), Hoffmann's Medical Herbalism (`lib/dh-materia-medica.ts`), and Tilgner's Heart of the Earth (`lib/hote-materia-medica.ts`).
 - **[Adding case studies](docs/adding-case-studies.md)** — Full walkthrough for creating a SOAP-structured case study entry: migration blocks for disorder, lifestyle notes, actions indicated, prescriptions, Subjective notes (with headed sub-sections), and Objective notes. Includes sort order ranges, herb conventions, and action inference guide.
 - **[Inferring energetics from constituents](docs/inferring-energetics-from-constituents.md)** — Rules for assigning first-pass temperature/moisture energetics to herbs based on constituent profile, with confidence levels and SQL patterns for marking values as inferred. Tone cannot be reliably inferred; do not attempt.
 - **[Inferring taste from constituents](docs/inferring-taste-from-constituents.md)** — Rules for assigning first-pass taste (bitter/pungent/sweet/sour/salty) from constituent profile. Covers 7 bitter rules, 2 pungent rules, 1 sweet rule, conflict resolution hierarchy, and a table of skipped herbs with reasons. 117 herbs inferred across migrations 171–172.
+- **[Adding herb pairings from sources](docs/adding-herb-pairings-from-sources.md)** — End-to-end process for adding a batch of `herb_pairs` from a new book or primary source: identifying missing herbs, deduplicating multi-indication rows, writing the migration skeleton, handling pre-existing pairs, and the `source` field format. Includes a sources-loaded-so-far table.
 
 ## Class Notes Source Files
 
@@ -58,6 +61,9 @@ A Next.js app backed by a local Supabase instance that visualizes herbal medicin
 
 ### Two constituent systems — critical distinction
 
+> ⚠ **RECURRING MISTAKE — READ THIS FIRST**
+> When the user pastes tabular data with a `Status` column containing `Marker`, `Major`, `Present`, or `Reported` — that data goes into **`constituent_profiles`** only. Do NOT map those values to `herb_constituents` concentration levels. They are different tables, different schemas, different data ownership. The moment you see Marker/Major/Present in user-pasted data, write a `constituent_profiles` migration and stop thinking about `herb_constituents`.
+
 The herb detail page has **two separate constituent sections** backed by different tables with different data ownership:
 
 | UI section | Table | Data source | What it holds |
@@ -65,7 +71,13 @@ The herb detail page has **two separate constituent sections** backed by differe
 | **Constituent Profile Markers** (amber cards) | `constituent_profiles` | **User-provided** from Herb Constituent Database CSV | Flat import: one row per compound per herb; `status` (Marker/Major/Present/Reported), `class`, `subclass`, `importance`, `notes`, `editorial_note`. Also drives the Ranked Alternates feature. |
 | **General Constituents** (colored pills) | `herb_constituents` + `constituents` | **Claude researches** from web (PubChem, PhytoHub, literature) | Normalized compound dictionary (`constituents`) + per-herb concentration level join (`herb_constituents`). The same compound (e.g. quercetin) links to many herbs, enabling cross-herb comparison. |
 
-**Never substitute one for the other.** If the user provides `constituent_profiles` data, take it as authoritative — do not second-guess it from web sources. Claude only researches `herb_constituents` (General Constituents) data.
+**Never substitute one for the other.** If the user provides `constituent_profiles` data, take it as authoritative — do not second-guess it from web sources. Claude only researches `herb_constituents` (General Constituents) data. **Never copy `constituent_profiles` data into `herb_constituents`** — they are researched independently.
+
+**Two-category methodology for `herb_constituents` research**: When researching General Constituents for any herb, always think in two categories:
+1. **Defining/primary compounds** — the alkaloids, glycosides, lignans, or specialized terpenoids that characterize this herb (include regardless of corpus overlap)
+2. **Broadly-shared compounds** — terpenes, flavonoids, phenolics, coumarins, sterols this herb contains that are already in the corpus; each one creates a real cross-herb connection in the phytochemical network
+
+Do not assume a specialized herb has no corpus connections — even herbs dominated by unique alkaloids often contain myrcene, beta-caryophyllene, linalool, quercetin, rosmarinic acid, or scopoletin. Before writing `ensure_constituent` calls, query the DB to find which shared compounds already have 3+ herb links and check whether the new herb realistically contains them. For compounds already in the DB, use `SELECT id INTO v_c FROM herbal.constituents WHERE name = '...'` rather than `ensure_constituent`.
 
 `constituent_profiles.status` values (controls sort order and badge color):
 - `Marker` — chemotaxonomic marker / defining compound

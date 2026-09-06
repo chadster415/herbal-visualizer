@@ -104,4 +104,5 @@ export const CONTRAINDICATIONS: Record<number, number> = {
   1639: 4,  // Bitter orange
   1648: 2,  // Dandelion
   1651: 2,  // Elder
+  2601: 8,  // Cannabis (Cannabis sativa)
 };

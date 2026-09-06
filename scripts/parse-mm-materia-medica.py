@@ -20,6 +20,7 @@ OUT_TS  = "/Users/chadarmstrong/Library/Mobile Documents/com~apple~CloudDocs/Arc
 SYNONYM_MAP = {
     # MM genus-only → DB latin
     'achillea':              ['achillea millefolium'],
+    'aconitum columbianum':  ['aconitum napellus'],    # MM's Western Monkshood → our Aconite entry
     'agrimonia':             ['agrimonia eupatoria'],
     'alchemilla':            ['alchemilla vulgaris'],
     'allium cepa':           ['allium cepa'],
@@ -27,6 +28,7 @@ SYNONYM_MAP = {
     'alpinia':               ['rhizoma alpiniae officinari'],  # galangal rhizome TCM
     'althea':                ['althaea officinalis'],
     'angelica':              ['angelica archangelica'],
+    'apocynum cannabinum':   ['apocynum cannabinum'],
     'arctium':               ['arctium lappa'],
     'arctostaphylos':        ['arctostaphylos uva-ursi', 'arctostaphylos manzanita'],
     'arnica':                ['arnica montana'],
@@ -34,13 +36,14 @@ SYNONYM_MAP = {
     'artemisia vulgaris':    ['artemisia vulgaris'],
     'asarum':                ['herba asari cum radice'],  # Chinese wild ginger TCM
     'astragalus membranaceus':['astragalus membranaceus'],
+    'atropa belladonna':     [],  # not in MM
     'avena':                 ['avena sativa'],
     'baptisia':              ['baptisia tinctoria'],
     'barosma':               ['agathosma betulina'],  # buchu
     'berberis vulgaris':     ['berberis vulgaris'],
     'betula':                ['betula spp.'],
     'calendula officinalis': ['calendula officinalis'],
-    'cannabis sativa':       [],  # not in DB
+    'cannabis sativa':       ['cannabis sativa'],
     'capsella bursa-pastoris':['capsella bursa-pastoris'],
     'capsicum':              ['capsicum annuum'],
     'cardamomum':            ['elettaria cardamomum'],
@@ -138,9 +141,11 @@ SYNONYM_MAP = {
     'matricaria':            ['matricaria recutita'],
     'medicago':              ['medicago sativa'],
     'melissa':               ['melissa officinalis'],
+    'menispermum':           ['menispermum canadense'],
     'mentha piperita':       ['mentha piperita'],
     'mentha pulegium':       ['mentha pulegium'],
     'mentha arvensis':       ['mentha arvensis var. piperascens'],
+    'mentha spicata':        ['mentha spicata'],
     'menyanthes':            ['menyanthes trifoliata'],
     'mitchella':             ['mitchella repens'],
     'momordica':             [],  # bitter melon — confirmed absent from MM
@@ -168,6 +173,7 @@ SYNONYM_MAP = {
     'piper methysticum':     ['piper methysticum'],
     'piscidia':              ['piscidia erythrina'],
     'plantago':              ['plantago major'],
+    'podophyllum':           ['podophyllum peltatum'],
     'polygala senega':       ['polygala senega'],
     'polygonatum':           ['polygonatum biflorum'],
     'polygonum bistorta':    ['polygonum bistorta'],
@@ -183,6 +189,8 @@ SYNONYM_MAP = {
     'rhamnus cathartica':    ['rhamnus cathartica'],
     'rhamnus purshiana':     ['rhamnus purshiana'],
     'rheum':                 ['rheum palmatum'],
+    'rhus glabra':           [],  # MM smooth sumac; not added to DB (different from Scudder's Rhus tox)
+    'rhus toxicodendron':    [],  # not in MM (MM has rhus glabra; tox = toxicodendron radicans)
     'rosa':                  ['rosa canina', 'rosa gallica'],
     'rosmarinus':            ['rosmarinus officinalis'],
     'rubus idaeus':          ['rubus idaeus'],
@@ -213,6 +221,8 @@ SYNONYM_MAP = {
     'stachys':               ['stachys officinalis'],
     'stellaria':             ['stellaria media'],
     'stillingia':            ['stillingia sylvatica'],
+    'strychnos ignatii':     [],  # not in MM
+    'strychnos nux-vomica':  [],  # not in MM
     'symplocarpus':          ['symplocarpus foetidus'],
     'symphytum':             ['symphytum officinale'],
     'syzygium':              ['syzygium aromaticum'],
@@ -223,6 +233,7 @@ SYNONYM_MAP = {
     'thuja':                 ['thuja occidentalis'],
     'thymus':                ['thymus vulgaris'],
     'tilia':                 ['tilia platyphyllos'],
+    'toxicodendron radicans': [],  # not in MM (MM has rhus glabra; tox is Poison Ivy)
     'trifolium':             ['trifolium pratense'],
     'trigonella':            ['trigonella foenum-graecum'],
     'tussilago':             ['tussilago farfara'],
@@ -236,6 +247,7 @@ SYNONYM_MAP = {
     'vaccinium myrtillus':   ['vaccinium myrtillus'],
     'vaccinium macrocarpon': ['vaccinium macrocarpon'],
     'valeriana':             ['valeriana officinalis'],
+    'veratrum':              ['veratrum viride'],
     'verbascum':             ['verbascum thapsus'],
     'verbena officinalis':   ['verbena officinalis'],
     'verbena hastata':       ['verbena hastata'],

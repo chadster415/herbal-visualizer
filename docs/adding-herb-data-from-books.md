@@ -217,6 +217,43 @@ These are the curated, concentration-weighted compound links that appear as colo
 
 **Data sources for General Constituents**: Claude may research compound classifications, categories, and biological activity descriptions from the general internet (PubChem, PhytoHub, published literature, etc.) when building `herb_constituents` data. The exception is the specific `constituent_profiles` data the user provides at the start of the process — that should be taken as given and not substituted or second-guessed from web sources.
 
+**Never copy `constituent_profiles` data into `herb_constituents`** — the two tables are independent and researched separately. The user's marker data is authoritative for `constituent_profiles`; Claude researches `herb_constituents` independently.
+
+### Research approach: two categories
+
+When researching `herb_constituents` for any herb, always think in two categories:
+
+**Category 1 — Defining/primary compounds**: The alkaloids, glycosides, lignans, or terpenoids that chemically characterize this herb (e.g., aconitine in Aconite, berberine in Goldenseal, spilanthol in Spilanthes). These should always be included — they are the reason the herb is botanically and clinically distinctive.
+
+**Category 2 — Broadly-shared compounds**: Terpenes, flavonoids, phenolics, coumarins, and sterols that this herb contains and that are already in the corpus. Each one creates a real cross-herb connection in the phytochemical network. Before assuming a specialized herb has no corpus overlap, check the DB.
+
+Compound families worth explicitly checking:
+
+| Family | Representative compounds |
+|---|---|
+| Monoterpene alcohols | linalool, terpineol, geraniol |
+| Sesquiterpenes | myrcene, beta-caryophyllene, farnesene |
+| Monoterpene oxides | 1,8-cineole, limonene, alpha-pinene |
+| Flavonols | quercetin, kaempferol, rutin |
+| Phenolic acids | rosmarinic acid, chlorogenic acid, caffeic acid |
+| Coumarins | scopoletin, umbelliferone |
+| Triterpenoids | ursolic acid, oleanolic acid, betulinic acid |
+| Phytosterols | beta-sitosterol |
+
+**Before writing any `ensure_constituent` call**, query the live DB to see which compounds are already in the corpus and how many herbs they link to:
+
+```sql
+-- Find all broadly-shared compounds with 3+ herb links
+SELECT c.name, c.category, COUNT(hc.herb_id) AS herb_count
+FROM herbal.constituents c
+JOIN herbal.herb_constituents hc ON hc.constituent_id = c.id
+GROUP BY c.id, c.name, c.category
+HAVING COUNT(hc.herb_id) >= 3
+ORDER BY herb_count DESC;
+```
+
+For each compound your new herb realistically contains, check if it's in that list — if it is, use `SELECT id INTO v_c FROM herbal.constituents WHERE name = '...'` rather than `ensure_constituent`, and include it.
+
 ### Step 1 — Check what already exists in `constituents`
 
 Before calling `ensure_constituent`, check whether a compound is already in the dictionary. Re-using an existing entry is preferred — it keeps the cross-herb count accurate and avoids near-duplicate names.
@@ -584,7 +621,42 @@ If the herb is absent from Medical Herbalism, no action needed — the book is E
 
 ---
 
-### 5. Herb synonyms
+### 5. Sharol Tilgner's Heart of the Earth (drop dosages)
+
+The source text file is at:
+```
+/Users/chadarmstrong/Library/Mobile Documents/com~apple~CloudDocs/Archive/Classes/Health and Plants/BHC/Apprenticeship/App/Dosages - Heart of the Earth.txt
+```
+The generated manifest is `lib/hote-materia-medica.ts` — `herb_id → { min: drops, max: drops }`.
+
+**Step 1** — Search by common name or latin name (entries open with `Common Name (Genus species)`):
+```bash
+grep -i "common name\|genus species" \
+  "/Users/chadarmstrong/Library/Mobile Documents/com~apple~CloudDocs/Archive/Classes/Health and Plants/BHC/Apprenticeship/App/Dosages - Heart of the Earth.txt"
+```
+
+**Step 2** — If found, read the dosage line:
+```bash
+grep -A 2 "^Common Name" \
+  "/Users/chadarmstrong/Library/Mobile Documents/com~apple~CloudDocs/Archive/Classes/Health and Plants/BHC/Apprenticeship/App/Dosages - Heart of the Earth.txt"
+```
+
+**Step 3** — Extract the drop range directly (Tilgner gives drops, no ml conversion needed):
+- `1:3 dry plant liquid extract: 10-60 drops 1-4 times per day` → min: 10, max: 60
+- `1:1:1 fresh plant liquid extract: 1-2 drops 1-4 times per day` → min: 1, max: 2
+
+**Step 4** — Add to `lib/hote-materia-medica.ts` in numeric herb_id order:
+```typescript
+999: { min: 10, max: 60 },  // Herb Name (Genus species)
+```
+
+If the entry says `[UNCLEAR — to verify]`, skip it (the source page was illegible at extraction).
+
+If the herb is absent from the file, no action needed — the book covers ~150 herbs.
+
+---
+
+### 6. Herb synonyms
 
 Every herb should have a populated `synonyms` array. This is a `TEXT[]` column on `herbs` — set it via migration UPDATE.
 
@@ -617,7 +689,7 @@ WHERE latin_name = 'Genus species';
 ```
 NNN_description.sql
 ```
-Current highest: **108**. Next free: **109**.
+Current highest: **255**. Next free: **256**.
 
 Files go in `supabase/migrations/`. The user runs them manually in the Supabase SQL Editor.
 
@@ -642,7 +714,8 @@ Files go in `supabase/migrations/`. The user runs them manually in the Supabase 
 - [ ] Stockley's checked — search `scripts/stockleys_herb_pages.json`; if found, extract images and add to `lib/contraindications-manifest.ts` (see §2).
 - [ ] Easley's Dispensatory checked — grep `Dosages - Dispensatory.txt`; if found, add drops entry to `lib/te-materia-medica.ts` and check `ENERGETICS:` line for confirmed energetics (see §3).
 - [ ] Hoffmann's Medical Herbalism checked — grep `Dosages - Medical Herbalism.txt`; if found, add drops entry to `lib/dh-materia-medica.ts` (see §4).
-- [ ] Synonyms populated — check `herbs.synonyms` array is non-empty; if `{}`, add common names, regional names, and trade names via migration UPDATE (see §5).
+- [ ] Tilgner's Heart of the Earth checked — grep `Dosages - Heart of the Earth.txt`; if found and not UNCLEAR, add drops entry to `lib/hote-materia-medica.ts` (see §5).
+- [ ] Synonyms populated — check `herbs.synonyms` array is non-empty; if `{}`, add common names, regional names, and trade names via migration UPDATE (see §6).
 
 ---
 

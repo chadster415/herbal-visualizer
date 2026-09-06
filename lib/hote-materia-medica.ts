@@ -150,4 +150,6 @@ export const HOTE_MATERIA_MEDICA: Record<number, { min: number; max: number }> =
   2241: { min: 10, max: 60 }, // White Oak (Quercus alba)
   2244: { min: 10, max: 50 }, // Yucca (Yucca spp.)
   2363: { min: 10, max: 60 }, // Spilanthes / Paracress (Acmella oleracea)
+  2602: { min: 10, max: 40 }, // Gravel Root (Eupatorium purpureum)
+  2608: { min: 1, max: 5 },   // Veratrum (Veratrum viride) — acute, expert use only; 1–5 drops every 0.5–2 hr
 };

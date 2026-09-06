@@ -1360,4 +1360,55 @@ export const MM_MATERIA_MEDICA: Record<number, string> = {
   STIGMAS.  Tincture [1:5, 95% alcohol] 5-20 drops.
   STATUS : C`,
 
+  // Aconite (Aconitum napellus)
+  2598: `*ACONITUM COLUMBIANUM  (Aconite, Western Monkshood)
+  FLOWERING HERB. Fresh Herb Tincture, 1:4, topical in moderation, internal
+  1-5 drops to 4X a day.
+  DRIED ROOT. Tincture [1:10, 70% alcohol]
+  FOR TOPICAL USE ONLY.DANGEROUS IN LARGER DOSES.
+  STATUS : W/LA`,
+
+  // Dogbane (Apocynum cannabinum)
+  2599: `*APOCYNUM CANNABINUM  (Dogbane, Canada Hemp)
+  ROOT. Tincture [1:5, 50% alcohol] 5-20 drops, to 3X a day.
+  USE CAREFULLY!
+  STATUS : W/A`,
+
+  // Cannabis (Cannabis sativa)
+  2601: `CANNABIS SATIVA  (Marijuana, Hemp)
+  FLOWERING TOPS.Tincture [Fresh Herb, 1:2, Dry Herb, 1:5, 95% alcohol] 5-30
+  drops. Smokers need higher dose.
+  ILLEGAL TO POSSESS AT PRESENT.
+  STATUS : W/LA/C`,
+
+  // Gravel Root (Eupatorium purpureum)
+  2602: `EUPATORIUM PURPUREUM  (Gravel Root, Queen of the Meadow)
+  ROOT. Strong Decoction, 2-4 ounces, to 4X a day. Tincture [Fresh Root, 1:2,
+  Dry Root, 1:5, 60% alcohol] 30-90 drops in cup of warm water.
+  STATUS : W/A`,
+
+  // Podophyllum (Podophyllum peltatum)
+  2605: `*PODOPHYLLUM.  (American Mandrake)
+  ROOT. Tincture [1:5, 95% alcohol] 10-20 drops. Use carefully, and never with
+  overt disease or in physical depression.
+  STATUS : W/LA`,
+
+  // Spearmint (Mentha spicata)
+  2607: `MENTHA SPICATA  (Spearmint, Yerba Buena)
+  HERB. Standard Infusion, or any way you want, as needed.
+  ESSENTIAL OIL.  10-20 drops in capsules (in a binder), to 3X a day.
+  STATUS : W/C`,
+
+  // Veratrum (Veratrum viride)
+  2608: `*VERATRUM  (Green, False or American Hellebore)
+  ROOT.  Tincture [1:10, 95% alcohol] 3-10 drops to 3X a day.
+  DANGEROUS IN MODERATE, POISONOUS IN LARGER AMOUNTS.
+  STATUS : W/A`,
+
+  // Yellow Parilla (Menispermum canadense)
+  2609: `MENISPERMUM  (Yellow Parilla, Moonseed)
+  ROOT.  Tincture [1:5, 70% alcohol], 10-40 drops, or 5-10 drops as a bitter
+  tonic, taken just before meals.
+  STATUS : W/LA`,
+
 };
