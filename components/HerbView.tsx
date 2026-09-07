@@ -602,6 +602,9 @@ function HerbDetailPanel({
             <p className="text-lg text-gray-500 mt-0.5">{herb.pinyin_name}</p>
           )}
           <p className="text-xl italic text-gray-600">{herb.latin_name}</p>
+          {herb.synonyms && herb.synonyms.length > 0 && (
+            <p className="text-sm text-gray-400 mt-0.5">{herb.synonyms.join(' · ')}</p>
+          )}
         </div>
         <div className="flex flex-col items-end gap-1.5 mt-2 sm:mt-0 sm:ml-4 sm:mr-7 shrink-0">
           {/* Monograph links */}
