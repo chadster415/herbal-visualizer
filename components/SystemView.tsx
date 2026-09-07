@@ -41,6 +41,8 @@ type FuseEntry =
   | { type: 'regular'; disorder: DisorderListItem; system: SystemData }
   | { type: 'inferred'; ailment: InferredAilment };
 
+interface InventoryEntry { in_stock: boolean; notes: string; }
+
 interface SystemViewProps {
   onHerbClick?: (herbId: number) => void;
   onActionClick?: (actionId: number) => void;
@@ -52,9 +54,10 @@ interface SystemViewProps {
   onDisorderChange?: (id: number | null) => void;
   onClassNotesClick?: () => void;
   onAilmentKeywordClick?: (keyword: string) => void;
+  userInventory?: Map<number, InventoryEntry>;
 }
 
-export function SystemView({ onHerbClick, onActionClick, onSupplementClick, onTransferToDosing, selectedSystemId, onSystemChange, selectedDisorderId, onDisorderChange, onClassNotesClick, onAilmentKeywordClick }: SystemViewProps) {
+export function SystemView({ onHerbClick, onActionClick, onSupplementClick, onTransferToDosing, selectedSystemId, onSystemChange, selectedDisorderId, onDisorderChange, onClassNotesClick, onAilmentKeywordClick, userInventory }: SystemViewProps) {
   const [systems, setSystems] = useState<SystemData[]>([]);
   const [inferredAilments, setInferredAilments] = useState<InferredAilment[]>([]);
   const [selectedSystem, setSelectedSystem] = useState<SystemData | null>(null);
@@ -322,6 +325,7 @@ export function SystemView({ onHerbClick, onActionClick, onSupplementClick, onTr
                   onTransferToDosing={onTransferToDosing}
                   selectedDisorderId={selectedDisorderId}
                   onDisorderChange={onDisorderChange}
+                  userInventory={userInventory}
                 />
               </div>
             ) : (
@@ -351,7 +355,7 @@ export function SystemView({ onHerbClick, onActionClick, onSupplementClick, onTr
                             >
                               <div className="flex items-center justify-between gap-1 mb-1">
                                 <span className="font-medium text-sm">{item.herb.common_name}{item.herb.plant_part ? ` (${item.herb.plant_part})` : ''}</span>
-                                <EnergeticEmojis temperature={item.herb.temperature} moisture={item.herb.moisture} tone={item.herb.tone} temperatureInferred={item.herb.temperature_inferred} moistureInferred={item.herb.moisture_inferred} toneInferred={item.herb.tone_inferred} className="text-sm leading-none shrink-0" />
+                                <EnergeticEmojis temperature={item.herb.temperature} moisture={item.herb.moisture} tone={item.herb.tone} temperatureInferred={item.herb.temperature_inferred} moistureInferred={item.herb.moisture_inferred} toneInferred={item.herb.tone_inferred} className="text-sm leading-none shrink-0" inStock={userInventory?.get(item.herb.id)?.in_stock} inventoryNotes={userInventory?.get(item.herb.id)?.notes} />
                               </div>
                               <div className="flex items-center justify-between gap-1">
                                 <span className="text-xs italic text-gray-600">{item.herb.latin_name}</span>

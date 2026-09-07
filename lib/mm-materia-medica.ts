@@ -1411,4 +1411,43 @@ export const MM_MATERIA_MEDICA: Record<number, string> = {
   tonic, taken just before meals.
   STATUS : W/LA`,
 
+  // Aletris (Aletris farinosa)
+  2610: `ALETRIS FARINOSA  (Star Grass. "True"(properly "False") Unicorn Root)
+  RHIZOME. Tincture [1:5, 50% alcohol] 30-60 drops to 3X a day. Cold Infusion,
+  1-3 ounces.
+  STATUS : W/Rare`,
+
+  // Bryonia (Bryonia alba)
+  2611: `*BRYONIA  (Bryony)
+  ROOT.  Tincture [Fresh Root, 1:2, recent Dry Root, 1:5, 50% alcohol], 2-10
+  drops to 3X a day.
+  USE WITH CARE; better in small, frequent doses.
+  STATUS : W/LA`,
+
+  // Fireweed (Epilobium angustifolium)
+  2613: `EPILOBIUM ANGUSTIFOLIUM  (Chamaenerium, Fireweed, Giant Willow-Herb)
+  HERB IN FLOWER.  Standard Infusion as needed.
+  STATUS : W/A`,
+
+  // False Unicorn (Chamaelirium luteum)
+  2617: `CHAMAELIRIUM (Helonias,  Unicorn Root )
+  RHIZOME and ROOT.  Tincture [1:5, 50% alcohol] 10-40 drops.
+  Best in lower doses in a formula context.
+  STATUS : W/Rare`,
+
+  // Stramonium (Datura stramonium)
+  2622: `*DATURA  (Jimson Weed, Stramonium, Thorn Apple)
+  LEAVES.  Tincture [1:10, 60% alcohol] 3-10 drops to 3X a day.
+  Leaf mixed w/Tussilago and smoked for incipient asthma.
+  DANGEROUS IN MODERATE DOSES.
+  STATUS : W/A`,
+
+  // Pedicularis (pedicularis densiflora)
+  2624: `PEDICULARIS  (Betony, Lousewort, Elephant Head, Parrot's Beak, Indian Warrior)
+  HERB in FLOWER. Standard Infusion, 4-8 ounces.  Tincture [Fresh Plant, 1:2,
+  Dry Plant, 1:5, 50% alcohol] 1-2 teaspoons, all to 3X a day.
+  A semi-parasitic genus, don't use Pedicularis growing on Senecio or toxic
+  legumes.
+  STATUS : W/A`,
+
 };

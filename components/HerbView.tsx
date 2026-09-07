@@ -140,6 +140,11 @@ interface HerbPair {
   herb_pair_herb_properties: { herb_id: number; property: string; sort_order: number }[];
 }
 
+interface InventoryEntry {
+  in_stock: boolean;
+  notes: string;
+}
+
 interface HerbViewProps {
   selectedHerbId?: number | null;
   onHerbIdChange?: (herbId: number | null) => void;
@@ -157,6 +162,8 @@ interface HerbViewProps {
   onFocusChange?: (herbId: number | null) => void;
   pairingsInitialFocusId?: number | null;
   isLoggedIn?: boolean;
+  userInventory?: Map<number, InventoryEntry>;
+  onHerbsLoaded?: () => void;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -297,7 +304,7 @@ function highlightHerbName(text: string, terms: string[]): React.ReactNode[] {
     const orig = text.slice(pos, pos + part.length);
     pos += part.length;
     return i % 2 === 1
-      ? <strong key={i} className="font-bold text-teal-900">{orig}</strong>
+      ? <strong key={i} className="font-bold text-teal-900 bg-yellow-200 rounded px-0.5">{orig}</strong>
       : orig;
   });
 }
@@ -335,6 +342,7 @@ interface HerbDetailPanelProps {
   detailLoading: boolean;
   frozen?: boolean;
   isLoggedIn?: boolean;
+  userInventory?: Map<number, InventoryEntry>;
   onActionClick?: (actionId: number) => void;
   onActionNameClick?: (name: string) => void;
   onDisorderClick?: (disorderId: number, systemId: number) => void;
@@ -356,6 +364,7 @@ function HerbDetailPanel({
   detailLoading,
   frozen,
   isLoggedIn,
+  userInventory,
   onActionClick,
   onActionNameClick,
   onDisorderClick,
@@ -367,7 +376,7 @@ function HerbDetailPanel({
     primaryActions: true, secondaryActions: true,
     constituentProfile: true, constituents: true, disorders: true, pairings: true,
     contraindications: true, mmMateriaMedica: true, herbContraindications: true,
-    classNotes: true, sourceNotes: true,
+    classNotes: true, sourceNotes: true, stock: true,
   });
   const toggleSection = (key: keyof typeof sectionsOpen) =>
     setSectionsOpen((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -389,7 +398,7 @@ function HerbDetailPanel({
 
   // Reset per-herb UI state when the herb changes
   useEffect(() => {
-    setSectionsOpen({ primaryActions: true, secondaryActions: true, constituentProfile: true, constituents: true, disorders: true, pairings: true, contraindications: true, mmMateriaMedica: true, herbContraindications: true, classNotes: true, sourceNotes: true });
+    setSectionsOpen({ primaryActions: true, secondaryActions: true, constituentProfile: true, constituents: true, disorders: true, pairings: true, contraindications: true, mmMateriaMedica: true, herbContraindications: true, classNotes: true, sourceNotes: true, stock: true });
     setAlternatesOpen(false);
     setHoveredConstituentId(null);
     setTooltipPos(null);
@@ -703,6 +712,14 @@ function HerbDetailPanel({
                     i
                   </button>
                 )}
+                {userInventory?.get(herb.id)?.in_stock && (
+                  <button
+                    onClick={() => scrollToSection('stock')}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-green-300 bg-green-50 text-green-700 text-sm font-medium hover:border-green-500 transition-colors"
+                  >
+                    📦 In Stock
+                  </button>
+                )}
               </div>
             );
           })()}
@@ -723,6 +740,7 @@ function HerbDetailPanel({
           ...(MM_MATERIA_MEDICA[herb.id] ? [{ key: 'mmMateriaMedica' as const, label: 'MM Materia Medica', pink: false }] : []),
           ...(CONTRAINDICATIONS[herb.id] ? [{ key: 'contraindications' as const, label: 'Drug Interactions', pink: true }] : []),
           ...(herb.contraindications ? [{ key: 'herbContraindications' as const, label: 'Contraindications', pink: true }] : []),
+          ...(userInventory?.get(herb.id)?.in_stock ? [{ key: 'stock' as const, label: '📦 My Stock', pink: false }] : []),
         ].map(({ key, label, pink }) => (
           <button
             key={key}
@@ -743,7 +761,7 @@ function HerbDetailPanel({
         <button
           onClick={() => {
             const allOpen = Object.values(sectionsOpen).every(Boolean);
-            setSectionsOpen({ primaryActions: !allOpen, secondaryActions: !allOpen, constituentProfile: !allOpen, constituents: !allOpen, disorders: !allOpen, pairings: !allOpen, contraindications: !allOpen, mmMateriaMedica: !allOpen, herbContraindications: !allOpen, classNotes: !allOpen, sourceNotes: !allOpen });
+            setSectionsOpen({ primaryActions: !allOpen, secondaryActions: !allOpen, constituentProfile: !allOpen, constituents: !allOpen, disorders: !allOpen, pairings: !allOpen, contraindications: !allOpen, mmMateriaMedica: !allOpen, herbContraindications: !allOpen, classNotes: !allOpen, sourceNotes: !allOpen, stock: !allOpen });
           }}
           className="flex items-center gap-1.5 px-3 py-1 rounded-full border border-gray-300 text-xs text-gray-500 hover:border-gray-400 hover:text-gray-700 transition-colors"
         >
@@ -1236,9 +1254,7 @@ function HerbDetailPanel({
                       </div>
                     )}
                     {item.actions.length > 0 && (
-                      <div className="mt-1">
-                        <span className="text-sm font-medium text-gray-700">Actions:</span>
-                        <div className="flex flex-wrap gap-2 mt-1">
+                      <div className="flex flex-wrap items-center gap-2 mt-1">
                           {item.actions.map((action, idx) => (
                             <button
                               key={idx}
@@ -1248,7 +1264,6 @@ function HerbDetailPanel({
                               {action.name}
                             </button>
                           ))}
-                        </div>
                       </div>
                     )}
                   </div>
@@ -1540,6 +1555,22 @@ function HerbDetailPanel({
         </div>
       )}
 
+      {/* My Stock */}
+      {userInventory?.get(herb.id)?.in_stock && (
+        <div className="mt-6" ref={(el) => { sectionRefs.current.stock = el; }}>
+          <SectionHeader title="📦 My Stock" open={sectionsOpen.stock} onToggle={() => toggleSection('stock')} />
+          {sectionsOpen.stock && (
+            <div className="pl-4 border-l-2 border-green-100">
+              {userInventory.get(herb.id)!.notes ? (
+                <p className="text-sm text-gray-700 whitespace-pre-wrap">{userInventory.get(herb.id)!.notes}</p>
+              ) : (
+                <p className="text-sm text-gray-400 italic">No notes — add them on the Manage Inventory page.</p>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Inferred energetics modal */}
       <InferredEnergeticsModal
         isOpen={inferredEnergeticsOpen}
@@ -1660,7 +1691,7 @@ function HerbDetailPanel({
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onActionClick, onActionNameClick, onDisorderClick, selectedSupplementId, onSupplementClick, selectedEssenceId, onEssenceClick, onSoulConditionClick, pairingsMode, onShowPairings, onFocusChange, pairingsInitialFocusId, isLoggedIn }: HerbViewProps) {
+export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onActionClick, onActionNameClick, onDisorderClick, selectedSupplementId, onSupplementClick, selectedEssenceId, onEssenceClick, onSoulConditionClick, pairingsMode, onShowPairings, onFocusChange, pairingsInitialFocusId, isLoggedIn, userInventory, onHerbsLoaded }: HerbViewProps) {
   const [herbs, setHerbs] = useState<HerbData[]>([]);
   const [allProfiles, setAllProfiles] = useState<ConstituentProfile[]>([]);
   const [selectedHerb, setSelectedHerb] = useState<HerbData | null>(null);
@@ -2029,6 +2060,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
       console.error('Error fetching herbs:', err);
     } finally {
       setLoading(false);
+      onHerbsLoaded?.();
     }
 
     // Build constituent → herbs cross-reference index in background
@@ -2117,7 +2149,13 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
     }));
   }
 
-  if (loading) return <div className="text-center py-8">Loading herbs...</div>;
+  if (loading) return (
+    <div className="flex flex-col items-center justify-center py-24 gap-4">
+      <style>{`@keyframes inv-spin { to { transform: rotate(360deg); } }`}</style>
+      <div style={{ width: 36, height: 36, borderRadius: '50%', border: '4px solid #d1fae5', borderTopColor: '#10b981', animation: 'inv-spin 0.8s linear infinite' }} />
+      <span className="text-gray-400 text-sm">Loading herbs…</span>
+    </div>
+  );
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
@@ -2306,7 +2344,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
                   {herb.is_tcm && (
                     <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-red-50 border border-red-200 text-red-700 font-semibold">TCM</span>
                   )}
-                  <EnergeticEmojis temperature={herb.temperature} moisture={herb.moisture} tone={herb.tone} taste={herb.taste} temperatureInferred={herb.temperature_inferred} moistureInferred={herb.moisture_inferred} toneInferred={herb.tone_inferred} tasteInferred={herb.taste_inferred} className="text-sm leading-none" />
+                  <EnergeticEmojis temperature={herb.temperature} moisture={herb.moisture} tone={herb.tone} taste={herb.taste} temperatureInferred={herb.temperature_inferred} moistureInferred={herb.moisture_inferred} toneInferred={herb.tone_inferred} tasteInferred={herb.taste_inferred} className="text-sm leading-none" inStock={userInventory?.get(herb.id)?.in_stock} inventoryNotes={userInventory?.get(herb.id)?.notes} />
                 </div>
               </div>
             </button>
@@ -2516,6 +2554,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
               allProfiles={allProfiles}
               detailLoading={detailLoading}
               isLoggedIn={isLoggedIn}
+              userInventory={userInventory}
               onActionClick={onActionClick}
               onActionNameClick={onActionNameClick}
               onDisorderClick={onDisorderClick}
@@ -2554,6 +2593,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
                 allProfiles={allProfiles}
                 detailLoading={false}
                 frozen
+                userInventory={userInventory}
                 onNavigateToHerb={navigateToHerb}
               />
             </div>

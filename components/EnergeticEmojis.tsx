@@ -10,6 +10,8 @@ interface Props {
   toneInferred?: boolean;
   tasteInferred?: boolean;
   className?: string;
+  inStock?: boolean;
+  inventoryNotes?: string;
 }
 
 function EmojiTip({ emoji, label, inferred }: { emoji: string; label: string; inferred?: boolean }) {
@@ -24,7 +26,22 @@ function EmojiTip({ emoji, label, inferred }: { emoji: string; label: string; in
   );
 }
 
-export function EnergeticEmojis({ temperature, moisture, tone, taste, temperatureInferred, moistureInferred, toneInferred, tasteInferred, className }: Props) {
+function InventoryTip({ notes }: { notes: string }) {
+  return (
+    <span className="relative inline-block group/invtip">
+      <span className="select-none cursor-default">📦</span>
+      <span className="pointer-events-none absolute right-full top-1/2 -translate-y-1/2 mr-1.5 px-2 py-1.5 rounded bg-gray-800 text-white text-xs opacity-0 group-hover/invtip:opacity-100 transition-opacity z-[200] max-w-[220px]">
+        {notes
+          ? <span className="whitespace-pre-wrap">{notes}</span>
+          : <span className="italic text-gray-400">In my inventory</span>
+        }
+        <span className="absolute left-full top-1/2 -translate-y-1/2 border-4 border-transparent border-l-gray-800" />
+      </span>
+    </span>
+  );
+}
+
+export function EnergeticEmojis({ temperature, moisture, tone, taste, temperatureInferred, moistureInferred, toneInferred, tasteInferred, className, inStock, inventoryNotes }: Props) {
   const emojis: { emoji: string; label: string; inferred?: boolean }[] = [];
 
   if (temperature === 'warming') emojis.push({ emoji: '🔥', label: 'Warming', inferred: temperatureInferred });
@@ -39,13 +56,14 @@ export function EnergeticEmojis({ temperature, moisture, tone, taste, temperatur
   if (taste === 'salty')         emojis.push({ emoji: '🧂', label: 'Salty taste', inferred: tasteInferred });
   if (taste === 'sour')          emojis.push({ emoji: '🍋', label: 'Sour taste', inferred: tasteInferred });
 
-  if (emojis.length === 0) return null;
+  if (emojis.length === 0 && !inStock) return null;
 
   return (
-    <span className={`inline-flex gap-1 ${className ?? ''}`}>
+    <span className={`inline-flex gap-1 items-center ${className ?? ''}`}>
       {emojis.map(({ emoji, label, inferred }) => (
         <EmojiTip key={emoji} emoji={emoji} label={label} inferred={inferred} />
       ))}
+      {inStock && <InventoryTip notes={inventoryNotes ?? ''} />}
     </span>
   );
 }

@@ -82,6 +82,8 @@ interface DisorderData extends Disorder {
   >;
 }
 
+interface InventoryEntry { in_stock: boolean; notes: string; }
+
 interface DisorderViewProps {
   bodySystemId?: number;
   onHerbClick?: (herbId: number) => void;
@@ -90,9 +92,10 @@ interface DisorderViewProps {
   onTransferToDosing?: (herbs: Array<{ id: number; common_name: string; latin_name: string; plant_part: string | null }>) => void;
   selectedDisorderId?: number | null;
   onDisorderChange?: (id: number | null) => void;
+  userInventory?: Map<number, InventoryEntry>;
 }
 
-export function DisorderView({ bodySystemId, onHerbClick, onActionClick, onSupplementClick, onTransferToDosing, selectedDisorderId, onDisorderChange }: DisorderViewProps) {
+export function DisorderView({ bodySystemId, onHerbClick, onActionClick, onSupplementClick, onTransferToDosing, selectedDisorderId, onDisorderChange, userInventory }: DisorderViewProps) {
   const [disorders, setDisorders] = useState<DisorderData[]>([]);
   const [selectedDisorder, setSelectedDisorder] = useState<DisorderData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -471,7 +474,7 @@ export function DisorderView({ bodySystemId, onHerbClick, onActionClick, onSuppl
                     >
                       <div className="flex items-center gap-2">
                         <span className="font-medium text-gray-900 text-sm">{h.herbs.common_name}{h.herbs.plant_part ? ` (${h.herbs.plant_part})` : ''}</span>
-                        <EnergeticEmojis temperature={h.herbs.temperature} moisture={h.herbs.moisture} tone={h.herbs.tone} temperatureInferred={h.herbs.temperature_inferred} moistureInferred={h.herbs.moisture_inferred} toneInferred={h.herbs.tone_inferred} className="text-sm leading-none shrink-0" />
+                        <EnergeticEmojis temperature={h.herbs.temperature} moisture={h.herbs.moisture} tone={h.herbs.tone} temperatureInferred={h.herbs.temperature_inferred} moistureInferred={h.herbs.moisture_inferred} toneInferred={h.herbs.tone_inferred} className="text-sm leading-none shrink-0" inStock={userInventory?.get(h.herbs.id)?.in_stock} inventoryNotes={userInventory?.get(h.herbs.id)?.notes} />
                       </div>
                       <span className="text-xs italic text-gray-600">{h.herbs.latin_name}</span>
                     </button>
@@ -546,7 +549,7 @@ export function DisorderView({ bodySystemId, onHerbClick, onActionClick, onSuppl
                           {item.source_id === 1 && (
                             <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-100 text-amber-700 border border-amber-200">P&amp;P</span>
                           )}
-                          <EnergeticEmojis temperature={item.herbs.temperature} moisture={item.herbs.moisture} tone={item.herbs.tone} temperatureInferred={item.herbs.temperature_inferred} moistureInferred={item.herbs.moisture_inferred} toneInferred={item.herbs.tone_inferred} className="text-sm leading-none" />
+                          <EnergeticEmojis temperature={item.herbs.temperature} moisture={item.herbs.moisture} tone={item.herbs.tone} temperatureInferred={item.herbs.temperature_inferred} moistureInferred={item.herbs.moisture_inferred} toneInferred={item.herbs.tone_inferred} className="text-sm leading-none" inStock={userInventory?.get(item.herbs.id)?.in_stock} inventoryNotes={userInventory?.get(item.herbs.id)?.notes} />
                         </div>
                       </div>
                       <div className="text-sm italic text-gray-600">{item.herbs.latin_name}</div>

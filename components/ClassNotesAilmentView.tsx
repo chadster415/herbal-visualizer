@@ -23,7 +23,7 @@ function highlightName(text: string, terms: string[]): ReactNode[] {
     const orig = text.slice(pos, pos + part.length);
     pos += part.length;
     return i % 2 === 1
-      ? <strong key={i} className="font-bold text-teal-900">{orig}</strong>
+      ? <strong key={i} className="font-bold text-teal-900 bg-yellow-200 rounded px-0.5">{orig}</strong>
       : orig;
   });
 }

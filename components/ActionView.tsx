@@ -21,13 +21,16 @@ interface ActionData extends PrimaryAction {
   action_descriptions: ActionDescription[];
 }
 
+interface InventoryEntry { in_stock: boolean; notes: string; }
+
 interface ActionViewProps {
   onHerbClick?: (herbId: number) => void;
   selectedActionId?: number | null;
   onActionIdChange?: (actionId: number | null) => void;
+  userInventory?: Map<number, InventoryEntry>;
 }
 
-export function ActionView({ onHerbClick, selectedActionId, onActionIdChange }: ActionViewProps) {
+export function ActionView({ onHerbClick, selectedActionId, onActionIdChange, userInventory }: ActionViewProps) {
   const [actions, setActions] = useState<ActionData[]>([]);
   const [selectedAction, setSelectedAction] = useState<ActionData | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -271,7 +274,7 @@ export function ActionView({ onHerbClick, selectedActionId, onActionIdChange }: 
                             <div className="flex items-center justify-between gap-1 mb-1">
                               <span className="font-medium">{item.herb.common_name}{item.herb.plant_part ? ` (${item.herb.plant_part})` : ''}</span>
                               <div className="flex items-center gap-1 shrink-0">
-                                <EnergeticEmojis temperature={item.herb.temperature} moisture={item.herb.moisture} tone={item.herb.tone} temperatureInferred={item.herb.temperature_inferred} moistureInferred={item.herb.moisture_inferred} toneInferred={item.herb.tone_inferred} className="text-sm leading-none" />
+                                <EnergeticEmojis temperature={item.herb.temperature} moisture={item.herb.moisture} tone={item.herb.tone} temperatureInferred={item.herb.temperature_inferred} moistureInferred={item.herb.moisture_inferred} toneInferred={item.herb.tone_inferred} className="text-sm leading-none" inStock={userInventory?.get(item.herb.id)?.in_stock} inventoryNotes={userInventory?.get(item.herb.id)?.notes} />
                                 {selectedAction.name === 'Tonic' && agingHerbIds.has(item.herb.id) && (
                                   <span className="text-base leading-none" title="Recommended for elders">🧓</span>
                                 )}

@@ -11,6 +11,7 @@ import { SoulConditionView } from '@/components/SoulConditionView';
 import { FlashcardModal } from '@/components/FlashcardModal';
 import { EnergeticsQuizModal } from '@/components/EnergeticsQuizModal';
 import { HerbFilterPanel } from '@/components/HerbFilterPanel';
+import { InventoryView } from '@/components/InventoryView';
 import { FormulaBuilderModal } from '@/components/FormulaBuilderModal';
 import { DosingCalculatorModal } from '@/components/DosingCalculatorModal';
 import { DoubleExtractionCalculatorModal } from '@/components/DoubleExtractionCalculatorModal';
@@ -37,7 +38,13 @@ import {
   FunnelIcon,
 } from '@heroicons/react/24/outline';
 
-type ViewMode = 'herb' | 'action' | 'system' | 'soul_condition' | 'pairings' | 'class_notes';
+type ViewMode = 'herb' | 'action' | 'system' | 'soul_condition' | 'pairings' | 'class_notes' | 'inventory';
+
+interface InventoryEntry {
+  in_stock: boolean;
+  notes: string;
+}
+type InventoryMap = Map<number, InventoryEntry>;
 
 interface NavEntry {
   viewMode: ViewMode;
@@ -111,6 +118,23 @@ export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [loginOpen, setLoginOpen] = useState(false);
+  const [userInventory, setUserInventory] = useState<InventoryMap>(new Map());
+  const [herbsLoaded, setHerbsLoaded] = useState(false);
+
+  useEffect(() => {
+    if (!isLoggedIn) { setUserInventory(new Map()); return; }
+    supabase
+      .from('user_inventory')
+      .select('herb_id, in_stock, notes')
+      .then(({ data }) => {
+        if (!data) return;
+        const m: InventoryMap = new Map();
+        for (const row of data) {
+          m.set(row.herb_id, { in_stock: row.in_stock, notes: row.notes ?? '' });
+        }
+        setUserInventory(m);
+      });
+  }, [isLoggedIn]);
 
   const pushAndNavigate = (next: NavEntry) => {
     setHistory((prev) => [...prev, { viewMode, selectedHerbId, selectedActionId, selectedSystemId, selectedDisorderId, selectedSupplementId, selectedEssenceId, selectedSoulConditionCategory, pairingsInitialFocusId, selectedAilmentKeyword }]);
@@ -225,6 +249,7 @@ export default function Home() {
   };
 
   const isBrowseMode = viewMode === 'herb' || viewMode === 'action' || viewMode === 'system' || viewMode === 'soul_condition';
+  const isInventoryMode = viewMode === 'inventory';
 
   const viewModeLabel =
     viewMode === 'herb' ? 'By Herb' :
@@ -513,6 +538,11 @@ export default function Home() {
       </header>
 
       <main>
+        {isInventoryMode && (
+          <InventoryView
+            onInventoryChange={setUserInventory}
+          />
+        )}
         <div className={viewMode !== 'herb' && viewMode !== 'pairings' ? 'hidden' : ''}>
           <HerbView
             pairingsMode={viewMode === 'pairings'}
@@ -531,9 +561,11 @@ export default function Home() {
             onEssenceClick={handleEssenceClick}
             onSoulConditionClick={handleSoulConditionClick}
             isLoggedIn={isLoggedIn}
+            userInventory={userInventory}
+            onHerbsLoaded={() => setHerbsLoaded(true)}
           />
         </div>
-        <div className={viewMode !== 'action' ? 'hidden' : ''}><ActionView selectedActionId={selectedActionId} onActionIdChange={setSelectedActionId} onHerbClick={handleHerbClick} /></div>
+        <div className={viewMode !== 'action' ? 'hidden' : ''}><ActionView selectedActionId={selectedActionId} onActionIdChange={setSelectedActionId} onHerbClick={handleHerbClick} userInventory={userInventory} /></div>
         {viewMode === 'system' && (
           <SystemView
             onHerbClick={handleHerbClick}
@@ -546,6 +578,7 @@ export default function Home() {
             onDisorderChange={setSelectedDisorderId}
             onClassNotesClick={handleClassNotesClick}
             onAilmentKeywordClick={(keyword) => pushAndNavigate({ viewMode: 'class_notes', selectedHerbId: null, selectedActionId: null, selectedSystemId: null, selectedDisorderId: null, selectedAilmentKeyword: keyword })}
+            userInventory={userInventory}
           />
         )}
         {viewMode === 'soul_condition' && (
@@ -570,6 +603,27 @@ export default function Home() {
           />
         )}
       </main>
+
+      {isLoggedIn && !isInventoryMode && herbsLoaded && (
+        <footer className="mt-12 pb-6 text-center">
+          <button
+            onClick={() => { setHistory([]); setViewMode('inventory'); setScrollTrigger((k) => k + 1); }}
+            className="text-xs text-gray-400 hover:text-green-700 transition-colors underline underline-offset-2"
+          >
+            Manage Inventory
+          </button>
+        </footer>
+      )}
+      {isInventoryMode && (
+        <footer className="mt-4 pb-6 text-center">
+          <button
+            onClick={() => { setHistory([]); setViewMode('herb'); setScrollTrigger((k) => k + 1); }}
+            className="text-xs text-gray-400 hover:text-green-700 transition-colors underline underline-offset-2"
+          >
+            ← Back to herbs
+          </button>
+        </footer>
+      )}
 
       <FlashcardModal isOpen={flashcardsOpen} onClose={() => setFlashcardsOpen(false)} />
       <FormulaBuilderModal
@@ -622,6 +676,7 @@ export default function Home() {
           setHerbFilterOpen(false);
           pushAndNavigate({ viewMode: 'system', selectedHerbId: null, selectedActionId: null, selectedSystemId: systemId, selectedDisorderId: null });
         }}
+        userInventory={userInventory}
       />
       <HelpModal isOpen={helpOpen} onClose={() => setHelpOpen(false)} />
       <LoginModal isOpen={loginOpen} onClose={() => setLoginOpen(false)} />

@@ -44,11 +44,14 @@ interface HerbRow {
   menstruum: HerbMenstruumData | null;
 }
 
+interface InventoryEntry { in_stock: boolean; notes: string; }
+
 export interface HerbFilterPanelProps {
   isOpen: boolean;
   onClose: () => void;
   onHerbSelect: (herbId: number) => void;
   onSystemSelect?: (systemId: number) => void;
+  userInventory?: Map<number, InventoryEntry>;
 }
 
 // ─── Static filter option definitions ────────────────────────────────────────
@@ -199,7 +202,7 @@ const DEFAULT_SECTIONS = {
   soilFertility: true,
 };
 
-export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect }: HerbFilterPanelProps) {
+export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect, userInventory }: HerbFilterPanelProps) {
   const [herbs, setHerbs] = useState<HerbRow[]>([]);
   const [bodySystems, setBodySystems] = useState<BodySystem[]>([]);
   const [actions, setActions] = useState<Action[]>([]);
@@ -215,6 +218,8 @@ export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect 
   const [sunFilter, setSunFilter]               = useState<Set<SunRequirement>>(new Set());
   const [waterFilter, setWaterFilter]           = useState<Set<WaterNeed>>(new Set());
   const [soilFilter, setSoilFilter]             = useState<Set<SoilFertility>>(new Set());
+
+  const [inStockOnly, setInStockOnly] = useState(false);
 
   const [sectionsOpen, setSectionsOpen] = useState(DEFAULT_SECTIONS);
 
@@ -318,6 +323,7 @@ export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect 
 
   const filteredHerbs = useMemo(() => {
     return herbs.filter((h) => {
+      if (inStockOnly && !userInventory?.get(h.id)?.in_stock)                                       return false;
       if (tempFilter.size > 0       && !tempFilter.has(h.temperature))                              return false;
       if (moistureFilter.size > 0   && !moistureFilter.has(h.moisture))                             return false;
       if (toneFilter.size > 0       && !toneFilter.has(h.tone))                                     return false;
@@ -330,7 +336,7 @@ export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect 
       if (soilFilter.size > 0       && (!h.soil_fertility  || !soilFilter.has(h.soil_fertility)))   return false;
       return true;
     });
-  }, [herbs, tempFilter, moistureFilter, toneFilter, tasteFilter, systemFilter, actionFilter, menstruumFilter, sunFilter, waterFilter, soilFilter]);
+  }, [herbs, inStockOnly, userInventory, tempFilter, moistureFilter, toneFilter, tasteFilter, systemFilter, actionFilter, menstruumFilter, sunFilter, waterFilter, soilFilter]);
 
   useEffect(() => {
     requestAnimationFrame(() => checkPaneScroll(resultsPaneRef.current, setResultsScroll));
@@ -510,6 +516,18 @@ export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect 
             {/* Pane header — always visible */}
             <div className="flex items-center justify-between px-5 h-11 border-b border-gray-100">
               <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Filters</p>
+              <div className="flex items-center gap-3">
+                {userInventory && userInventory.size > 0 && (
+                  <label className="flex items-center gap-1.5 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={inStockOnly}
+                      onChange={(e) => setInStockOnly(e.target.checked)}
+                      className="h-3.5 w-3.5 rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
+                    />
+                    <span className="text-xs text-gray-500 whitespace-nowrap">In stock only</span>
+                  </label>
+                )}
               <button
                 onClick={() => setFilterPaneOpen((prev) => !prev)}
                 className="p-1 rounded text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-all"
@@ -519,6 +537,7 @@ export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect 
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
               </button>
+              </div>
             </div>
             {filterPaneOpen && <ScrollArrow direction="up" visible={filterScroll.up} />}
             {filterPaneOpen && (
@@ -811,7 +830,7 @@ export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect 
                         >
                           <div className="flex items-center justify-between gap-2">
                             <span className="font-medium text-gray-900 text-sm">{herb.common_name}{herb.plant_part ? ` (${herb.plant_part})` : ''}</span>
-                            <EnergeticEmojis temperature={herb.temperature} moisture={herb.moisture} tone={herb.tone} taste={herb.taste} temperatureInferred={herb.temperature_inferred} moistureInferred={herb.moisture_inferred} toneInferred={herb.tone_inferred} tasteInferred={herb.taste_inferred} className="text-base leading-none shrink-0" />
+                            <EnergeticEmojis temperature={herb.temperature} moisture={herb.moisture} tone={herb.tone} taste={herb.taste} temperatureInferred={herb.temperature_inferred} moistureInferred={herb.moisture_inferred} toneInferred={herb.tone_inferred} tasteInferred={herb.taste_inferred} className="text-base leading-none shrink-0" inStock={userInventory?.get(herb.id)?.in_stock} inventoryNotes={userInventory?.get(herb.id)?.notes} />
                           </div>
                           {herb.pinyin_name && (
                             <div className="text-xs text-gray-500 mt-0.5">{herb.pinyin_name}</div>

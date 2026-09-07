@@ -8,6 +8,7 @@ import { TE_MATERIA_MEDICA } from '@/lib/te-materia-medica';
 import { HOTE_MATERIA_MEDICA } from '@/lib/hote-materia-medica';
 import { supabase } from '@/lib/supabase';
 import { EnergeticEmojis } from './EnergeticEmojis';
+import type { HerbMenstruum } from '@/types/database';
 
 interface HerbOption {
   id: number;
@@ -56,6 +57,7 @@ interface HerbEntry {
   toneInferred: boolean;
   tasteInferred: boolean;
   actions: HerbAction[] | null; // null = loading
+  menstruum: HerbMenstruum | null | undefined; // undefined = loading
 }
 
 interface Props {
@@ -84,6 +86,27 @@ function parseMmDropRange(text: string): { min: number; max: number } | null {
     return { min: v, max: v };
   }
   return null;
+}
+
+function menstruumBadges(m: HerbMenstruum): { label: string; color: string }[] {
+  const badges: { label: string; color: string }[] = [];
+  if (m.alcohol_pct_min != null || m.alcohol_pct_max != null) {
+    const range = m.alcohol_pct_min === m.alcohol_pct_max
+      ? `${m.alcohol_pct_min}%`
+      : `${m.alcohol_pct_min ?? '?'}–${m.alcohol_pct_max ?? '?'}%`;
+    badges.push({ label: `Alcohol ${range}`, color: 'bg-purple-100 text-purple-800 border-purple-200' });
+  }
+  if (m.glycerin_pct != null)
+    badges.push({ label: `Glycerin ${m.glycerin_pct}%`, color: 'bg-pink-100 text-pink-800 border-pink-200' });
+  if (m.vinegar_pct != null)
+    badges.push({ label: `Vinegar ${m.vinegar_pct}%`, color: 'bg-yellow-100 text-yellow-800 border-yellow-200' });
+  if (m.water_effective)
+    badges.push({ label: 'Water effective', color: 'bg-blue-100 text-blue-800 border-blue-200' });
+  if (m.powder_effective)
+    badges.push({ label: 'Powder effective', color: 'bg-yellow-100 text-yellow-900 border-yellow-300' });
+  if (m.oil_effective)
+    badges.push({ label: 'Oil effective', color: 'bg-orange-100 text-orange-900 border-orange-200' });
+  return badges;
 }
 
 function gcd(a: number, b: number): number {
@@ -192,18 +215,26 @@ export function DosingCalculatorModal({ isOpen, onClose, initialHerbs }: Props) 
       toneInferred: !!herb.tone_inferred,
       tasteInferred: !!herb.taste_inferred,
       actions: null,
+      menstruum: undefined,
     };
 
     setHerbEntries((prev) => [...prev, entry]);
     setSearch('');
     setShowDropdown(false);
 
-    const { data } = await supabase
-      .from('herb_primary_actions')
-      .select('primary_actions(name), body_systems(name)')
-      .eq('herb_id', herb.id);
+    const [{ data: actionsData }, { data: menstruumData }] = await Promise.all([
+      supabase
+        .from('herb_primary_actions')
+        .select('primary_actions(name), body_systems(name)')
+        .eq('herb_id', herb.id),
+      supabase
+        .from('herb_menstruum')
+        .select('*')
+        .eq('herb_id', herb.id)
+        .maybeSingle(),
+    ]);
 
-    const actions: HerbAction[] = (data ?? [])
+    const actions: HerbAction[] = (actionsData ?? [])
       .map((row: any) => ({
         actionName: row.primary_actions?.name ?? '',
         systemName: row.body_systems?.name ?? 'General',
@@ -217,7 +248,11 @@ export function DosingCalculatorModal({ isOpen, onClose, initialHerbs }: Props) 
     );
 
     setHerbEntries((prev) =>
-      prev.map((e) => (e.key === entryKey ? { ...e, actions } : e)),
+      prev.map((e) =>
+        e.key === entryKey
+          ? { ...e, actions, menstruum: (menstruumData as HerbMenstruum | null) ?? null }
+          : e,
+      ),
     );
   };
 
@@ -507,6 +542,23 @@ export function DosingCalculatorModal({ isOpen, onClose, initialHerbs }: Props) 
                     />
                   );
 
+                  // Menstruum badges
+                  const menstruumJSX = entry.menstruum
+                    ? (() => {
+                        const badges = menstruumBadges(entry.menstruum);
+                        if (badges.length === 0) return null;
+                        return (
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {badges.map((b) => (
+                              <span key={b.label} className={`text-[10px] px-1.5 py-0.5 rounded-full border font-medium ${b.color}`}>
+                                {b.label}
+                              </span>
+                            ))}
+                          </div>
+                        );
+                      })()
+                    : null;
+
                   // Actions JSX — placed right (desktop) or inline (mobile)
                   const actionsJSX =
                     entry.actions === null ? (
@@ -559,7 +611,7 @@ export function DosingCalculatorModal({ isOpen, onClose, initialHerbs }: Props) 
                                 {entry.dhMin != null && (
                                   <span className="group relative text-xs bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300 px-2 py-0.5 rounded-full font-medium cursor-default">
                                     DH
-                                    <span className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover:block whitespace-nowrap rounded bg-gray-800 px-2 py-1 text-xs text-white shadow-lg z-50">
+                                    <span className="pointer-events-none absolute bottom-full left-0 mb-1.5 hidden group-hover:block whitespace-nowrap rounded bg-gray-800 px-2 py-1 text-xs text-white shadow-lg z-50">
                                       {entry.dhMin}–{entry.dhMax} drops (David Hoffmann)
                                     </span>
                                   </span>
@@ -567,7 +619,7 @@ export function DosingCalculatorModal({ isOpen, onClose, initialHerbs }: Props) 
                                 {entry.teMin != null && (
                                   <span className="group relative text-xs bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 px-2 py-0.5 rounded-full font-medium cursor-default">
                                     TE
-                                    <span className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover:block whitespace-nowrap rounded bg-gray-800 px-2 py-1 text-xs text-white shadow-lg z-50">
+                                    <span className="pointer-events-none absolute bottom-full left-0 mb-1.5 hidden group-hover:block whitespace-nowrap rounded bg-gray-800 px-2 py-1 text-xs text-white shadow-lg z-50">
                                       {entry.teMin}–{entry.teMax} drops (Thomas Easley)
                                     </span>
                                   </span>
@@ -575,7 +627,7 @@ export function DosingCalculatorModal({ isOpen, onClose, initialHerbs }: Props) 
                                 {entry.hoteMin != null && (
                                   <span className="group relative text-xs bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300 px-2 py-0.5 rounded-full font-medium cursor-default">
                                     ST
-                                    <span className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover:block whitespace-nowrap rounded bg-gray-800 px-2 py-1 text-xs text-white shadow-lg z-50">
+                                    <span className="pointer-events-none absolute bottom-full left-0 mb-1.5 hidden group-hover:block whitespace-nowrap rounded bg-gray-800 px-2 py-1 text-xs text-white shadow-lg z-50">
                                       {entry.hoteMin}–{entry.hoteMax} drops (Sharol Tilgner)
                                     </span>
                                   </span>
@@ -595,11 +647,12 @@ export function DosingCalculatorModal({ isOpen, onClose, initialHerbs }: Props) 
                             </button>
                           </div>
 
-                          {/* Mobile-only: energetics + actions inline below title */}
-                          {(energeticsJSX || actionsJSX) && (
+                          {/* Mobile-only: energetics + actions + menstruum inline below title */}
+                          {(energeticsJSX || actionsJSX || menstruumJSX) && (
                             <div className="md:hidden mb-3 space-y-1">
                               {energeticsJSX}
                               {actionsJSX}
+                              {menstruumJSX}
                             </div>
                           )}
 
@@ -687,11 +740,12 @@ export function DosingCalculatorModal({ isOpen, onClose, initialHerbs }: Props) 
                           )}
                         </div>{/* end left column */}
 
-                        {/* Right column: energetics + actions (desktop only) */}
-                        {(energeticsJSX || actionsJSX) && (
+                        {/* Right column: energetics + actions + menstruum (desktop only) */}
+                        {(energeticsJSX || actionsJSX || menstruumJSX) && (
                           <div className="hidden md:flex md:flex-col md:gap-1.5 w-44 xl:w-52 shrink-0 border-l border-green-100 dark:border-gray-700 pl-4 pt-0.5">
                             {energeticsJSX}
                             {actionsJSX}
+                            {menstruumJSX}
                           </div>
                         )}
 
@@ -712,7 +766,7 @@ export function DosingCalculatorModal({ isOpen, onClose, initialHerbs }: Props) 
 
           {/* Right column: summary (desktop only) */}
           {hasEntries && (
-            <div className="hidden md:flex flex-col w-80 xl:w-96 shrink-0 border-l border-green-100 dark:border-gray-700 md:overflow-y-auto p-6 bg-green-50/20 dark:bg-gray-800/20 space-y-4">
+            <div className="hidden md:flex flex-col w-80 xl:w-96 shrink-0 border-l border-green-100 dark:border-gray-700 md:overflow-y-auto p-6 bg-green-50/20 dark:bg-gray-800/20 space-y-4 rounded-br-2xl">
               {summaryPanel}
             </div>
           )}
