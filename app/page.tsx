@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
+import { isFeatureVisible, type FeatureKey } from '@/lib/features';
 import { HerbView } from '@/components/HerbView';
 import { LoginModal } from '@/components/LoginModal';
 import { ActionView } from '@/components/ActionView';
@@ -265,6 +266,8 @@ export default function Home() {
     viewMode === 'soul_condition' ? 'By Soul Condition' :
     'By Body System';
 
+  const feat = (key: FeatureKey) => isFeatureVisible(key, isLoggedIn);
+
   return (
     <div className="min-h-screen p-4 sm:p-8 bg-gradient-to-br from-green-50 to-emerald-100 dark:from-gray-900 dark:to-gray-800">
       <header className="mb-8">
@@ -302,7 +305,14 @@ export default function Home() {
               </button>
               {openDropdown === 'browse' && (
                 <div className="absolute top-full mt-1 left-0 bg-white border border-green-200 rounded-lg shadow-lg min-w-[190px] overflow-hidden z-10">
-                  {(['herb', 'action', 'system', 'soul_condition'] as const).map((mode) => (
+                  {(['herb', 'action', 'system', 'soul_condition'] as const)
+                    .filter((mode) =>
+                      mode === 'herb' ? feat('herbBrowser') :
+                      mode === 'action' ? feat('actionBrowser') :
+                      mode === 'system' ? feat('bodySystemBrowser') :
+                      feat('soulConditionBrowser')
+                    )
+                    .map((mode) => (
                     <div key={mode} className={`flex items-center ${viewMode === mode ? 'bg-green-100' : ''}`}>
                       <button
                         onClick={() => { switchTab(mode); setOpenDropdown(null); }}
@@ -323,66 +333,86 @@ export default function Home() {
                   ))}
                   {/* Mobile-only: tools collapsed into browse dropdown */}
                   <div className="md:hidden border-t border-green-100">
-                    <button
-                      onClick={() => { setFlashcardsOpen(true); setOpenDropdown(null); }}
-                      className="w-full text-left px-4 py-2.5 text-green-800 hover:bg-green-50 transition-all flex items-center gap-2"
-                    >
-                      <RectangleStackIcon className="w-4 h-4 shrink-0" /> Flashcards
-                    </button>
-                    <button
-                      onClick={() => { setFormulaBuilderOpen(true); setOpenDropdown(null); }}
-                      className="w-full text-left px-4 py-2.5 text-green-800 hover:bg-green-50 transition-all flex items-center gap-2"
-                    >
-                      <ClipboardDocumentListIcon className="w-4 h-4 shrink-0" /> Formula Builder
-                    </button>
-                    <button
-                      onClick={() => { setDosingCalculatorOpen(true); setOpenDropdown(null); }}
-                      className="w-full text-left px-4 py-2.5 text-green-800 hover:bg-green-50 transition-all flex items-center gap-2"
-                    >
-                      <CalculatorIcon className="w-4 h-4 shrink-0" /> Dosing Calculator
-                    </button>
-                    <button
-                      onClick={() => { setDoubleExtractionOpen(true); setOpenDropdown(null); }}
-                      className="w-full text-left px-4 py-2.5 text-green-800 hover:bg-green-50 transition-all flex items-center gap-2"
-                    >
-                      <FunnelIcon className="w-4 h-4 shrink-0" /> Double Extraction
-                    </button>
-                    <button
-                      onClick={() => { switchTab('pairings'); setOpenDropdown(null); }}
-                      className="w-full text-left px-4 py-2.5 text-green-800 hover:bg-green-50 transition-all flex items-center gap-2"
-                    >
-                      <ShareIcon className="w-4 h-4 shrink-0" /> Pairings
-                    </button>
-                    <button
-                      onClick={() => { setEnergeticsQuizOpen(true); setOpenDropdown(null); }}
-                      className="w-full text-left px-4 py-2.5 text-green-800 hover:bg-green-50 transition-all flex items-center gap-2"
-                    >
-                      <FireIcon className="w-4 h-4 shrink-0" /> Energetics Quiz
-                    </button>
-                    <button
-                      onClick={() => { setIntakeFormOpen(true); setOpenDropdown(null); }}
-                      className="w-full text-left px-4 py-2.5 text-green-800 hover:bg-green-50 transition-all flex items-center gap-2"
-                    >
-                      <ClipboardDocumentListIcon className="w-4 h-4 shrink-0" /> Intake Assessment
-                    </button>
-                    <button
-                      onClick={() => { setFlowerEssenceQuizOpen(true); setOpenDropdown(null); }}
-                      className="w-full text-left px-4 py-2.5 text-green-800 hover:bg-green-50 transition-all flex items-center gap-2"
-                    >
-                      <SparklesIcon className="w-4 h-4 shrink-0" /> Flower Essence Quiz
-                    </button>
-                    <button
-                      onClick={() => { setClassQuizOpen(true); setOpenDropdown(null); }}
-                      className="w-full text-left px-4 py-2.5 text-green-800 hover:bg-green-50 transition-all flex items-center gap-2"
-                    >
-                      <AcademicCapIcon className="w-4 h-4 shrink-0" /> Class Quizzes
-                    </button>
-                    <button
-                      onClick={() => { switchTab('class_notes'); setOpenDropdown(null); }}
-                      className="w-full text-left px-4 py-2.5 text-green-800 hover:bg-green-50 transition-all flex items-center gap-2"
-                    >
-                      <DocumentTextIcon className="w-4 h-4 shrink-0" /> Class Notes
-                    </button>
+                    {feat('flashcards') && (
+                      <button
+                        onClick={() => { setFlashcardsOpen(true); setOpenDropdown(null); }}
+                        className="w-full text-left px-4 py-2.5 text-green-800 hover:bg-green-50 transition-all flex items-center gap-2"
+                      >
+                        <RectangleStackIcon className="w-4 h-4 shrink-0" /> Flashcards
+                      </button>
+                    )}
+                    {feat('formulaBuilder') && (
+                      <button
+                        onClick={() => { setFormulaBuilderOpen(true); setOpenDropdown(null); }}
+                        className="w-full text-left px-4 py-2.5 text-green-800 hover:bg-green-50 transition-all flex items-center gap-2"
+                      >
+                        <ClipboardDocumentListIcon className="w-4 h-4 shrink-0" /> Formula Builder
+                      </button>
+                    )}
+                    {feat('dosingCalculator') && (
+                      <button
+                        onClick={() => { setDosingCalculatorOpen(true); setOpenDropdown(null); }}
+                        className="w-full text-left px-4 py-2.5 text-green-800 hover:bg-green-50 transition-all flex items-center gap-2"
+                      >
+                        <CalculatorIcon className="w-4 h-4 shrink-0" /> Dosing Calculator
+                      </button>
+                    )}
+                    {feat('doubleExtraction') && (
+                      <button
+                        onClick={() => { setDoubleExtractionOpen(true); setOpenDropdown(null); }}
+                        className="w-full text-left px-4 py-2.5 text-green-800 hover:bg-green-50 transition-all flex items-center gap-2"
+                      >
+                        <FunnelIcon className="w-4 h-4 shrink-0" /> Double Extraction
+                      </button>
+                    )}
+                    {feat('herbPairings') && (
+                      <button
+                        onClick={() => { switchTab('pairings'); setOpenDropdown(null); }}
+                        className="w-full text-left px-4 py-2.5 text-green-800 hover:bg-green-50 transition-all flex items-center gap-2"
+                      >
+                        <ShareIcon className="w-4 h-4 shrink-0" /> Pairings
+                      </button>
+                    )}
+                    {feat('energeticsQuiz') && (
+                      <button
+                        onClick={() => { setEnergeticsQuizOpen(true); setOpenDropdown(null); }}
+                        className="w-full text-left px-4 py-2.5 text-green-800 hover:bg-green-50 transition-all flex items-center gap-2"
+                      >
+                        <FireIcon className="w-4 h-4 shrink-0" /> Energetics Quiz
+                      </button>
+                    )}
+                    {feat('intakeAssessment') && (
+                      <button
+                        onClick={() => { setIntakeFormOpen(true); setOpenDropdown(null); }}
+                        className="w-full text-left px-4 py-2.5 text-green-800 hover:bg-green-50 transition-all flex items-center gap-2"
+                      >
+                        <ClipboardDocumentListIcon className="w-4 h-4 shrink-0" /> Intake Assessment
+                      </button>
+                    )}
+                    {feat('flowerEssenceQuiz') && (
+                      <button
+                        onClick={() => { setFlowerEssenceQuizOpen(true); setOpenDropdown(null); }}
+                        className="w-full text-left px-4 py-2.5 text-green-800 hover:bg-green-50 transition-all flex items-center gap-2"
+                      >
+                        <SparklesIcon className="w-4 h-4 shrink-0" /> Flower Essence Quiz
+                      </button>
+                    )}
+                    {feat('classQuizzes') && (
+                      <button
+                        onClick={() => { setClassQuizOpen(true); setOpenDropdown(null); }}
+                        className="w-full text-left px-4 py-2.5 text-green-800 hover:bg-green-50 transition-all flex items-center gap-2"
+                      >
+                        <AcademicCapIcon className="w-4 h-4 shrink-0" /> Class Quizzes
+                      </button>
+                    )}
+                    {feat('classNotes') && (
+                      <button
+                        onClick={() => { switchTab('class_notes'); setOpenDropdown(null); }}
+                        className="w-full text-left px-4 py-2.5 text-green-800 hover:bg-green-50 transition-all flex items-center gap-2"
+                      >
+                        <DocumentTextIcon className="w-4 h-4 shrink-0" /> Class Notes
+                      </button>
+                    )}
                   </div>
                 </div>
               )}
@@ -406,31 +436,39 @@ export default function Home() {
               </button>
               {openDropdown === 'formulation' && (
                 <div className="absolute top-full mt-1 left-0 bg-white border border-green-200 rounded-lg shadow-lg overflow-hidden z-10">
-                  <button
-                    onClick={() => { setFormulaBuilderOpen(true); setOpenDropdown(null); }}
-                    className="w-full text-left px-4 py-2.5 text-green-800 hover:bg-green-50 transition-all whitespace-nowrap flex items-center gap-2"
-                  >
-                    <ClipboardDocumentListIcon className="w-5 h-5 shrink-0" /> Formula Builder
-                  </button>
-                  <button
-                    onClick={() => { setDosingCalculatorOpen(true); setOpenDropdown(null); }}
-                    className="w-full text-left px-4 py-2.5 text-green-800 hover:bg-green-50 transition-all whitespace-nowrap flex items-center gap-2"
-                  >
-                    <CalculatorIcon className="w-5 h-5 shrink-0" /> Dosing Calculator
-                  </button>
-                  <button
-                    onClick={() => { setDoubleExtractionOpen(true); setOpenDropdown(null); }}
-                    className="w-full text-left px-4 py-2.5 text-green-800 hover:bg-green-50 transition-all whitespace-nowrap flex items-center gap-2"
-                  >
-                    <FunnelIcon className="w-5 h-5 shrink-0" /> Double Extraction
-                  </button>
+                  {feat('formulaBuilder') && (
+                    <button
+                      onClick={() => { setFormulaBuilderOpen(true); setOpenDropdown(null); }}
+                      className="w-full text-left px-4 py-2.5 text-green-800 hover:bg-green-50 transition-all whitespace-nowrap flex items-center gap-2"
+                    >
+                      <ClipboardDocumentListIcon className="w-5 h-5 shrink-0" /> Formula Builder
+                    </button>
+                  )}
+                  {feat('dosingCalculator') && (
+                    <button
+                      onClick={() => { setDosingCalculatorOpen(true); setOpenDropdown(null); }}
+                      className="w-full text-left px-4 py-2.5 text-green-800 hover:bg-green-50 transition-all whitespace-nowrap flex items-center gap-2"
+                    >
+                      <CalculatorIcon className="w-5 h-5 shrink-0" /> Dosing Calculator
+                    </button>
+                  )}
+                  {feat('doubleExtraction') && (
+                    <button
+                      onClick={() => { setDoubleExtractionOpen(true); setOpenDropdown(null); }}
+                      className="w-full text-left px-4 py-2.5 text-green-800 hover:bg-green-50 transition-all whitespace-nowrap flex items-center gap-2"
+                    >
+                      <FunnelIcon className="w-5 h-5 shrink-0" /> Double Extraction
+                    </button>
+                  )}
                   <div className="border-t border-green-100" />
-                  <button
-                    onClick={() => { switchTab('pairings'); setOpenDropdown(null); }}
-                    className={`w-full text-left px-4 py-2.5 hover:bg-green-50 transition-all whitespace-nowrap flex items-center gap-2 ${viewMode === 'pairings' ? 'font-semibold text-green-900 bg-green-50' : 'text-green-800'}`}
-                  >
-                    <ShareIcon className="w-5 h-5 shrink-0" /> Pairings
-                  </button>
+                  {feat('herbPairings') && (
+                    <button
+                      onClick={() => { switchTab('pairings'); setOpenDropdown(null); }}
+                      className={`w-full text-left px-4 py-2.5 hover:bg-green-50 transition-all whitespace-nowrap flex items-center gap-2 ${viewMode === 'pairings' ? 'font-semibold text-green-900 bg-green-50' : 'text-green-800'}`}
+                    >
+                      <ShareIcon className="w-5 h-5 shrink-0" /> Pairings
+                    </button>
+                  )}
                 </div>
               )}
             </div>
@@ -445,24 +483,30 @@ export default function Home() {
               </button>
               {openDropdown === 'practice' && (
                 <div className="absolute top-full mt-1 left-0 bg-white border border-green-200 rounded-lg shadow-lg overflow-hidden z-10">
-                  <button
-                    onClick={() => { setEnergeticsQuizOpen(true); setOpenDropdown(null); }}
-                    className="w-full text-left px-4 py-2.5 text-green-800 hover:bg-green-50 transition-all whitespace-nowrap flex items-center gap-2"
-                  >
-                    <FireIcon className="w-5 h-5 shrink-0" /> Energetics Quiz
-                  </button>
-                  <button
-                    onClick={() => { setIntakeFormOpen(true); setOpenDropdown(null); }}
-                    className="w-full text-left px-4 py-2.5 text-green-800 hover:bg-green-50 transition-all whitespace-nowrap flex items-center gap-2"
-                  >
-                    <ClipboardDocumentListIcon className="w-5 h-5 shrink-0" /> Intake Assessment
-                  </button>
-                  <button
-                    onClick={() => { setFlowerEssenceQuizOpen(true); setOpenDropdown(null); }}
-                    className="w-full text-left px-4 py-2.5 text-green-800 hover:bg-green-50 transition-all whitespace-nowrap flex items-center gap-2"
-                  >
-                    <SparklesIcon className="w-5 h-5 shrink-0" /> Flower Essence Quiz
-                  </button>
+                  {feat('energeticsQuiz') && (
+                    <button
+                      onClick={() => { setEnergeticsQuizOpen(true); setOpenDropdown(null); }}
+                      className="w-full text-left px-4 py-2.5 text-green-800 hover:bg-green-50 transition-all whitespace-nowrap flex items-center gap-2"
+                    >
+                      <FireIcon className="w-5 h-5 shrink-0" /> Energetics Quiz
+                    </button>
+                  )}
+                  {feat('intakeAssessment') && (
+                    <button
+                      onClick={() => { setIntakeFormOpen(true); setOpenDropdown(null); }}
+                      className="w-full text-left px-4 py-2.5 text-green-800 hover:bg-green-50 transition-all whitespace-nowrap flex items-center gap-2"
+                    >
+                      <ClipboardDocumentListIcon className="w-5 h-5 shrink-0" /> Intake Assessment
+                    </button>
+                  )}
+                  {feat('flowerEssenceQuiz') && (
+                    <button
+                      onClick={() => { setFlowerEssenceQuizOpen(true); setOpenDropdown(null); }}
+                      className="w-full text-left px-4 py-2.5 text-green-800 hover:bg-green-50 transition-all whitespace-nowrap flex items-center gap-2"
+                    >
+                      <SparklesIcon className="w-5 h-5 shrink-0" /> Flower Essence Quiz
+                    </button>
+                  )}
                 </div>
               )}
             </div>
@@ -477,34 +521,40 @@ export default function Home() {
               </button>
               {openDropdown === 'quizzes' && (
                 <div className="absolute top-full mt-1 left-0 bg-white border border-green-200 rounded-lg shadow-lg overflow-hidden z-10">
-                  <button
-                    onClick={() => { setClassQuizOpen(true); setOpenDropdown(null); }}
-                    className="w-full text-left px-4 py-2.5 text-green-800 hover:bg-green-50 transition-all whitespace-nowrap flex items-center gap-2"
-                  >
-                    <AcademicCapIcon className="w-5 h-5 shrink-0" /> Class Quizzes
-                  </button>
+                  {feat('classQuizzes') && (
+                    <button
+                      onClick={() => { setClassQuizOpen(true); setOpenDropdown(null); }}
+                      className="w-full text-left px-4 py-2.5 text-green-800 hover:bg-green-50 transition-all whitespace-nowrap flex items-center gap-2"
+                    >
+                      <AcademicCapIcon className="w-5 h-5 shrink-0" /> Class Quizzes
+                    </button>
+                  )}
                   <div className="border-t border-green-100" />
-                  <button
-                    onClick={() => { setFlashcardsOpen(true); setOpenDropdown(null); }}
-                    className="w-full text-left px-4 py-2.5 text-green-800 hover:bg-green-50 transition-all whitespace-nowrap flex items-center gap-2"
-                  >
-                    <RectangleStackIcon className="w-5 h-5 shrink-0" /> Flashcards
-                  </button>
+                  {feat('flashcards') && (
+                    <button
+                      onClick={() => { setFlashcardsOpen(true); setOpenDropdown(null); }}
+                      className="w-full text-left px-4 py-2.5 text-green-800 hover:bg-green-50 transition-all whitespace-nowrap flex items-center gap-2"
+                    >
+                      <RectangleStackIcon className="w-5 h-5 shrink-0" /> Flashcards
+                    </button>
+                  )}
                 </div>
               )}
             </div>
 
             {/* Class Notes standalone button (desktop) */}
-            <button
-              onClick={() => { switchTab('class_notes'); setOpenDropdown(null); }}
-              className={`hidden md:flex px-6 py-3 rounded-lg font-medium transition-all border items-center gap-2 ${
-                viewMode === 'class_notes'
-                  ? 'bg-green-100 text-green-900 border-green-400 font-semibold'
-                  : 'bg-white text-green-800 hover:bg-green-100 border-green-300'
-              }`}
-            >
-              <DocumentTextIcon className="w-5 h-5 shrink-0" /> Class Notes
-            </button>
+            {feat('classNotes') && (
+              <button
+                onClick={() => { switchTab('class_notes'); setOpenDropdown(null); }}
+                className={`hidden md:flex px-6 py-3 rounded-lg font-medium transition-all border items-center gap-2 ${
+                  viewMode === 'class_notes'
+                    ? 'bg-green-100 text-green-900 border-green-400 font-semibold'
+                    : 'bg-white text-green-800 hover:bg-green-100 border-green-300'
+                }`}
+              >
+                <DocumentTextIcon className="w-5 h-5 shrink-0" /> Class Notes
+              </button>
+            )}
           </div>
 
           <div className="relative">
@@ -580,7 +630,7 @@ export default function Home() {
             onHerbClick={handleHerbClick}
             onActionClick={handleActionClick}
             onSupplementClick={handleSupplementClick}
-            onTransferToDosing={(herbs) => { setDosingInitialHerbs(herbs); setDosingCalculatorOpen(true); }}
+            onTransferToDosing={feat('dosingCalculator') ? (herbs) => { setDosingInitialHerbs(herbs); setDosingCalculatorOpen(true); } : undefined}
             selectedSystemId={selectedSystemId}
             onSystemChange={setSelectedSystemId}
             selectedDisorderId={selectedDisorderId}
@@ -616,7 +666,7 @@ export default function Home() {
         )}
       </main>
 
-      {isLoggedIn && !isInventoryMode && herbsLoaded && (
+      {feat('inventory') && !isInventoryMode && herbsLoaded && (
         <footer className="mt-12 pb-6 text-center">
           <button
             onClick={() => { setHistory([]); setViewMode('inventory'); setScrollTrigger((k) => k + 1); }}
@@ -642,16 +692,18 @@ export default function Home() {
         isOpen={formulaBuilderOpen}
         onClose={() => setFormulaBuilderOpen(false)}
         onHerbClick={handleHerbClick}
-        onTransferToDosing={(herbs) => {
+        onTransferToDosing={feat('dosingCalculator') ? (herbs) => {
           setDosingInitialHerbs(herbs);
           setDosingCalculatorOpen(true);
-        }}
+        } : undefined}
       />
-      <DosingCalculatorModal
-        isOpen={dosingCalculatorOpen}
-        onClose={() => setDosingCalculatorOpen(false)}
-        initialHerbs={dosingInitialHerbs}
-      />
+      {feat('dosingCalculator') && (
+        <DosingCalculatorModal
+          isOpen={dosingCalculatorOpen}
+          onClose={() => setDosingCalculatorOpen(false)}
+          initialHerbs={dosingInitialHerbs}
+        />
+      )}
       {(energeticsQuizOpen || intakeFormOpen || flowerEssenceQuizOpen || classQuizOpen) && (
         <div className="fixed inset-0 z-[39]" onClick={() => { setEnergeticsQuizOpen(false); setIntakeFormOpen(false); setFlowerEssenceQuizOpen(false); setClassQuizOpen(false); }} aria-hidden="true" />
       )}
@@ -659,7 +711,9 @@ export default function Home() {
       <IntakeFormModal isOpen={intakeFormOpen} onClose={() => setIntakeFormOpen(false)} onHerbSelect={(herbId) => { handleHerbClick(herbId); if (typeof window !== 'undefined' && window.innerWidth < 640) setIntakeFormOpen(false); }} />
       <FlowerEssenceQuizModal isOpen={flowerEssenceQuizOpen} onClose={() => setFlowerEssenceQuizOpen(false)} onEssenceSelect={handleQuizEssenceSelect} />
       <ClassQuizModal isOpen={classQuizOpen} onClose={() => setClassQuizOpen(false)} />
-      <DoubleExtractionCalculatorModal isOpen={doubleExtractionOpen} onClose={() => setDoubleExtractionOpen(false)} />
+      {feat('doubleExtraction') && (
+        <DoubleExtractionCalculatorModal isOpen={doubleExtractionOpen} onClose={() => setDoubleExtractionOpen(false)} />
+      )}
       <BodyDiagramModal
         open={bodyDiagramOpen}
         onClose={() => setBodyDiagramOpen(false)}
