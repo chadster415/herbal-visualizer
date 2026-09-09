@@ -149,7 +149,7 @@ export function ActionView({ onHerbClick, selectedActionId, onActionIdChange, us
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+    <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
       {/* Action List */}
       <div className="lg:col-span-1 bg-white rounded-lg shadow-lg p-6">
         <div className="flex gap-2 items-center mb-4">
@@ -212,7 +212,7 @@ export function ActionView({ onHerbClick, selectedActionId, onActionIdChange, us
       </div>
 
       {/* Action Details */}
-      <div ref={detailPanelRef} className="lg:col-span-2 bg-white rounded-lg shadow-lg p-6">
+      <div ref={detailPanelRef} className="lg:col-span-3 bg-white rounded-lg shadow-lg p-6">
         {selectedAction ? (
           <div>
             <h2 className="text-3xl font-bold text-green-800 mb-4">

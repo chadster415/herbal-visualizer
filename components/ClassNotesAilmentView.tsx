@@ -223,7 +223,7 @@ export function ClassNotesAilmentView({
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+    <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
       {/* ── Left panel: ailment keyword list ─────────────────────────────── */}
       <div className={`lg:col-span-1 bg-white rounded-lg shadow-lg lg:p-6 ${mobileListOpen ? 'p-6' : 'p-3'}`}>
         <div className={`flex items-center justify-between lg:mb-4 ${mobileListOpen ? 'mb-4' : ''}`}>
@@ -271,7 +271,7 @@ export function ClassNotesAilmentView({
       </div>
 
       {/* ── Right panel ───────────────────────────────────────────────────── */}
-      <div ref={detailPanelRef} className="lg:col-span-2 bg-white rounded-lg shadow-lg p-6">
+      <div ref={detailPanelRef} className="lg:col-span-3 bg-white rounded-lg shadow-lg p-6">
         {selectedAilmentKeyword ? (
           /* ── Ailment detail ─────────────────────────────────────────────── */
           <div>

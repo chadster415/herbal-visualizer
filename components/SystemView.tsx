@@ -5,6 +5,7 @@ import Fuse from 'fuse.js';
 import { supabase } from '@/lib/supabase';
 import type { BodySystem, Herb, PrimaryAction, StrengthLevel } from '@/types/database';
 import { DisorderView } from './DisorderView';
+import { RecipeView } from './RecipeView';
 import { EnergeticEmojis } from './EnergeticEmojis';
 
 interface SystemNote {
@@ -28,6 +29,7 @@ interface SystemData extends BodySystem {
     relative_strength: StrengthLevel | null;
   }>;
   disorder_count?: number;
+  recipe_count?: number;
   system_notes?: SystemNote[];
   disorders?: DisorderListItem[];
 }
@@ -52,17 +54,20 @@ interface SystemViewProps {
   onSystemChange?: (id: number | null) => void;
   selectedDisorderId?: number | null;
   onDisorderChange?: (id: number | null) => void;
+  selectedRecipeId?: number | null;
+  onRecipeChange?: (id: number | null) => void;
   onClassNotesClick?: () => void;
   onAilmentKeywordClick?: (keyword: string) => void;
   userInventory?: Map<number, InventoryEntry>;
+  isLoggedIn?: boolean;
 }
 
-export function SystemView({ onHerbClick, onActionClick, onSupplementClick, onTransferToDosing, selectedSystemId, onSystemChange, selectedDisorderId, onDisorderChange, onClassNotesClick, onAilmentKeywordClick, userInventory }: SystemViewProps) {
+export function SystemView({ onHerbClick, onActionClick, onSupplementClick, onTransferToDosing, selectedSystemId, onSystemChange, selectedDisorderId, onDisorderChange, selectedRecipeId, onRecipeChange, onClassNotesClick, onAilmentKeywordClick, userInventory, isLoggedIn }: SystemViewProps) {
   const [systems, setSystems] = useState<SystemData[]>([]);
   const [inferredAilments, setInferredAilments] = useState<InferredAilment[]>([]);
   const [selectedSystem, setSelectedSystem] = useState<SystemData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [viewMode, setViewMode] = useState<'actions' | 'disorders'>('actions');
+  const [viewMode, setViewMode] = useState<'actions' | 'disorders' | 'recipes'>('actions');
   const [disorderSearch, setDisorderSearch] = useState('');
   const [dropdownIndex, setDropdownIndex] = useState(-1);
   const [mobileListOpen, setMobileListOpen] = useState(false);
@@ -117,13 +122,15 @@ export function SystemView({ onHerbClick, onActionClick, onSupplementClick, onTr
     const system = systems.find((s) => s.id === selectedSystemId);
     if (system) {
       setSelectedSystem(system);
-      setViewMode(selectedDisorderId != null ? 'disorders' : 'actions');
+      if (selectedDisorderId != null) setViewMode('disorders');
+      else if (selectedRecipeId != null) setViewMode('recipes');
+      else setViewMode('actions');
     }
   }, [selectedSystemId, systems]);
 
   async function fetchSystems() {
     try {
-      const [{ data, error }, { data: disorderData }, { data: notesData }, { data: kwData }, { data: synonymsData }] = await Promise.all([
+      const [{ data, error }, { data: disorderData }, { data: notesData }, { data: kwData }, { data: synonymsData }, { data: recipeData }] = await Promise.all([
         supabase
           .from('body_systems')
           .select(`*, herb_primary_actions (herbs (*), primary_actions (*), relative_strength)`)
@@ -132,6 +139,7 @@ export function SystemView({ onHerbClick, onActionClick, onSupplementClick, onTr
         supabase.from('body_system_notes').select('body_system_id, id, note_text, sort_order').order('sort_order'),
         supabase.from('herb_keywords').select('keyword').eq('category', 'ailment'),
         supabase.from('ailment_search_terms').select('ailment_keyword, synonyms'),
+        supabase.from('recipe_body_systems').select('body_system_id, recipe_id'),
       ]);
 
       if (error) throw error;
@@ -148,12 +156,18 @@ export function SystemView({ onHerbClick, onActionClick, onSupplementClick, onTr
         notesMap.get(n.body_system_id)!.push({ id: n.id, note_text: n.note_text, sort_order: n.sort_order });
       });
 
+      const recipeCountMap = new Map<number, number>();
+      recipeData?.forEach((r) => {
+        recipeCountMap.set(r.body_system_id, (recipeCountMap.get(r.body_system_id) ?? 0) + 1);
+      });
+
       const systemsWithData = (data || [])
         .filter((system) => system.name !== 'All')
         .map((system) => ({
           ...system,
           disorders: disorderMap.get(system.id) ?? [],
           disorder_count: disorderMap.get(system.id)?.length ?? 0,
+          recipe_count: recipeCountMap.get(system.id) ?? 0,
           system_notes: notesMap.get(system.id) ?? [],
         }));
 
@@ -227,7 +241,7 @@ export function SystemView({ onHerbClick, onActionClick, onSupplementClick, onTr
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+    <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
       {/* System List */}
       <div className={`lg:col-span-1 bg-white rounded-lg shadow-lg lg:p-6 ${mobileListOpen ? 'p-6' : 'p-3'}`}>
         <div className={`flex items-center justify-between lg:mb-4 ${mobileListOpen ? 'mb-4' : ''}`}>
@@ -274,6 +288,9 @@ export function SystemView({ onHerbClick, onActionClick, onSupplementClick, onTr
                   <div>{system.disorder_count} disorder{system.disorder_count !== 1 ? 's' : ''}</div>
                 )}
                 <div>{system.herb_primary_actions.length} herb{system.herb_primary_actions.length !== 1 ? 's' : ''}</div>
+                {(system.recipe_count ?? 0) > 0 && (
+                  <div>{system.recipe_count} recipe{system.recipe_count !== 1 ? 's' : ''}</div>
+                )}
               </div>
             </button>
           ))}
@@ -281,7 +298,7 @@ export function SystemView({ onHerbClick, onActionClick, onSupplementClick, onTr
       </div>
 
       {/* Main panel */}
-      <div ref={detailPanelRef} className="lg:col-span-2 bg-white rounded-lg shadow-lg p-6">
+      <div ref={detailPanelRef} className="lg:col-span-3 bg-white rounded-lg shadow-lg p-6">
         {selectedSystem ? (
           // ── Detail view ────────────────────────────────────────────────────
           <div>
@@ -289,18 +306,20 @@ export function SystemView({ onHerbClick, onActionClick, onSupplementClick, onTr
               <h2 className="text-3xl font-bold text-green-800">
                 {selectedSystem.name} System
               </h2>
-              {(selectedSystem.disorder_count ?? 0) > 0 && (
-                <div className="flex gap-2 shrink-0">
-                  <button
-                    onClick={() => setViewMode('disorders')}
-                    className={`px-4 py-2 rounded-lg font-medium transition-all ${
-                      viewMode === 'disorders'
-                        ? 'bg-green-600 text-white'
-                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                    }`}
-                  >
-                    Disorders ({selectedSystem.disorder_count})
-                  </button>
+              {((selectedSystem.disorder_count ?? 0) > 0 || (selectedSystem.recipe_count ?? 0) > 0) && (
+                <div className="flex gap-2 shrink-0 flex-wrap">
+                  {(selectedSystem.disorder_count ?? 0) > 0 && (
+                    <button
+                      onClick={() => setViewMode('disorders')}
+                      className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                        viewMode === 'disorders'
+                          ? 'bg-green-600 text-white'
+                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                      }`}
+                    >
+                      Disorders ({selectedSystem.disorder_count})
+                    </button>
+                  )}
                   <button
                     onClick={() => setViewMode('actions')}
                     className={`px-4 py-2 rounded-lg font-medium transition-all ${
@@ -311,6 +330,18 @@ export function SystemView({ onHerbClick, onActionClick, onSupplementClick, onTr
                   >
                     Actions &amp; Herbs
                   </button>
+                  {(selectedSystem.recipe_count ?? 0) > 0 && (
+                    <button
+                      onClick={() => setViewMode('recipes')}
+                      className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                        viewMode === 'recipes'
+                          ? 'bg-green-600 text-white'
+                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                      }`}
+                    >
+                      Recipes ({selectedSystem.recipe_count})
+                    </button>
+                  )}
                 </div>
               )}
             </div>
@@ -326,6 +357,16 @@ export function SystemView({ onHerbClick, onActionClick, onSupplementClick, onTr
                   selectedDisorderId={selectedDisorderId}
                   onDisorderChange={onDisorderChange}
                   userInventory={userInventory}
+                />
+              </div>
+            ) : viewMode === 'recipes' && (selectedSystem.recipe_count ?? 0) > 0 ? (
+              <div className="mt-4">
+                <RecipeView
+                  bodySystemId={selectedSystem.id}
+                  selectedRecipeId={selectedRecipeId}
+                  onRecipeChange={onRecipeChange}
+                  onHerbClick={onHerbClick}
+                  isLoggedIn={isLoggedIn}
                 />
               </div>
             ) : (

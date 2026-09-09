@@ -52,6 +52,7 @@ interface NavEntry {
   selectedActionId: number | null;
   selectedSystemId: number | null;
   selectedDisorderId: number | null;
+  selectedRecipeId?: number | null;
   selectedSupplementId?: number | null;
   selectedEssenceId?: number | null;
   selectedSoulConditionCategory?: string | null;
@@ -96,6 +97,7 @@ export default function Home() {
   const [selectedActionId, setSelectedActionId] = useState<number | null>(null);
   const [selectedSystemId, setSelectedSystemId] = useState<number | null>(null);
   const [selectedDisorderId, setSelectedDisorderId] = useState<number | null>(null);
+  const [selectedRecipeId, setSelectedRecipeId] = useState<number | null>(null);
   const [selectedSupplementId, setSelectedSupplementId] = useState<number | null>(null);
   const [selectedEssenceId, setSelectedEssenceId] = useState<number | null>(null);
   const [selectedSoulConditionCategory, setSelectedSoulConditionCategory] = useState<string | null>(null);
@@ -137,12 +139,13 @@ export default function Home() {
   }, [isLoggedIn]);
 
   const pushAndNavigate = (next: NavEntry) => {
-    setHistory((prev) => [...prev, { viewMode, selectedHerbId, selectedActionId, selectedSystemId, selectedDisorderId, selectedSupplementId, selectedEssenceId, selectedSoulConditionCategory, pairingsInitialFocusId, selectedAilmentKeyword }]);
+    setHistory((prev) => [...prev, { viewMode, selectedHerbId, selectedActionId, selectedSystemId, selectedDisorderId, selectedRecipeId, selectedSupplementId, selectedEssenceId, selectedSoulConditionCategory, pairingsInitialFocusId, selectedAilmentKeyword }]);
     setViewMode(next.viewMode);
     setSelectedHerbId(next.selectedHerbId);
     setSelectedActionId(next.selectedActionId);
     setSelectedSystemId(next.selectedSystemId);
     setSelectedDisorderId(next.selectedDisorderId);
+    setSelectedRecipeId(next.selectedRecipeId ?? null);
     setSelectedSupplementId(next.selectedSupplementId ?? null);
     setSelectedEssenceId(next.selectedEssenceId ?? null);
     setSelectedSoulConditionCategory(next.selectedSoulConditionCategory ?? null);
@@ -161,6 +164,7 @@ export default function Home() {
       setSelectedActionId(entry.selectedActionId);
       setSelectedSystemId(entry.selectedSystemId);
       setSelectedDisorderId(entry.selectedDisorderId);
+      setSelectedRecipeId(entry.selectedRecipeId ?? null);
       setSelectedSupplementId(entry.selectedSupplementId ?? null);
       setSelectedEssenceId(entry.selectedEssenceId ?? null);
       setSelectedSoulConditionCategory(entry.selectedSoulConditionCategory ?? null);
@@ -182,6 +186,10 @@ export default function Home() {
 
   const handleClassNotesClick = () => {
     pushAndNavigate({ viewMode: 'class_notes', selectedHerbId: null, selectedActionId: null, selectedSystemId: null, selectedDisorderId: null, selectedAilmentKeyword: null });
+  };
+
+  const handleRecipeClick = (recipeId: number, bodySystemId: number) => {
+    pushAndNavigate({ viewMode: 'system', selectedHerbId: null, selectedActionId: null, selectedSystemId: bodySystemId, selectedDisorderId: null, selectedRecipeId: recipeId });
   };
 
   const handleHerbClick = (herbId: number) => {
@@ -555,6 +563,7 @@ export default function Home() {
             onActionClick={handleActionClick}
             onActionNameClick={handleActionNameClick}
             onDisorderClick={handleDisorderClick}
+            onRecipeClick={handleRecipeClick}
             selectedSupplementId={selectedSupplementId}
             onSupplementClick={handleSupplementClick}
             selectedEssenceId={selectedEssenceId}
@@ -576,9 +585,12 @@ export default function Home() {
             onSystemChange={setSelectedSystemId}
             selectedDisorderId={selectedDisorderId}
             onDisorderChange={setSelectedDisorderId}
+            selectedRecipeId={selectedRecipeId}
+            onRecipeChange={setSelectedRecipeId}
             onClassNotesClick={handleClassNotesClick}
             onAilmentKeywordClick={(keyword) => pushAndNavigate({ viewMode: 'class_notes', selectedHerbId: null, selectedActionId: null, selectedSystemId: null, selectedDisorderId: null, selectedAilmentKeyword: keyword })}
             userInventory={userInventory}
+            isLoggedIn={isLoggedIn}
           />
         )}
         {viewMode === 'soul_condition' && (

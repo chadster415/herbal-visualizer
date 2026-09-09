@@ -150,7 +150,7 @@ export function SoulConditionView({ onEssenceClick, selectedCategory, onCategory
   if (loading) return <div className="text-center py-8 text-purple-600">Loading soul conditions…</div>;
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+    <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
       {/* Left: condition list */}
       <div className="lg:col-span-1 bg-white rounded-lg shadow-lg p-6">
 
@@ -247,7 +247,7 @@ export function SoulConditionView({ onEssenceClick, selectedCategory, onCategory
       </div>
 
       {/* Right: condition detail */}
-      <div ref={detailRef} className="lg:col-span-2 bg-white rounded-lg shadow-lg p-6">
+      <div ref={detailRef} className="lg:col-span-3 bg-white rounded-lg shadow-lg p-6">
         {!selected ? (
           <div className="text-center py-16 text-gray-400">
             <p className="text-lg">Select a soul condition to view details</p>

@@ -290,6 +290,47 @@ export interface PrescriptionSupplement {
   created_at: string;
 }
 
+// Recipe types
+
+export interface Recipe {
+  id: number;
+  name: string;
+  description?: string | null;
+  preparation_label?: string | null;
+  instructions: Array<{ label: string; text: string }>;
+  taste?: string | null;
+  herbal_actions?: string[] | null;
+  sort_order: number;
+  created_at: string;
+}
+
+export interface RecipeHerb {
+  id: number;
+  recipe_id: number;
+  herb_id?: number | null;
+  herb_name_override?: string | null;
+  quantity: string;
+  sort_order: number;
+  created_at: string;
+}
+
+export interface RecipeBodySystem {
+  recipe_id: number;
+  body_system_id: number;
+}
+
+export interface RecipeImage {
+  id: number;
+  recipe_id: number;
+  image_key: string;
+  created_at: string;
+}
+
+export interface RecipeWithDetails extends Recipe {
+  recipe_herbs: Array<RecipeHerb & { herbs: Pick<Herb, 'id' | 'common_name' | 'latin_name' | 'plant_part'> | null }>;
+  recipe_body_systems: Array<{ body_system_id: number; body_systems: Pick<BodySystem, 'id' | 'name'> }>;
+}
+
 // Flower Essence tables (Part One = soul conditions, Part Two = plant profiles)
 
 export interface FlowerEssencePlant {

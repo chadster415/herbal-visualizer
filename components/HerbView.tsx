@@ -152,6 +152,7 @@ interface HerbViewProps {
   onActionClick?: (actionId: number) => void;
   onActionNameClick?: (name: string) => void;
   onDisorderClick?: (disorderId: number, systemId: number) => void;
+  onRecipeClick?: (recipeId: number, bodySystemId: number) => void;
   selectedSupplementId?: number | null;
   onSupplementClick?: (supplementId: number) => void;
   selectedEssenceId?: number | null;
@@ -328,6 +329,14 @@ function SectionHeader({ title, open, onToggle }: { title: string; open: boolean
 
 // ─── HerbDetailPanel ──────────────────────────────────────────────────────────
 
+interface HerbRecipeRef {
+  id: number;
+  name: string;
+  quantity: string;
+  body_system_id: number;
+  body_system_name: string;
+}
+
 interface HerbDetailPanelProps {
   herb: HerbData;
   profiles: ConstituentProfile[];
@@ -348,6 +357,7 @@ interface HerbDetailPanelProps {
   onDisorderClick?: (disorderId: number, systemId: number) => void;
   onNavigateToHerb?: (herbId: number) => void;
   onMonographLinkAdded?: (newLink: { id: number; url: string; label: string | null; sort_order: number }) => void;
+  onRecipeClick?: (recipeId: number, bodySystemId: number) => void;
 }
 
 function HerbDetailPanel({
@@ -370,14 +380,16 @@ function HerbDetailPanel({
   onDisorderClick,
   onNavigateToHerb,
   onMonographLinkAdded,
+  onRecipeClick,
 }: HerbDetailPanelProps) {
   const [alternatesOpen, setAlternatesOpen] = useState(false);
   const [sectionsOpen, setSectionsOpen] = useState({
     primaryActions: true, secondaryActions: true,
     constituentProfile: true, constituents: true, disorders: true, pairings: true,
     contraindications: true, mmMateriaMedica: true, herbContraindications: true,
-    classNotes: true, sourceNotes: true, stock: true,
+    classNotes: true, sourceNotes: true, recipes: true, stock: true,
   });
+  const [herbRecipes, setHerbRecipes] = useState<HerbRecipeRef[]>([]);
   const toggleSection = (key: keyof typeof sectionsOpen) =>
     setSectionsOpen((prev) => ({ ...prev, [key]: !prev[key] }));
 
@@ -398,8 +410,9 @@ function HerbDetailPanel({
 
   // Reset per-herb UI state when the herb changes
   useEffect(() => {
-    setSectionsOpen({ primaryActions: true, secondaryActions: true, constituentProfile: true, constituents: true, disorders: true, pairings: true, contraindications: true, mmMateriaMedica: true, herbContraindications: true, classNotes: true, sourceNotes: true, stock: true });
+    setSectionsOpen({ primaryActions: true, secondaryActions: true, constituentProfile: true, constituents: true, disorders: true, pairings: true, contraindications: true, mmMateriaMedica: true, herbContraindications: true, classNotes: true, sourceNotes: true, recipes: true, stock: true });
     setAlternatesOpen(false);
+    setHerbRecipes([]);
     setHoveredConstituentId(null);
     setTooltipPos(null);
   }, [herb.id]);
@@ -414,6 +427,30 @@ function HerbDetailPanel({
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [monographDropdownOpen]);
+
+  useEffect(() => {
+    supabase
+      .from('recipe_herbs')
+      .select('recipe_id, quantity, recipes ( id, name, recipe_body_systems ( body_system_id, body_systems ( id, name ) ) )')
+      .eq('herb_id', herb.id)
+      .then(({ data }) => {
+        if (!data) return;
+        const refs: HerbRecipeRef[] = [];
+        for (const row of data as any[]) {
+          const recipe = row.recipes;
+          if (!recipe) continue;
+          const bs = recipe.recipe_body_systems?.[0];
+          refs.push({
+            id: recipe.id,
+            name: recipe.name,
+            quantity: row.quantity,
+            body_system_id: bs?.body_system_id ?? 0,
+            body_system_name: bs?.body_systems?.name ?? '',
+          });
+        }
+        setHerbRecipes(refs);
+      });
+  }, [herb.id]);
 
   const scrollToSection = (key: keyof typeof sectionsOpen) => {
     setSectionsOpen((prev) => ({ ...prev, [key]: true }));
@@ -743,7 +780,8 @@ function HerbDetailPanel({
           ...(MM_MATERIA_MEDICA[herb.id] ? [{ key: 'mmMateriaMedica' as const, label: 'MM Materia Medica', pink: false }] : []),
           ...(CONTRAINDICATIONS[herb.id] ? [{ key: 'contraindications' as const, label: 'Drug Interactions', pink: true }] : []),
           ...(herb.contraindications ? [{ key: 'herbContraindications' as const, label: 'Contraindications', pink: true }] : []),
-          ...(userInventory?.get(herb.id)?.in_stock ? [{ key: 'stock' as const, label: '📦 My Stock', pink: false }] : []),
+          ...(herbRecipes.length > 0 ? [{ key: 'recipes' as const, label: 'Recipes', pink: false }] : []),
+          ...(userInventory?.get(herb.id)?.in_stock ? [{ key: 'stock' as const, label: 'My Stock', pink: false }] : []),
         ].map(({ key, label, pink }) => (
           <button
             key={key}
@@ -764,7 +802,7 @@ function HerbDetailPanel({
         <button
           onClick={() => {
             const allOpen = Object.values(sectionsOpen).every(Boolean);
-            setSectionsOpen({ primaryActions: !allOpen, secondaryActions: !allOpen, constituentProfile: !allOpen, constituents: !allOpen, disorders: !allOpen, pairings: !allOpen, contraindications: !allOpen, mmMateriaMedica: !allOpen, herbContraindications: !allOpen, classNotes: !allOpen, sourceNotes: !allOpen, stock: !allOpen });
+            setSectionsOpen({ primaryActions: !allOpen, secondaryActions: !allOpen, constituentProfile: !allOpen, constituents: !allOpen, disorders: !allOpen, pairings: !allOpen, contraindications: !allOpen, mmMateriaMedica: !allOpen, herbContraindications: !allOpen, classNotes: !allOpen, sourceNotes: !allOpen, recipes: !allOpen, stock: !allOpen });
           }}
           className="flex items-center gap-1.5 px-3 py-1 rounded-full border border-gray-300 text-xs text-gray-500 hover:border-gray-400 hover:text-gray-700 transition-colors"
         >
@@ -1558,10 +1596,33 @@ function HerbDetailPanel({
         </div>
       )}
 
+      {/* Recipes */}
+      {herbRecipes.length > 0 && (
+        <div className="mt-6" ref={(el) => { sectionRefs.current.recipes = el; }}>
+          <SectionHeader title="Recipes" open={sectionsOpen.recipes} onToggle={() => toggleSection('recipes')} />
+          {sectionsOpen.recipes && (
+            <div className="pl-4 border-l-2 border-green-100">
+              <div className="flex flex-wrap gap-2">
+                {herbRecipes.map((r) => (
+                  <button
+                    key={r.id}
+                    onClick={() => onRecipeClick?.(r.id, r.body_system_id)}
+                    className="px-3 py-1.5 rounded-full bg-green-50 text-green-800 text-sm font-medium border border-green-200 hover:bg-green-100 hover:border-green-400 transition-colors flex items-center gap-1.5"
+                  >
+                    <span>{r.name}</span>
+                    <span className="text-xs text-gray-400">{r.quantity}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* My Stock */}
       {userInventory?.get(herb.id)?.in_stock && (
         <div className="mt-6" ref={(el) => { sectionRefs.current.stock = el; }}>
-          <SectionHeader title="📦 My Stock" open={sectionsOpen.stock} onToggle={() => toggleSection('stock')} />
+          <SectionHeader title="My Stock" open={sectionsOpen.stock} onToggle={() => toggleSection('stock')} />
           {sectionsOpen.stock && (
             <div className="pl-4 border-l-2 border-green-100">
               {userInventory.get(herb.id)!.notes ? (
@@ -1694,7 +1755,7 @@ function HerbDetailPanel({
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onActionClick, onActionNameClick, onDisorderClick, selectedSupplementId, onSupplementClick, selectedEssenceId, onEssenceClick, onSoulConditionClick, pairingsMode, onShowPairings, onFocusChange, pairingsInitialFocusId, isLoggedIn, userInventory, onHerbsLoaded }: HerbViewProps) {
+export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onActionClick, onActionNameClick, onDisorderClick, onRecipeClick, selectedSupplementId, onSupplementClick, selectedEssenceId, onEssenceClick, onSoulConditionClick, pairingsMode, onShowPairings, onFocusChange, pairingsInitialFocusId, isLoggedIn, userInventory, onHerbsLoaded }: HerbViewProps) {
   const [herbs, setHerbs] = useState<HerbData[]>([]);
   const [allProfiles, setAllProfiles] = useState<ConstituentProfile[]>([]);
   const [selectedHerb, setSelectedHerb] = useState<HerbData | null>(null);
@@ -2561,6 +2622,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
               onActionClick={onActionClick}
               onActionNameClick={onActionNameClick}
               onDisorderClick={onDisorderClick}
+              onRecipeClick={onRecipeClick}
               onNavigateToHerb={navigateToHerb}
               onMonographLinkAdded={handleMonographLinkAdded}
             />
