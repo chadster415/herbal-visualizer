@@ -33,12 +33,16 @@ The schema (tables `class_note_snippets` and `herb_keywords`) already exists fro
 
 ## Step 1 — Fetch the herb DB and existing ailment keywords
 
-Run these at the start:
-```sql
-SELECT id, common_name, latin_name, plant_part FROM herbal.herbs ORDER BY common_name;
+Run these at the start using the local Supabase instance:
+```bash
+PGPASSWORD=postgres /opt/homebrew/Cellar/libpq/18.6/bin/psql -h 127.0.0.1 -p 54322 -U postgres -d postgres \
+  -c "SELECT id, common_name, latin_name, plant_part FROM herbal.herbs ORDER BY common_name;"
 
-SELECT DISTINCT keyword FROM herbal.herb_keywords WHERE category = 'ailment' ORDER BY keyword;
+PGPASSWORD=postgres /opt/homebrew/Cellar/libpq/18.6/bin/psql -h 127.0.0.1 -p 54322 -U postgres -d postgres \
+  -c "SELECT DISTINCT keyword FROM herbal.herb_keywords WHERE category = 'ailment' ORDER BY keyword;"
 ```
+
+For multi-query steps, chain with multiple `-c` flags or use `-f` with a temp SQL file. Never use `psql -i` (interactive mode is not supported).
 
 Build a working lookup: `common_name → id` and `latin_name → id`. Also include synonyms from `herb_synonyms` if that table exists.
 
