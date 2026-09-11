@@ -643,7 +643,7 @@ function HerbDetailPanel({
             <p className="text-sm text-gray-400 mt-0.5">{herb.synonyms.join(' · ')}</p>
           )}
         </div>
-        <div className="flex flex-col items-end gap-1.5 mt-2 sm:mt-0 sm:ml-4 sm:mr-7 shrink-0">
+        <div className="flex flex-col items-end gap-1.5 mt-2 sm:mt-0 sm:ml-4 sm:mr-7 min-w-0">
           {/* Monograph links */}
           {(() => {
             const sorted = (herb.herb_monograph_links ?? []).slice().sort((a, b) => a.sort_order - b.sort_order);
