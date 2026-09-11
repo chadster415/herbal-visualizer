@@ -661,7 +661,7 @@ function HerbDetailPanel({
               return (
                 <div className="flex items-center gap-1.5">
                   <a href={sorted[0].url} target="_blank" rel="noopener noreferrer"
-                    className="px-4 py-2 bg-green-700 text-white text-sm font-bold rounded hover:bg-green-800 transition-colors">
+                    className="px-2 py-1 bg-green-700 text-white text-xs font-bold rounded hover:bg-green-800 transition-colors">
                     {sorted[0].label || 'MONOGRAPH'}
                   </a>
                   {addBtn}
@@ -673,7 +673,7 @@ function HerbDetailPanel({
                 <div className="relative">
                   <button
                     onClick={() => setMonographDropdownOpen((v) => !v)}
-                    className="flex items-center gap-2 px-4 py-2 bg-green-700 text-white text-sm font-bold rounded hover:bg-green-800 transition-colors"
+                    className="flex items-center gap-1.5 px-2 py-1 bg-green-700 text-white text-xs font-bold rounded hover:bg-green-800 transition-colors"
                   >
                     MONOGRAPHS
                     <svg className={`w-3 h-3 transition-transform ${monographDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">

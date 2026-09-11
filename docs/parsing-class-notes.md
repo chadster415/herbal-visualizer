@@ -337,7 +337,7 @@ Before writing the final migration, verify:
 
 ## Step 8 — Generate class quiz questions
 
-After completing the snippets migration, generate 30 MCQ questions for this class. Create a separate migration file: `{N+1}_class_{nn}_{slug}_quiz.sql`
+After completing the snippets migration, generate quiz questions for this class. Create a separate migration file: `{N+1}_class_{nn}_{slug}_quiz.sql`
 
 **Table schema** (already exists from migration 232):
 - `class_name` — exact match to the class_name used in snippet migration
@@ -347,7 +347,21 @@ After completing the snippets migration, generate 30 MCQ questions for this clas
 - `explanation` — 1-2 sentences explaining why the correct answer is right
 - `snippet_text` — the verbatim note passage that supports the answer (taken directly from the snippets you just inserted)
 - `section_header` — the section this snippet came from (same value as in class_note_snippets)
-- `sort_order` — 10, 20, 30... 300 for the 30 questions
+- `sort_order` — 10, 20, 30... up to `target × 10`
+
+**Determining question count:**
+
+Using the counts already in hand from Step 2:
+- **H** = number of distinct herbs (and supplements) identified
+- **F** = number of named factual items: specific dosages/ratios, named formulas, specific constituent mentions
+
+```
+target = clamp(15 + H × 4 + F × 1, 20, 50)
+```
+
+Round to the nearest 5 for cleanliness. A note with 6 herbs and 4 named facts → `15 + 24 + 4 = 43` → target **45**. A sparse note with 3 herbs and 1 fact → `15 + 12 + 1 = 28` → target **30** (floor is 20, ceiling is 50).
+
+State the calculated target at the top of the quiz migration as a comment.
 
 **Question quality rules**:
 - Every question must be directly supported by a specific snippet from the class notes — use real herb names, dosages, and clinical relationships from the notes, not general knowledge
@@ -384,12 +398,13 @@ END $$;
 ```
 
 **Checklist for quiz migration**:
-- [ ] Exactly 30 questions total for this class
+- [ ] Calculated target question count (H, F → formula → round to nearest 5, clamp 20–50); stated in migration header comment
+- [ ] Exactly `target` questions total for this class
 - [ ] Every question has a `snippet_text` copied verbatim from the snippets migration
-- [ ] Correct options distributed across a, b, c, d (roughly 7-8 each)
+- [ ] Correct options distributed across a, b, c, d (roughly evenly)
 - [ ] Distractors are clinically plausible, not trivially wrong
 - [ ] Guard block uses class_name = exact match to snippets migration
-- [ ] sort_order runs 10, 20, 30… 300
+- [ ] sort_order runs 10, 20, 30… `(target × 10)`
 
 ---
 
@@ -416,5 +431,6 @@ END $$;
 - [ ] Guard block checks by class_name
 - [ ] Normalisations listed in migration header comments
 - [ ] Quiz migration file created ({N+1}_class_{nn}_{slug}_quiz.sql)
-- [ ] Exactly 30 questions with correct guard block
+- [ ] Target question count calculated (H × 4 + F × 1 + 15, rounded to nearest 5, clamped 20–50) and stated in migration header
+- [ ] Exactly `target` questions with correct guard block
 - [ ] All snippet_text values copied verbatim from the snippets migration
