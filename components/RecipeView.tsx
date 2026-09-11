@@ -10,10 +10,12 @@ interface Props {
   selectedRecipeId?: number | null;
   onRecipeChange?: (id: number | null) => void;
   onHerbClick?: (herbId: number) => void;
+  onSystemClick?: (systemId: number) => void;
+  onActionNameClick?: (name: string) => void;
   isLoggedIn?: boolean;
 }
 
-export function RecipeView({ bodySystemId, selectedRecipeId, onRecipeChange, onHerbClick, isLoggedIn }: Props) {
+export function RecipeView({ bodySystemId, selectedRecipeId, onRecipeChange, onHerbClick, onSystemClick, onActionNameClick, isLoggedIn }: Props) {
   const [recipes, setRecipes] = useState<RecipeWithDetails[]>([]);
   const [loading, setLoading] = useState(true);
   const [mobileListOpen, setMobileListOpen] = useState(false);
@@ -46,7 +48,7 @@ export function RecipeView({ bodySystemId, selectedRecipeId, onRecipeChange, onH
         .select(`
           recipe_id,
           recipes (
-            id, name, description, preparation_label, instructions, taste, herbal_actions, sort_order,
+            id, name, description, preparation_label, instructions, taste, herbal_actions, sort_order, source,
             recipe_herbs (
               id, herb_id, herb_name_override, quantity, sort_order,
               herbs ( id, common_name, latin_name, plant_part )
@@ -123,7 +125,7 @@ export function RecipeView({ bodySystemId, selectedRecipeId, onRecipeChange, onH
       {/* Recipe detail */}
       <div ref={detailRef} className="lg:col-span-2">
         {selectedRecipe ? (
-          <RecipeDetail recipe={selectedRecipe} onHerbClick={onHerbClick} isLoggedIn={isLoggedIn} />
+          <RecipeDetail recipe={selectedRecipe} onHerbClick={onHerbClick} onSystemClick={onSystemClick} onActionNameClick={onActionNameClick} isLoggedIn={isLoggedIn} />
         ) : (
           <p className="text-gray-400 italic text-sm">Select a recipe to view details.</p>
         )}
@@ -135,10 +137,14 @@ export function RecipeView({ bodySystemId, selectedRecipeId, onRecipeChange, onH
 function RecipeDetail({
   recipe,
   onHerbClick,
+  onSystemClick,
+  onActionNameClick,
   isLoggedIn,
 }: {
   recipe: RecipeWithDetails;
   onHerbClick?: (herbId: number) => void;
+  onSystemClick?: (systemId: number) => void;
+  onActionNameClick?: (name: string) => void;
   isLoggedIn?: boolean;
 }) {
   const bodySystems = recipe.recipe_body_systems ?? [];
@@ -212,7 +218,7 @@ function RecipeDetail({
         </div>
       )}
 
-      {/* Footer: taste, actions, systems */}
+      {/* Footer: taste, actions, systems, source */}
       <div className="space-y-2 text-sm border-t border-gray-100 pt-4">
         {recipe.taste && (
           <div>
@@ -221,22 +227,36 @@ function RecipeDetail({
           </div>
         )}
         {(recipe.herbal_actions?.length ?? 0) > 0 && (
-          <div>
+          <div className="flex items-baseline gap-2 flex-wrap">
             <span className="font-semibold text-gray-500 uppercase text-[10px] tracking-widest">Herbal Actions: </span>
-            <span className="text-gray-700">{recipe.herbal_actions!.join(', ')}</span>
+            {recipe.herbal_actions!.map((action) => (
+              onActionNameClick ? (
+                <button key={action} onClick={() => onActionNameClick(action)} className="px-2 py-0.5 rounded-full bg-green-50 text-green-700 text-xs border border-green-100 hover:bg-green-100 hover:border-green-300 transition-colors">
+                  {action}
+                </button>
+              ) : (
+                <span key={action} className="px-2 py-0.5 rounded-full bg-green-50 text-green-700 text-xs border border-green-100">{action}</span>
+              )
+            ))}
           </div>
         )}
         {bodySystems.length > 0 && (
           <div className="flex items-baseline gap-2 flex-wrap">
             <span className="font-semibold text-gray-500 uppercase text-[10px] tracking-widest">Systems: </span>
             {bodySystems.map((bs: any) => (
-              <span
-                key={bs.body_system_id}
-                className="px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 text-xs border border-blue-100"
-              >
-                {bs.body_systems?.name ?? ''}
-              </span>
+              onSystemClick ? (
+                <button key={bs.body_system_id} onClick={() => onSystemClick(bs.body_system_id)} className="px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 text-xs border border-blue-100 hover:bg-blue-100 hover:border-blue-300 transition-colors">
+                  {bs.body_systems?.name ?? ''}
+                </button>
+              ) : (
+                <span key={bs.body_system_id} className="px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 text-xs border border-blue-100">{bs.body_systems?.name ?? ''}</span>
+              )
             ))}
+          </div>
+        )}
+        {recipe.source && (
+          <div className="pt-1 border-t border-gray-50">
+            <span className="text-gray-400 text-xs italic">Source: {recipe.source}</span>
           </div>
         )}
       </div>

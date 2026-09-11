@@ -11,6 +11,14 @@ interface ActionDescription {
   sort_order: number;
 }
 
+interface RecipeForAction {
+  id: number;
+  name: string;
+  taste: string | null;
+  herbal_actions: string[] | null;
+  recipe_body_systems: Array<{ body_system_id: number }>;
+}
+
 interface ActionData extends PrimaryAction {
   herb_primary_actions: Array<{
     herbs: Herb;
@@ -19,18 +27,20 @@ interface ActionData extends PrimaryAction {
     source_id: number | null;
   }>;
   action_descriptions: ActionDescription[];
+  recipe_primary_actions: Array<{ recipes: RecipeForAction }>;
 }
 
 interface InventoryEntry { in_stock: boolean; notes: string; }
 
 interface ActionViewProps {
   onHerbClick?: (herbId: number) => void;
+  onRecipeClick?: (recipeId: number, bodySystemId: number) => void;
   selectedActionId?: number | null;
   onActionIdChange?: (actionId: number | null) => void;
   userInventory?: Map<number, InventoryEntry>;
 }
 
-export function ActionView({ onHerbClick, selectedActionId, onActionIdChange, userInventory }: ActionViewProps) {
+export function ActionView({ onHerbClick, onRecipeClick, selectedActionId, onActionIdChange, userInventory }: ActionViewProps) {
   const [actions, setActions] = useState<ActionData[]>([]);
   const [selectedAction, setSelectedAction] = useState<ActionData | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -39,6 +49,7 @@ export function ActionView({ onHerbClick, selectedActionId, onActionIdChange, us
   const [mobileListOpen, setMobileListOpen] = useState(() => selectedActionId == null);
   const actionRefs = useRef<Map<number, HTMLButtonElement>>(new Map());
   const systemRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+  const recipesRef = useRef<HTMLDivElement>(null);
   const detailPanelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -83,6 +94,15 @@ export function ActionView({ onHerbClick, selectedActionId, onActionIdChange, us
               id,
               description,
               sort_order
+            ),
+            recipe_primary_actions (
+              recipes (
+                id,
+                name,
+                taste,
+                herbal_actions,
+                recipe_body_systems ( body_system_id )
+              )
             )
           `)
           .order('name'),
@@ -104,7 +124,7 @@ export function ActionView({ onHerbClick, selectedActionId, onActionIdChange, us
   }
 
   const filteredActions = actions.filter((action) =>
-    action.herb_primary_actions.length > 0 &&
+    (action.herb_primary_actions.length > 0 || (action.recipe_primary_actions?.length ?? 0) > 0) &&
     action.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -203,7 +223,10 @@ export function ActionView({ onHerbClick, selectedActionId, onActionIdChange, us
                   <div className="text-xs text-gray-400 mt-0.5 leading-snug">{action.description}</div>
                 )}
                 <div className="text-xs text-gray-500 mt-1">
-                  {action.herb_primary_actions.length} herbs
+                  <div>{action.herb_primary_actions.length} herbs</div>
+                  {(action.recipe_primary_actions?.length ?? 0) > 0 && (
+                    <div className="text-emerald-600">{action.recipe_primary_actions.length} recipes</div>
+                  )}
                 </div>
               </button>
             ))}
@@ -241,9 +264,10 @@ export function ActionView({ onHerbClick, selectedActionId, onActionIdChange, us
                   if (b.startsWith('General')) return -1;
                   return a.localeCompare(b);
                 });
+              const hasRecipes = (selectedAction.recipe_primary_actions?.length ?? 0) > 0;
               return (
               <>
-                {sortedSystems.length > 1 && (
+                {(sortedSystems.length > 1 || hasRecipes) && (
                   <div className="flex flex-wrap gap-1.5 mb-6 text-xs">
                     {sortedSystems.map(([systemName]) => (
                       <button
@@ -254,6 +278,14 @@ export function ActionView({ onHerbClick, selectedActionId, onActionIdChange, us
                         {systemName}
                       </button>
                     ))}
+                    {hasRecipes && (
+                      <button
+                        onClick={() => recipesRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                        className="px-2.5 py-1 rounded-full border border-emerald-300 text-emerald-600 hover:border-emerald-500 hover:text-emerald-800 transition-colors"
+                      >
+                        Recipes
+                      </button>
+                    )}
                   </div>
                 )}
                 <div className="space-y-6">
@@ -306,6 +338,32 @@ export function ActionView({ onHerbClick, selectedActionId, onActionIdChange, us
               <p className="text-gray-500 italic">
                 No herbs recorded for this action.
               </p>
+            )}
+
+            {(selectedAction.recipe_primary_actions?.length ?? 0) > 0 && (
+              <div ref={recipesRef} className="mt-8 pt-6 border-t border-gray-100">
+                <h3 className="text-lg font-semibold text-gray-700 mb-3">Recipes</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {selectedAction.recipe_primary_actions.map(({ recipes: recipe }) => {
+                    const bodySystemId = recipe.recipe_body_systems?.[0]?.body_system_id;
+                    return (
+                      <button
+                        key={recipe.id}
+                        onClick={() => bodySystemId != null && onRecipeClick?.(recipe.id, bodySystemId)}
+                        className="border border-emerald-200 rounded-lg py-2 px-3 bg-emerald-50 text-left hover:bg-emerald-100 hover:shadow-md transition-all"
+                      >
+                        <div className="font-medium text-gray-900">{recipe.name}</div>
+                        {recipe.herbal_actions && recipe.herbal_actions.length > 0 && (
+                          <div className="text-xs text-emerald-700 mt-0.5">{recipe.herbal_actions.join(', ')}</div>
+                        )}
+                        {recipe.taste && (
+                          <div className="text-xs text-gray-500 mt-0.5 italic">{recipe.taste}</div>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
             )}
           </div>
         ) : (

@@ -58,11 +58,13 @@ interface SystemViewProps {
   onRecipeChange?: (id: number | null) => void;
   onClassNotesClick?: () => void;
   onAilmentKeywordClick?: (keyword: string) => void;
+  onSystemClick?: (systemId: number) => void;
+  onActionNameClick?: (name: string) => void;
   userInventory?: Map<number, InventoryEntry>;
   isLoggedIn?: boolean;
 }
 
-export function SystemView({ onHerbClick, onActionClick, onSupplementClick, onTransferToDosing, selectedSystemId, onSystemChange, selectedDisorderId, onDisorderChange, selectedRecipeId, onRecipeChange, onClassNotesClick, onAilmentKeywordClick, userInventory, isLoggedIn }: SystemViewProps) {
+export function SystemView({ onHerbClick, onActionClick, onSupplementClick, onTransferToDosing, selectedSystemId, onSystemChange, selectedDisorderId, onDisorderChange, selectedRecipeId, onRecipeChange, onClassNotesClick, onAilmentKeywordClick, onSystemClick, onActionNameClick, userInventory, isLoggedIn }: SystemViewProps) {
   const [systems, setSystems] = useState<SystemData[]>([]);
   const [inferredAilments, setInferredAilments] = useState<InferredAilment[]>([]);
   const [selectedSystem, setSelectedSystem] = useState<SystemData | null>(null);
@@ -366,6 +368,8 @@ export function SystemView({ onHerbClick, onActionClick, onSupplementClick, onTr
                   selectedRecipeId={selectedRecipeId}
                   onRecipeChange={onRecipeChange}
                   onHerbClick={onHerbClick}
+                  onSystemClick={onSystemClick}
+                  onActionNameClick={onActionNameClick}
                   isLoggedIn={isLoggedIn}
                 />
               </div>

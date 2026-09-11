@@ -222,6 +222,10 @@ export default function Home() {
     pushAndNavigate({ viewMode: 'action', selectedHerbId, selectedActionId: actionId, selectedSystemId: null, selectedDisorderId: null });
   };
 
+  const handleSystemClick = (systemId: number) => {
+    pushAndNavigate({ viewMode: 'system', selectedHerbId: null, selectedActionId: null, selectedSystemId: systemId, selectedDisorderId: null });
+  };
+
   const handleDisorderClick = (disorderId: number, systemId: number) => {
     pushAndNavigate({ viewMode: 'system', selectedHerbId: null, selectedActionId: null, selectedSystemId: systemId, selectedDisorderId: disorderId });
   };
@@ -624,7 +628,7 @@ export default function Home() {
             onHerbsLoaded={() => setHerbsLoaded(true)}
           />
         </div>
-        <div className={viewMode !== 'action' ? 'hidden' : ''}><ActionView selectedActionId={selectedActionId} onActionIdChange={setSelectedActionId} onHerbClick={handleHerbClick} userInventory={userInventory} /></div>
+        <div className={viewMode !== 'action' ? 'hidden' : ''}><ActionView selectedActionId={selectedActionId} onActionIdChange={setSelectedActionId} onHerbClick={handleHerbClick} onRecipeClick={handleRecipeClick} userInventory={userInventory} /></div>
         {viewMode === 'system' && (
           <SystemView
             onHerbClick={handleHerbClick}
@@ -639,6 +643,8 @@ export default function Home() {
             onRecipeChange={setSelectedRecipeId}
             onClassNotesClick={handleClassNotesClick}
             onAilmentKeywordClick={(keyword) => pushAndNavigate({ viewMode: 'class_notes', selectedHerbId: null, selectedActionId: null, selectedSystemId: null, selectedDisorderId: null, selectedAilmentKeyword: keyword })}
+            onSystemClick={handleSystemClick}
+            onActionNameClick={handleActionNameClick}
             userInventory={userInventory}
             isLoggedIn={isLoggedIn}
           />

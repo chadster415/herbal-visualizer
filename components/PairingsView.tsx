@@ -470,12 +470,14 @@ export function PairingsView({ onHerbClick, onFocusChange, initialFocusId }: Pai
       ctx.strokeStyle = isFocused ? '#ffffff' : 'rgba(255,255,255,0.85)';
       ctx.lineWidth = (isFocused ? 2.5 : 1.2) / globalScale;
       ctx.stroke();
+      ctx.restore();
 
+      ctx.save();
       const fontSize = Math.max(3, (isFocused ? 12 : 10) / globalScale);
       ctx.font = `${isFocused ? 'bold ' : ''}${fontSize}px system-ui, -apple-system, sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'top';
-      ctx.fillStyle = isSecondary ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.75)';
+      ctx.fillStyle = isSecondary ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.75)';
       ctx.fillText(n.name, n.x + 0.3 / globalScale, n.y + r + 1.3 / globalScale);
       ctx.fillStyle = isSecondary ? '#9ca3af' : (isFocused ? '#111827' : '#374151');
       ctx.fillText(n.name, n.x, n.y + r + 1 / globalScale);

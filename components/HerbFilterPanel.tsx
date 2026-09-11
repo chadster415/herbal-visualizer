@@ -220,6 +220,8 @@ export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect,
   const [soilFilter, setSoilFilter]             = useState<Set<SoilFertility>>(new Set());
 
   const [inStockOnly, setInStockOnly] = useState(false);
+  const [includeWithRecipes, setIncludeWithRecipes] = useState(false);
+  const [recipeHerbIds, setRecipeHerbIds] = useState<Set<number>>(new Set());
 
   const [sectionsOpen, setSectionsOpen] = useState(DEFAULT_SECTIONS);
 
@@ -259,7 +261,7 @@ export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect,
 
   async function fetchData() {
     setLoading(true);
-    const [herbsRes, systemsRes, actionsRes] = await Promise.all([
+    const [herbsRes, systemsRes, actionsRes, recipeHerbsRes] = await Promise.all([
       supabase
         .from('herbs')
         .select('id, common_name, latin_name, plant_part, temperature, moisture, tone, taste, temperature_inferred, moisture_inferred, tone_inferred, taste_inferred, pinyin_name, sun_requirement, water_need, soil_fertility, herb_primary_actions(primary_action_id, body_system_id), herb_menstruum(water_effective, glycerin_pct, vinegar_pct, alcohol_pct_min, alcohol_pct_max, powder_effective, oil_effective)')
@@ -267,6 +269,7 @@ export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect,
         .order('common_name'),
       supabase.from('body_systems').select('id, name').order('name'),
       supabase.from('primary_actions').select('id, name').order('name'),
+      supabase.from('recipe_herbs').select('herb_id').not('herb_id', 'is', null),
     ]);
 
     if (herbsRes.data) {
@@ -301,6 +304,10 @@ export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect,
     }
     if (systemsRes.data) setBodySystems(systemsRes.data);
     if (actionsRes.data) setActions(actionsRes.data);
+    if (recipeHerbsRes.data) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      setRecipeHerbIds(new Set((recipeHerbsRes.data as any[]).map((r) => r.herb_id).filter(Boolean)));
+    }
     setLoading(false);
   }
 
@@ -330,13 +337,14 @@ export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect,
       if (tasteFilter.size > 0      && (!h.taste || !tasteFilter.has(h.taste)))                     return false;
       if (systemFilter.size > 0     && ![...systemFilter].some((id) => h.system_ids.has(id)))       return false;
       if (actionFilter.size > 0     && ![...actionFilter].some((id) => h.action_ids.has(id)))       return false;
+      if (includeWithRecipes         && !recipeHerbIds.has(h.id))                                    return false;
       if (menstruumFilter.size > 0  && ![...menstruumFilter].some((t) => matchesMenstruum(h.menstruum, t))) return false;
       if (sunFilter.size > 0        && (!h.sun_requirement || !sunFilter.has(h.sun_requirement)))   return false;
       if (waterFilter.size > 0      && (!h.water_need      || !waterFilter.has(h.water_need)))      return false;
       if (soilFilter.size > 0       && (!h.soil_fertility  || !soilFilter.has(h.soil_fertility)))   return false;
       return true;
     });
-  }, [herbs, inStockOnly, userInventory, tempFilter, moistureFilter, toneFilter, tasteFilter, systemFilter, actionFilter, menstruumFilter, sunFilter, waterFilter, soilFilter]);
+  }, [herbs, inStockOnly, includeWithRecipes, recipeHerbIds, userInventory, tempFilter, moistureFilter, toneFilter, tasteFilter, systemFilter, actionFilter, menstruumFilter, sunFilter, waterFilter, soilFilter]);
 
   useEffect(() => {
     requestAnimationFrame(() => checkPaneScroll(resultsPaneRef.current, setResultsScroll));
@@ -514,20 +522,31 @@ export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect,
             style={{ height: filterPaneOpen ? filterPaneHeight : 44 }}
           >
             {/* Pane header — always visible */}
-            <div className="flex items-center justify-between px-5 h-11 border-b border-gray-100">
+            <div className="flex items-center justify-between px-5 py-2 border-b border-gray-100">
               <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Filters</p>
               <div className="flex items-center gap-3">
-                {userInventory && userInventory.size > 0 && (
+                <div className="flex flex-col gap-1 items-end">
+                  {userInventory && userInventory.size > 0 && (
+                    <label className="flex items-center gap-1.5 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={inStockOnly}
+                        onChange={(e) => setInStockOnly(e.target.checked)}
+                        className="h-3.5 w-3.5 rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
+                      />
+                      <span className="text-xs text-gray-500 whitespace-nowrap">In stock only</span>
+                    </label>
+                  )}
                   <label className="flex items-center gap-1.5 cursor-pointer select-none">
                     <input
                       type="checkbox"
-                      checked={inStockOnly}
-                      onChange={(e) => setInStockOnly(e.target.checked)}
-                      className="h-3.5 w-3.5 rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
+                      checked={includeWithRecipes}
+                      onChange={(e) => setIncludeWithRecipes(e.target.checked)}
+                      className="h-3.5 w-3.5 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
                     />
-                    <span className="text-xs text-gray-500 whitespace-nowrap">In stock only</span>
+                    <span className="text-xs text-gray-500 whitespace-nowrap">Include with recipes</span>
                   </label>
-                )}
+                </div>
               <button
                 onClick={() => setFilterPaneOpen((prev) => !prev)}
                 className="p-1 rounded text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-all"

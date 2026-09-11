@@ -300,6 +300,7 @@ export interface Recipe {
   instructions: Array<{ label: string; text: string }>;
   taste?: string | null;
   herbal_actions?: string[] | null;
+  source?: string | null;
   sort_order: number;
   created_at: string;
 }
