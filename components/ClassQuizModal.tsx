@@ -50,7 +50,7 @@ export function ClassQuizModal({ isOpen, onClose }: Props) {
     supabase
       .from('class_quiz_questions')
       .select('class_name')
-      .order('class_name')
+      .order('class_name', { ascending: false })
       .then(({ data }) => {
         if (data) {
           const unique = Array.from(
