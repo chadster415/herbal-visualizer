@@ -1450,4 +1450,15 @@ export const MM_MATERIA_MEDICA: Record<number, string> = {
   legumes.
   STATUS : W/A`,
 
+  // Trillium (Trillium spp.)
+  2626: `TRILLIUM (Beth Root)
+  WHOLE PLANT.  Fresh Plant Tincture [1:2] 15-25 drops to 3X a day.
+  STATUS : W/LA to W/Rare`,
+
+  // Yellow Pond Lily (Nuphar lutea)
+  2627: `*NUPHAR  (Yellow Pond Lily)
+  ROOT/RHIZOME. Fresh Root Tincture, [1:2], 10-20 drops. Weak Decoction  2-4
+  ounces, both to 3X a day.
+  STATUS : W/LA`,
+
 };

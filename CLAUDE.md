@@ -551,17 +551,20 @@ Also add `newSection: true/!allOpen` to every `setSectionsOpen({...})` literal i
 
 ## Backups
 ```bash
-PGPASSWORD=postgres /opt/homebrew/Cellar/libpq/18.1/bin/pg_dump \
+PGPASSWORD=postgres /opt/homebrew/Cellar/libpq/18.6/bin/pg_dump \
   -h 127.0.0.1 -p 54322 -U postgres -d postgres \
   --schema=herbal --no-owner --clean --if-exists \
+  --exclude-table=user_inventory \
   --file="supabase/backups/YYYYMMDD_HHMMSS_description.sql"
 ```
-Note: omit `--no-acl` so that GRANT statements are included — required when restoring to prod.
+Notes:
+- Omit `--no-acl` so that GRANT statements are included — required when restoring to prod.
+- Always exclude `user_inventory` — prod has real user data with a different auth user_id than localhost; restoring it would break the prod user's herb inventory.
 
 ## Restore to prod
 ```bash
-PGPASSWORD='<prod-password>' /opt/homebrew/Cellar/libpq/18.1/bin/psql \
-  "$DATABASE_RESTORE_URL" \
+PGPASSWORD='9mRXNlxvS2xaj2FO' /opt/homebrew/Cellar/libpq/18.6/bin/psql \
+  "postgresql://postgres.jadyjjnahstsybvkxttb:9mRXNlxvS2xaj2FO@aws-0-us-west-1.pooler.supabase.com:6543/postgres?sslmode=require" \
   -f "supabase/backups/YYYYMMDD_HHMMSS_description.sql"
 ```
-`DATABASE_RESTORE_URL` is in `.env.local` — use the transaction pooler URL (port 6543) with `sslmode=require` appended. The direct connection (`db.*.supabase.co:5432`) does not resolve for this project; the pooler with SSL handles DDL restores fine.
+Use the transaction pooler URL (port 6543) with `sslmode=require`. The direct connection (`db.*.supabase.co:5432`) does not resolve for this project; the pooler with SSL handles DDL restores fine.

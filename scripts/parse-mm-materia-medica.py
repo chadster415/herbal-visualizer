@@ -27,6 +27,7 @@ SYNONYM_MAP = {
     'aloe':                  ['aloe vera'],
     'alpinia':               ['rhizoma alpiniae officinari'],  # galangal rhizome TCM
     'althea':                ['althaea officinalis'],
+    'andrographis paniculata': [],  # confirmed absent from MM
     'angelica':              ['angelica archangelica'],
     'apocynum cannabinum':   ['apocynum cannabinum'],
     'arctium':               ['arctium lappa'],
