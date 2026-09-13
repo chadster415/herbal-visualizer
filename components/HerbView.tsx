@@ -701,6 +701,40 @@ function HerbDetailPanel({
               </div>
             );
           })()}
+          {/* UPS conservation status */}
+          {herb.ups_status && (() => {
+            const statusConfig = {
+              critical: {
+                label: 'Critical',
+                className: 'border-red-300 bg-red-50 text-red-700 hover:border-red-500',
+                title: 'CRITICAL: United Plant Savers recommends these plants should not be wild harvested or purchased under any circumstance except for research that directly supports the health of the population and sustainable use by Indigenous societies that have a traditional history of connection with these plants. These species have been evaluated by the Board of Directors of UpS which carefully reserves this category for species that are federally, or state protected and/or are at a very high risk of extinction.',
+              },
+              at_risk: {
+                label: 'At-Risk',
+                className: 'border-amber-300 bg-amber-50 text-amber-700 hover:border-amber-500',
+                title: 'AT-RISK: The United Plant Savers recommends that At-Risk plants should be used in cultivated forms whenever possible. Because of pressures facing these plant populations and significant variability in abundance, wild harvesting should be very limited and carefully monitored. Any wild harvest of these plants should align with rules established by federal, state, and local governments.',
+              },
+              in_review: {
+                label: 'In Review',
+                className: 'border-blue-300 bg-blue-50 text-blue-700 hover:border-blue-500',
+                title: 'IN REVIEW: The In Review list contains native plants that have significant known medicinal, edible, and/or ornamental uses that have been recommended through our membership or the UpS Board. We will review and, if necessary, score these plants for consideration for the At-Risk and Critical listing. We advise caution and careful consideration when using these plants for either personal or commercial use.',
+              },
+            };
+            const { label, className, title } = statusConfig[herb.ups_status];
+            return (
+              <div className="flex justify-end mt-1.5">
+                <a
+                  href={herb.ups_url ?? 'https://unitedplantsavers.org/species-at-risk-list/'}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title={title}
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-sm font-medium transition-colors ${className}`}
+                >
+                  🌿 UPS Status: {label}
+                </a>
+              </div>
+            );
+          })()}
           {/* Energetics badges */}
           {(() => {
             const badges: { emoji: string; label: string; inferred: boolean; isTaste: boolean }[] = [];

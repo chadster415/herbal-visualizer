@@ -32,6 +32,8 @@ export interface Herb {
   sun_requirement?: SunRequirement | null;
   water_need?: WaterNeed | null;
   soil_fertility?: SoilFertility | null;
+  ups_status?: 'critical' | 'at_risk' | 'in_review' | null;
+  ups_url?: string | null;
 }
 
 export interface PrimaryAction {
