@@ -86,7 +86,10 @@ Examples in DB: Zinc (id=24), Vitamin D (id=11), Vitamin C (id=10), Magnesium �
 SELECT id, name, category FROM herbal.supplements ORDER BY category, name;
 ```
 
-**Skip these — not in the DB at all:**
+**Medicinal herbs not yet in the DB — ADD them, don't skip:**
+If a named medicinal herb is mentioned in the notes but is not found in `herbal.herbs`, add it first using the [adding-herb-data-from-books playbook](adding-herb-data-from-books.md). Do not skip real herbs just because they are absent from the DB.
+
+**Skip these — not in the DB and not appropriate to add:**
 - Preparations: castor oil, fire cider, castor pack, honey, apple cider vinegar
 - Foods with no DB entry: blueberries, eggs, shellfish, cherries (check herbs and supplements before skipping)
 - Flax seed IS in the herbs DB (Flax, Linum usitatissimum) — do not skip it

@@ -142,4 +142,5 @@ export const TE_MATERIA_MEDICA: Record<number, { min: number; max: number }> = {
   2498: { min: 30, max: 60 },  // Black Pepper (Piper nigrum)
   2556: { min: 60, max: 120 },  // Bitter Melon (Momordica charantia)
   2573: { min: 5, max: 20 },   // Saffron (Crocus sativus)
+  2625: { min: 30, max: 150 }, // Fo Ti (Polygonum multiflorum)
 };

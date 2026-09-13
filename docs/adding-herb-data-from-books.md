@@ -662,7 +662,7 @@ Every herb should have a populated `synonyms` array. This is a `TEXT[]` column o
 
 **Step 1** — Check whether synonyms are already set:
 ```bash
-PGPASSWORD=postgres /opt/homebrew/Cellar/libpq/18.1/bin/psql \
+PGPASSWORD=postgres /opt/homebrew/Cellar/libpq/18.6/bin/psql \
   -h 127.0.0.1 -p 54322 -U postgres -d postgres \
   -c "SELECT synonyms FROM herbal.herbs WHERE latin_name = 'Genus species';"
 ```

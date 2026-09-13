@@ -658,12 +658,6 @@ export const MM_MATERIA_MEDICA: Record<number, string> = {
   Infusion, 2-6 oz.  all to 4X a day.
   STATUS : W/LA/C`,
 
-  // Jamaica Dogwood (Piscidia erythrina)
-  139: `PISCIDIA  (Jamaica Dogwood, Jabin)
-  TREE and ROOT BARK. Tincture [1:5, 60% alcohol] 10-90 drops.
-  USE WITH CARE.  Response is highly individual, so start with a low dose.
-  STATUS : W/LA`,
-
   // Wild Cherry Bark (Prunus serotina)
   140: `PRUNUS  (Wild Cherry, Choke Cherry)
   SUMMER or FALL BARK.  Cold Infusion 2-6 ounces, to 3X a day. Tincture [1:5,
@@ -1344,6 +1338,12 @@ export const MM_MATERIA_MEDICA: Record<number, string> = {
   FRESH PLANT.  Poultice as needed.  Fresh Plant Tincture, [1:2], as needed.
   STATUS : W/A`,
 
+  // Jamaican Dogwood (Piscidia spp.)
+  2461: `PISCIDIA  (Jamaica Dogwood, Jabin)
+  TREE and ROOT BARK. Tincture [1:5, 60% alcohol] 10-90 drops.
+  USE WITH CARE.  Response is highly individual, so start with a low dose.
+  STATUS : W/LA`,
+
   // Spikenard (Aralia racemosa)
   2479: `ARALIA RACEMOSA  [including A. californica]  (Spikenard, California Spikenard)
   ROOT.Tincture [Fresh Root,1:2, Recent Dry Root,1:5, 50% alcohol] 10-30 drops.
@@ -1442,7 +1442,7 @@ export const MM_MATERIA_MEDICA: Record<number, string> = {
   DANGEROUS IN MODERATE DOSES.
   STATUS : W/A`,
 
-  // Pedicularis (pedicularis densiflora)
+  // Pedicularis (Pedicularis densiflora)
   2624: `PEDICULARIS  (Betony, Lousewort, Elephant Head, Parrot's Beak, Indian Warrior)
   HERB in FLOWER. Standard Infusion, 4-8 ounces.  Tincture [Fresh Plant, 1:2,
   Dry Plant, 1:5, 50% alcohol] 1-2 teaspoons, all to 3X a day.

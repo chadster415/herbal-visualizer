@@ -178,6 +178,7 @@ SYNONYM_MAP = {
     'polygala senega':       ['polygala senega'],
     'polygonatum':           ['polygonatum biflorum'],
     'polygonum bistorta':    ['polygonum bistorta'],
+    'polygonum multiflorum': [],  # Fo Ti / He Shou Wu — confirmed absent from MM
     'populus candicans':     ['populus candicans'],
     'populus tremuloides':   ['populus tremuloides'],
     'primula':               ['primula veris'],
@@ -426,7 +427,7 @@ def parse_mm_entries(path):
 
 def get_db_herbs():
     result = subprocess.run([
-        '/opt/homebrew/Cellar/libpq/18.1/bin/psql',
+        '/opt/homebrew/Cellar/libpq/18.6/bin/psql',
         '-h', '127.0.0.1', '-p', '54322', '-U', 'postgres', '-d', 'postgres',
         '-t', '-A', '-F', '|',
         '-c', "SELECT id, common_name, latin_name, plant_part FROM herbal.herbs ORDER BY common_name;"

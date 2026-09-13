@@ -229,8 +229,23 @@ export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect,
     setSectionsOpen((prev) => ({ ...prev, [key]: !prev[key] }));
   }
 
+  function scrollToSection(key: keyof typeof DEFAULT_SECTIONS) {
+    setSectionsOpen((prev) => ({ ...prev, [key]: true }));
+    setTimeout(() => {
+      const el = sectionRefs.current[key];
+      const container = filterPaneRef.current;
+      if (!el || !container) return;
+      const elTop = el.getBoundingClientRect().top;
+      const containerTop = container.getBoundingClientRect().top;
+      const navHeight = filterNavRef.current?.getBoundingClientRect().height ?? 0;
+      container.scrollTo({ top: container.scrollTop + elTop - containerTop - navHeight, behavior: 'smooth' });
+    }, 50);
+  }
+
   const filterPaneRef  = useRef<HTMLDivElement>(null);
   const resultsPaneRef = useRef<HTMLDivElement>(null);
+  const sectionRefs    = useRef<Record<string, HTMLDivElement | null>>({});
+  const filterNavRef   = useRef<HTMLDivElement>(null);
   const [filterScroll, setFilterScroll]   = useState({ up: false, down: false });
   const [resultsScroll, setResultsScroll] = useState({ up: false, down: false });
 
@@ -563,12 +578,38 @@ export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect,
             <div
               ref={filterPaneRef}
               onScroll={() => checkPaneScroll(filterPaneRef.current, setFilterScroll)}
-              className="px-5 py-4 space-y-5 overflow-y-auto rounded-xl"
+              className="px-5 pb-4 overflow-y-auto rounded-xl"
               style={{ height: filterPaneHeight - 44 }}
             >
+              <div
+                ref={filterNavRef}
+                className="sticky top-0 z-10 bg-white border-b border-gray-100 -mx-5 px-3 py-2 mb-4 flex gap-1.5 overflow-x-auto"
+              >
+                {([
+                  ['temperature',   'Temp'],
+                  ['moisture',      'Moisture'],
+                  ['tone',          'Tone'],
+                  ['taste',         'Taste'],
+                  ['bodySystem',    'System'],
+                  ['action',        'Action'],
+                  ['menstruum',     'Menstruum'],
+                  ['sun',           'Sun'],
+                  ['water',         'Water'],
+                  ['soilFertility', 'Soil'],
+                ] as [keyof typeof DEFAULT_SECTIONS, string][]).map(([key, label]) => (
+                  <button
+                    key={key}
+                    onClick={() => scrollToSection(key)}
+                    className="shrink-0 text-xs px-2.5 py-1 rounded-full border border-gray-200 bg-gray-50 text-gray-600 hover:bg-gray-100 hover:border-gray-300 transition-colors"
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+              <div className="space-y-5">
 
               {/* Temperature */}
-              <div>
+              <div ref={(el) => { sectionRefs.current.temperature = el; }}>
                 <SectionHeader label="Temperature" open={sectionsOpen.temperature} onToggle={() => toggleSection('temperature')} />
                 {sectionsOpen.temperature && (
                   <div className="flex flex-wrap gap-2">
@@ -589,7 +630,7 @@ export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect,
               </div>
 
               {/* Moisture */}
-              <div>
+              <div ref={(el) => { sectionRefs.current.moisture = el; }}>
                 <SectionHeader label="Moisture" open={sectionsOpen.moisture} onToggle={() => toggleSection('moisture')} />
                 {sectionsOpen.moisture && (
                   <div className="flex flex-wrap gap-2">
@@ -610,7 +651,7 @@ export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect,
               </div>
 
               {/* Tone */}
-              <div>
+              <div ref={(el) => { sectionRefs.current.tone = el; }}>
                 <SectionHeader label="Tone" open={sectionsOpen.tone} onToggle={() => toggleSection('tone')} />
                 {sectionsOpen.tone && (
                   <div className="flex flex-wrap gap-2">
@@ -631,7 +672,7 @@ export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect,
               </div>
 
               {/* Taste */}
-              <div>
+              <div ref={(el) => { sectionRefs.current.taste = el; }}>
                 <SectionHeader label="Taste" open={sectionsOpen.taste} onToggle={() => toggleSection('taste')} />
                 {sectionsOpen.taste && (
                   <div className="flex flex-wrap gap-2">
@@ -651,9 +692,8 @@ export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect,
                 )}
               </div>
 
-              {/* Body System */}
               {bodySystems.length > 0 && (
-                <div>
+                <div ref={(el) => { sectionRefs.current.bodySystem = el; }}>
                   <SectionHeader label="Body System" open={sectionsOpen.bodySystem} onToggle={() => toggleSection('bodySystem')} />
                   {sectionsOpen.bodySystem && (
                     <div className="flex flex-wrap gap-2">
@@ -675,9 +715,8 @@ export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect,
                 </div>
               )}
 
-              {/* Action */}
               {availableActions.length > 0 && (
-                <div>
+                <div ref={(el) => { sectionRefs.current.action = el; }}>
                   <SectionHeader label="Action" open={sectionsOpen.action} onToggle={() => toggleSection('action')} />
                   {sectionsOpen.action && (
                     <div className="flex flex-wrap gap-2">
@@ -700,7 +739,7 @@ export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect,
               )}
 
               {/* Menstruum */}
-              <div>
+              <div ref={(el) => { sectionRefs.current.menstruum = el; }}>
                 <SectionHeader label="Menstruum" open={sectionsOpen.menstruum} onToggle={() => toggleSection('menstruum')} />
                 {sectionsOpen.menstruum && (
                   <div className="flex flex-wrap gap-2">
@@ -721,7 +760,7 @@ export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect,
               </div>
 
               {/* Sun */}
-              <div>
+              <div ref={(el) => { sectionRefs.current.sun = el; }}>
                 <SectionHeader label="Sun" open={sectionsOpen.sun} onToggle={() => toggleSection('sun')} />
                 {sectionsOpen.sun && (
                   <div className="flex flex-wrap gap-2">
@@ -742,7 +781,7 @@ export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect,
               </div>
 
               {/* Water */}
-              <div>
+              <div ref={(el) => { sectionRefs.current.water = el; }}>
                 <SectionHeader label="Water (once established)" open={sectionsOpen.water} onToggle={() => toggleSection('water')} />
                 {sectionsOpen.water && (
                   <div className="flex flex-wrap gap-2">
@@ -763,7 +802,7 @@ export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect,
               </div>
 
               {/* Soil Fertility */}
-              <div>
+              <div ref={(el) => { sectionRefs.current.soilFertility = el; }}>
                 <SectionHeader label="Soil Fertility" open={sectionsOpen.soilFertility} onToggle={() => toggleSection('soilFertility')} />
                 {sectionsOpen.soilFertility && (
                   <div className="flex flex-wrap gap-2">
@@ -783,6 +822,7 @@ export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect,
                 )}
               </div>
 
+              </div>{/* end space-y-5 */}
             </div>
             )}
             {filterPaneOpen && <ScrollArrow direction="down" visible={filterScroll.down} />}
