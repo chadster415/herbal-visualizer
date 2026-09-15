@@ -392,7 +392,7 @@ export function SystemView({ onHerbClick, onActionClick, onSupplementClick, onTr
                       <div key={actionName} className="border-l-4 border-blue-500 pl-4 pb-4">
                         <h3 className="text-xl font-semibold text-gray-800 mb-3">{actionName}</h3>
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                          {herbs.map((item, idx) => (
+                          {herbs.slice().sort((a, b) => a.herb.common_name.localeCompare(b.herb.common_name)).map((item, idx) => (
                             <button
                               key={idx}
                               onClick={() => onHerbClick?.(item.herb.id)}
