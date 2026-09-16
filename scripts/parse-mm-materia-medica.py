@@ -107,6 +107,7 @@ SYNONYM_MAP = {
     'geranium maculatum':    ['geranium maculatum'],
     'ginkgo':                ['ginkgo biloba'],
     'glycyrrhiza':           ['glycyrrhiza glabra'],
+    'gossypium':             ['gossypium herbaceum'],  # Cotton Root Bark (id=2635)
     'grifola':               [],  # Maitake (Grifola frondosa) — confirmed absent from MM
     'grindelia':             ['grindelia camporum'],
     'guaiacum officinale':   ['guaiacum officinale'],

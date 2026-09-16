@@ -1461,4 +1461,10 @@ export const MM_MATERIA_MEDICA: Record<number, string> = {
   ounces, both to 3X a day.
   STATUS : W/LA`,
 
+  // Cotton Root Bark (Gossypium herbaceum)
+  2635: `*GOSSYPIUM  (Cotton)
+  ROOT BARK. Fresh Bark Tincture, [1:2], 30-60 drops, to 3X a day. Recent Dry
+  Bark Tincture, [1:5, 50% alcohol] 1-2 teaspoons, to 4X a day.
+  STATUS : W/C`,
+
 };

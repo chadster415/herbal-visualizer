@@ -2161,18 +2161,25 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
       onHerbsLoaded?.();
     }
 
-    // Build constituent → herbs cross-reference index in background
-    supabase.from('herb_constituents')
-      .select('herb_id, constituent_id, concentration_level')
-      .then(({ data }) => {
-        if (!data) return;
-        const idx = new Map<number, ConstituentHerbRef[]>();
+    // Build constituent → herbs cross-reference index in background (paginated — table exceeds 1000 rows)
+    (async () => {
+      const PAGE = 1000;
+      let from = 0;
+      const idx = new Map<number, ConstituentHerbRef[]>();
+      while (true) {
+        const { data } = await supabase.from('herb_constituents')
+          .select('herb_id, constituent_id, concentration_level')
+          .range(from, from + PAGE - 1);
+        if (!data || data.length === 0) break;
         for (const row of data) {
           if (!idx.has(row.constituent_id)) idx.set(row.constituent_id, []);
           idx.get(row.constituent_id)!.push({ herb_id: row.herb_id, concentration_level: row.concentration_level });
         }
-        setConstituentIndex(idx);
-      });
+        if (data.length < PAGE) break;
+        from += PAGE;
+      }
+      setConstituentIndex(idx);
+    })();
 
     // Fetch all constituent profiles in background, paginating past PostgREST's 1000-row cap
     (async () => {
