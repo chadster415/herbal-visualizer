@@ -144,4 +144,8 @@ export const TE_MATERIA_MEDICA: Record<number, { min: number; max: number }> = {
   2573: { min: 5, max: 20 },   // Saffron (Crocus sativus)
   2625: { min: 30, max: 150 }, // Fo Ti (Polygonum multiflorum)
   2629: { min: 30, max: 120 }, // Andrographis (Andrographis paniculata)
+  // NOTE: Cordyceps ID below assumes sequence continuity after migration 325 inserts
+  // Lion's Mane (2632), Maitake (2633), Cordyceps (2634) — verify actual ID after running migration 325
+  // and adjust this key if the sequence produced a different value.
+  2634: { min: 60, max: 120 }, // Cordyceps (Cordyceps militaris) — dosage from Easley: 2–4 ml (1:4, 25%) 3× daily = 60–120 drops
 };

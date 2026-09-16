@@ -69,6 +69,7 @@ SYNONYM_MAP = {
     'commiphora myrrha':     ['commiphora molmol'],
     'commiphora mukul':      ['commiphora mukul'],
     'convallaria':           ['convallaria majalis'],
+    'cordyceps':             [],  # Cordyceps militaris / sinensis — confirmed absent from MM
     'coriandrum':            ['coriandrum sativum'],
     'crataegus':             ['crataegus spp.'],
     'curcuma':               ['curcuma longa'],
@@ -106,10 +107,12 @@ SYNONYM_MAP = {
     'geranium maculatum':    ['geranium maculatum'],
     'ginkgo':                ['ginkgo biloba'],
     'glycyrrhiza':           ['glycyrrhiza glabra'],
+    'grifola':               [],  # Maitake (Grifola frondosa) — confirmed absent from MM
     'grindelia':             ['grindelia camporum'],
     'guaiacum officinale':   ['guaiacum officinale'],
     'guayusa':               [],  # Ilex guayusa — confirmed absent from MM
     'hamamelis':             ['hamamelis virginiana'],
+    'hericium':              [],  # Lion's Mane (Hericium erinaceus) — confirmed absent from MM
     'harpagophytum':         ['harpagophytum procumbens'],
     'humulus':               ['humulus lupulus'],
     'hydrangea':             ['hydrangea arborescens'],
