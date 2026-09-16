@@ -71,7 +71,12 @@ export function ClassQuizModal({ isOpen, onClose }: Props) {
       .eq('class_name', className)
       .order('sort_order');
     if (data) {
-      setQuestions(data as QuizQuestion[]);
+      const arr = [...data] as QuizQuestion[];
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      setQuestions(arr);
     }
     setCurrentIndex(0);
     setSelectedOption(null);
