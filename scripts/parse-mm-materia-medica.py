@@ -28,6 +28,7 @@ SYNONYM_MAP = {
     'alpinia':               ['rhizoma alpiniae officinari'],  # galangal rhizome TCM
     'althea':                ['althaea officinalis'],
     'andrographis paniculata': [],  # confirmed absent from MM
+    'azadirachta':            [],  # Neem — confirmed absent from MM
     'angelica':              ['angelica archangelica'],
     'apocynum cannabinum':   ['apocynum cannabinum'],
     'arctium':               ['arctium lappa'],
@@ -41,7 +42,9 @@ SYNONYM_MAP = {
     'avena':                 ['avena sativa'],
     'baptisia':              ['baptisia tinctoria'],
     'barosma':               ['agathosma betulina'],  # buchu
+    'berberis trifoliolata': [],  # Agarita — listed in MM under MAHONIA, not a separate entry
     'berberis vulgaris':     ['berberis vulgaris'],
+    'bidens':                ['bidens spp.'],  # Tickseed / Spanish Needles / Te de Coral
     'betula':                ['betula spp.'],
     'calendula officinalis': ['calendula officinalis'],
     'cannabis sativa':       ['cannabis sativa'],
@@ -70,6 +73,7 @@ SYNONYM_MAP = {
     'commiphora mukul':      ['commiphora mukul'],
     'convallaria':           ['convallaria majalis'],
     'cordyceps':             [],  # Cordyceps militaris / sinensis — confirmed absent from MM
+    'cymbopogon':            [],  # Lemongrass — confirmed absent from MM
     'coriandrum':            ['coriandrum sativum'],
     'crataegus':             ['crataegus spp.'],
     'curcuma':               ['curcuma longa'],
@@ -153,7 +157,9 @@ SYNONYM_MAP = {
     'mentha spicata':        ['mentha spicata'],
     'menyanthes':            ['menyanthes trifoliata'],
     'mitchella':             ['mitchella repens'],
+    'mirabilis':             ['mirabilis multiflorum'],  # Wild Four-O'Clock / Maravilla (migration 338)
     'momordica':             [],  # bitter melon — confirmed absent from MM
+    'monarda':               ['monarda fistulosa'],  # Bee Balm / Horsemint (migration 338)
     'mucuna':                [],  # Mucuna pruriens / velvet bean — confirmed absent from MM
     'myrica':                ['myrica cerifera'],
     'myroxylon balsamum var. pereirae': ['myroxylon balsamum var. pereirae'],
@@ -197,7 +203,7 @@ SYNONYM_MAP = {
     'rhamnus cathartica':    ['rhamnus cathartica'],
     'rhamnus purshiana':     ['rhamnus purshiana'],
     'rheum':                 ['rheum palmatum'],
-    'rhus glabra':           [],  # MM smooth sumac; not added to DB (different from Scudder's Rhus tox)
+    'rhus glabra':           ['rhus glabra'],  # Smooth Sumac (migration 338)
     'rhus toxicodendron':    [],  # not in MM (MM has rhus glabra; tox = toxicodendron radicans)
     'rosa':                  ['rosa canina', 'rosa gallica'],
     'rosmarinus':            ['rosmarinus officinalis'],
@@ -223,6 +229,7 @@ SYNONYM_MAP = {
     'senna alexandrina':     ['senna alexandrina'],
     'serenoa':               ['serenoa repens'],
     'silybum':               ['silybum marianum'],
+    'simmondsia':            ['simmondsia chinensis'],  # Jojoba / Goatnut (migration 338)
     'smilax':                ['smilax spp.'],
     'smilacina':             ['smilacina racemosa'],
     'solidago':              ['solidago virgaurea'],

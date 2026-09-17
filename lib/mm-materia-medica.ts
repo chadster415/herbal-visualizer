@@ -1467,4 +1467,32 @@ export const MM_MATERIA_MEDICA: Record<number, string> = {
   Bark Tincture, [1:5, 50% alcohol] 1-2 teaspoons, to 4X a day.
   STATUS : W/C`,
 
+  // Sumac (Rhus glabra)
+  2637: `RHUS GLABRA (Smooth Sumach)
+  LEAVES, FRUIT. Same as previous. Powdered leaves for topical use.
+  STATUS : W/A`,
+
+  // Bee Balm (Monarda fistulosa)
+  2639: `MONARDA  (Bee Balm, Oswego Tea, Wild Bergamot, Wild Oregano)
+  FLOWERING HERB. Standard Infusion, 1-4 ounces, to 3X a day or as gargle.
+  STATUS : W/C`,
+
+  // Bidens (Bidens spp.)
+  2640: `BIDENS  (Tickseed, Spanish Needles, Te de Coral)
+  HERB. Cold or Standard Infusion, 2-4 ounces.Tincture [Fresh,1:2, Dry, 1:5,
+  50% alcohol] 45-90 drops.
+  STATUS : W/A`,
+
+  // Jojoba (Simmondsia chinensis)
+  2641: `SIMMONDSIA  (Jojoba, Goatnut)
+  LEAVES.  Standard Infusion, 2-4 ounces as needed.
+  OIL. Applied topically or mixed with Castor Oil.
+  STATUS : W/C`,
+
+  // Maravilla (Mirabilis multiflorum)
+  2644: `MIRABILIS MULTIFLORUM  (Wild Four-O'Clock, Maravilla)
+  ROOT. Fresh Root Tincture [1:2], 30-60 drops. Strong Decoction, 2-4 ounces,
+  either form taken 1/2 hour before meals.
+  STATUS : W/LA`,
+
 };

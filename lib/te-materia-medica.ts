@@ -149,4 +149,7 @@ export const TE_MATERIA_MEDICA: Record<number, { min: number; max: number }> = {
   // and adjust this key if the sequence produced a different value.
   2634: { min: 60, max: 120 }, // Cordyceps (Cordyceps militaris) — dosage from Easley: 2–4 ml (1:4, 25%) 3× daily = 60–120 drops
   2635: { min: 60, max: 120 }, // Cotton Root Bark (Gossypium herbaceum) — Easley: 2–4 ml (1:4, 50%) 1–3× daily = 60–120 drops
+  // NOTE: IDs 2636–2644 assigned by migration 338 (Class 68 new herbs); verify with
+  //       SELECT id, common_name FROM herbal.herbs WHERE id >= 2636 ORDER BY id;
+  2638: { min: 30, max: 60 },  // Neem (Azadirachta indica) — Easley: dried leaf (1:5, 50%) 30–60 drops 2× daily
 };

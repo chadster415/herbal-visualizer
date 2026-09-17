@@ -152,4 +152,7 @@ export const HOTE_MATERIA_MEDICA: Record<number, { min: number; max: number }> =
   2363: { min: 10, max: 60 }, // Spilanthes / Paracress (Acmella oleracea)
   2602: { min: 10, max: 40 }, // Gravel Root (Eupatorium purpureum)
   2608: { min: 1, max: 5 },   // Veratrum (Veratrum viride) — acute, expert use only; 1–5 drops every 0.5–2 hr
+  // NOTE: ID 2639 assigned by migration 338 (Class 68 new herbs); verify with
+  //       SELECT id, common_name FROM herbal.herbs WHERE id >= 2636 ORDER BY id;
+  2639: { min: 1, max: 60 },  // Bee Balm (Monarda fistulosa) — Tilgner: 1–60 drops 1–4× daily
 };
