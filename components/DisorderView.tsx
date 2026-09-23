@@ -1,6 +1,26 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
+
+function parseFoodSources(text: string): string[] {
+  const items: string[] = [];
+  let depth = 0;
+  let current = '';
+  for (const char of text) {
+    if (char === '(') { depth++; current += char; }
+    else if (char === ')') { depth--; current += char; }
+    else if (char === ',' && depth === 0) {
+      const trimmed = current.trim();
+      if (trimmed) items.push(trimmed);
+      current = '';
+    } else {
+      current += char;
+    }
+  }
+  const trimmed = current.trim();
+  if (trimmed) items.push(trimmed);
+  return items;
+}
 
 
 const SOLUBILITY_COLORS: Record<string, { bubble: string; name: string; dose: string; note: string; category: string }> = {
@@ -108,6 +128,9 @@ export function DisorderView({ bodySystemId, onHerbClick, onActionClick, onSuppl
   const actionsRef = useRef<HTMLDivElement | null>(null);
   const remediesRef = useRef<HTMLDivElement | null>(null);
   const prescriptionsRef = useRef<HTMLDivElement | null>(null);
+  const foodSourcesRef = useRef<HTMLDivElement | null>(null);
+  const [shopModalOpen, setShopModalOpen] = useState(false);
+  const [checkedFoods, setCheckedFoods] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     fetch('/api/disorder-images')
@@ -115,6 +138,7 @@ export function DisorderView({ bodySystemId, onHerbClick, onActionClick, onSuppl
       .then(setImageManifest)
       .catch(() => {});
   }, []);
+
 
   useEffect(() => {
     if (bodySystemId) {
@@ -237,6 +261,60 @@ export function DisorderView({ bodySystemId, onHerbClick, onActionClick, onSuppl
     }
   };
 
+  // Aggregate food sources across all prescription supplements for the selected disorder
+  const foodSourceMap = useMemo(() => {
+    if (!selectedDisorder) return new Map<string, string[]>();
+    const map = new Map<string, string[]>();
+    selectedDisorder.disorder_prescriptions.forEach((rx) => {
+      rx.prescription_supplements.forEach(({ supplements: supp }) => {
+        if (!supp.dietary_sources) return;
+        parseFoodSources(supp.dietary_sources).forEach((food) => {
+          const key = food.toLowerCase();
+          if (!map.has(key)) map.set(key, []);
+          const existing = map.get(key)!;
+          if (!existing.includes(supp.name)) existing.push(supp.name);
+        });
+      });
+    });
+    return map;
+  }, [selectedDisorder]);
+
+  // Foods grouped by supplement, for the modal display
+  const supplementFoodGroups = useMemo(() => {
+    if (!selectedDisorder) return [] as Array<{ supplement: string; foods: string[] }>;
+    const map = new Map<string, string[]>();
+    selectedDisorder.disorder_prescriptions.forEach((rx) => {
+      rx.prescription_supplements.forEach(({ supplements: supp }) => {
+        if (!supp.dietary_sources) return;
+        const foods = parseFoodSources(supp.dietary_sources).sort((a, b) => a.localeCompare(b));
+        if (!map.has(supp.name)) map.set(supp.name, []);
+        foods.forEach((f) => {
+          if (!map.get(supp.name)!.includes(f)) map.get(supp.name)!.push(f);
+        });
+      });
+    });
+    return Array.from(map.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([supplement, foods]) => ({ supplement, foods }));
+  }, [selectedDisorder]);
+
+  // Canonical food name (first seen casing) list sorted alphabetically
+  const foodSourceList = useMemo(() => {
+    if (!selectedDisorder) return [] as Array<{ food: string; supplements: string[] }>;
+    const seen = new Map<string, string>();
+    selectedDisorder.disorder_prescriptions.forEach((rx) => {
+      rx.prescription_supplements.forEach(({ supplements: supp }) => {
+        if (!supp.dietary_sources) return;
+        parseFoodSources(supp.dietary_sources).forEach((food) => {
+          if (!seen.has(food.toLowerCase())) seen.set(food.toLowerCase(), food);
+        });
+      });
+    });
+    return Array.from(seen.keys())
+      .sort()
+      .map((key) => ({ food: seen.get(key)!, supplements: foodSourceMap.get(key) ?? [] }));
+  }, [selectedDisorder, foodSourceMap]);
+
   // Group action herbs by primary action
   const groupActionHerbs = (actionHerbs: DisorderData['disorder_action_herbs']) => {
     const grouped: Record<number, { action: PrimaryAction; herbs: Array<{ herb: Herb; note: string | null; sort_order: number }> }> = {};
@@ -268,6 +346,7 @@ export function DisorderView({ bodySystemId, onHerbClick, onActionClick, onSuppl
   }
 
   return (
+    <>
     <div className="space-y-4">
       {/* Disorder Selector */}
       <div>
@@ -347,6 +426,7 @@ export function DisorderView({ bodySystemId, onHerbClick, onActionClick, onSuppl
                 ...((selectedDisorder.disorder_actions_indicated.length > 0 || selectedDisorder.disorder_action_herbs.length > 0) ? [{ label: 'Actions Indicated', ref: actionsRef }] : []),
                 ...(selectedDisorder.disorder_specific_remedies.length > 0 ? [{ label: 'Specific Remedies', ref: remediesRef }] : []),
                 ...(selectedDisorder.disorder_prescriptions.length > 0 ? [{ label: 'Prescriptions', ref: prescriptionsRef }] : []),
+                ...(foodSourceList.length > 0 ? [{ label: 'Food Sources', ref: foodSourcesRef }] : []),
               ];
               if (pills.length === 0) return null;
               return (
@@ -687,7 +767,208 @@ export function DisorderView({ bodySystemId, onHerbClick, onActionClick, onSuppl
             )}
           </div>
         ) : null}
+
+        {/* Food Sources */}
+        {selectedDisorder && foodSourceList.length > 0 && (
+          <div ref={foodSourcesRef} className="border-l-4 border-teal-500 pl-4 mt-8">
+            <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+              <h3 className="text-xl font-semibold text-gray-800">
+                Food Sources for {selectedDisorder.name}
+              </h3>
+              <button
+                onClick={() => {
+                  setCheckedFoods(new Set(foodSourceList.map((f) => f.food)));
+                  setShopModalOpen(true);
+                }}
+                className="inline-flex items-center gap-1.5 text-sm px-4 py-2 rounded-lg bg-teal-600 hover:bg-teal-700 text-white font-medium transition-all shadow-sm"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                  <path d="M3 1a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43-.893.892C3.74 11.846 4.632 14 6.414 14H15a1 1 0 000-2H6.414l1-1H14a1 1 0 00.894-.553l3-6A1 1 0 0017 3H6.28l-.31-1.243A1 1 0 005 1H3zM16 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM6.5 18a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" />
+                </svg>
+                Shop Ingredients
+              </button>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {foodSourceList.map(({ food, supplements }) => (
+                <div
+                  key={food}
+                  className="flex items-center gap-1.5 bg-teal-50 border border-teal-200 rounded-full pl-3 pr-2 py-1"
+                >
+                  <span className="text-sm text-teal-900 font-medium">{food}</span>
+                  <div className="flex gap-1">
+                    {supplements.map((s) => (
+                      <span key={s} className="text-[10px] bg-teal-100 text-teal-700 border border-teal-300 rounded-full px-1.5 py-0.5">
+                        {s}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
+
+    {/* Shop Ingredients Modal */}
+    {shopModalOpen && selectedDisorder && (
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+        onClick={(e) => { if (e.target === e.currentTarget) setShopModalOpen(false); }}
+      >
+        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[80vh] flex flex-col">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
+            <h2 className="text-lg font-semibold text-gray-900">Select Foods to Shop</h2>
+            <button
+              onClick={() => setShopModalOpen(false)}
+              className="text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+              </svg>
+            </button>
+          </div>
+
+          <div className="flex items-center justify-between px-5 py-2 border-b border-gray-100 bg-gray-50">
+            <span className="text-xs text-gray-500">{checkedFoods.size} of {foodSourceList.length} selected</span>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setCheckedFoods(new Set(foodSourceList.map((f) => f.food)))}
+                className="text-xs text-teal-600 hover:text-teal-800 font-medium"
+              >
+                Select all
+              </button>
+              <button
+                onClick={() => setCheckedFoods(new Set())}
+                className="text-xs text-gray-400 hover:text-gray-600 font-medium"
+              >
+                Clear
+              </button>
+            </div>
+          </div>
+
+          <div className="overflow-y-auto flex-1 px-5 py-3 space-y-4">
+            {supplementFoodGroups.map(({ supplement, foods }) => {
+              const allChecked = foods.every((f) => checkedFoods.has(f));
+              const someChecked = foods.some((f) => checkedFoods.has(f));
+              return (
+                <div key={supplement}>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs font-semibold text-teal-700 uppercase tracking-wide">{supplement}</span>
+                    <button
+                      onClick={() => {
+                        const next = new Set(checkedFoods);
+                        if (allChecked) foods.forEach((f) => next.delete(f));
+                        else foods.forEach((f) => next.add(f));
+                        setCheckedFoods(next);
+                      }}
+                      className="text-[10px] text-teal-600 hover:text-teal-800 font-medium"
+                    >
+                      {allChecked ? 'Deselect all' : someChecked ? 'Select rest' : 'Select all'}
+                    </button>
+                  </div>
+                  <div className="space-y-0.5">
+                    {foods.map((food) => (
+                      <label
+                        key={food}
+                        className="flex items-center gap-3 py-1.5 cursor-pointer hover:bg-gray-50 -mx-2 px-2 rounded-lg"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={checkedFoods.has(food)}
+                          onChange={(e) => {
+                            const next = new Set(checkedFoods);
+                            if (e.target.checked) next.add(food); else next.delete(food);
+                            setCheckedFoods(next);
+                          }}
+                          className="w-4 h-4 rounded border-gray-300 text-teal-600 focus:ring-teal-500 shrink-0"
+                        />
+                        <span className="text-sm text-gray-800">{food}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="px-5 py-4 border-t border-gray-200 flex flex-col gap-2">
+            <button
+              disabled={checkedFoods.size === 0}
+              onClick={() => {
+                const selected = foodSourceList.filter((f) => checkedFoods.has(f.food));
+                const bySupplement = new Map<string, string[]>();
+                selected.forEach(({ food, supplements }) => {
+                  supplements.forEach((s) => {
+                    if (!bySupplement.has(s)) bySupplement.set(s, []);
+                    bySupplement.get(s)!.push(food);
+                  });
+                });
+                const lines = [`Food Sources for ${selectedDisorder?.name ?? 'Disorder'}`, ''];
+                Array.from(bySupplement.entries())
+                  .sort(([a], [b]) => a.localeCompare(b))
+                  .forEach(([supp, foods]) => {
+                    lines.push(supp);
+                    foods.sort().forEach((f) => lines.push(`• ${f}`));
+                    lines.push('');
+                  });
+                navigator.clipboard.writeText(lines.join('\n').trimEnd());
+              }}
+              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg border border-gray-300 hover:border-gray-400 disabled:opacity-40 disabled:cursor-not-allowed text-gray-700 text-sm font-medium transition-all"
+            >
+              Copy list to clipboard
+            </button>
+            <button
+              disabled={checkedFoods.size === 0}
+              onClick={() => {
+                const selected = foodSourceList.filter((f) => checkedFoods.has(f.food));
+                const bySupplement = new Map<string, string[]>();
+                selected.forEach(({ food, supplements }) => {
+                  supplements.forEach((s) => {
+                    if (!bySupplement.has(s)) bySupplement.set(s, []);
+                    bySupplement.get(s)!.push(food);
+                  });
+                });
+                const sections = Array.from(bySupplement.entries())
+                  .sort(([a], [b]) => a.localeCompare(b))
+                  .map(([supp, foods]) => `
+                    <section>
+                      <h2>${supp}</h2>
+                      <ul>${foods.sort().map((f) => `<li>${f}</li>`).join('')}</ul>
+                    </section>`)
+                  .join('');
+                const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
+                  <title>Food Sources for ${selectedDisorder?.name ?? ''}</title>
+                  <style>
+                    body{font-family:Georgia,serif;max-width:640px;margin:40px auto;color:#111;line-height:1.6}
+                    h1{color:#0f766e;font-size:1.4rem;margin-bottom:.2rem}
+                    p.sub{color:#6b7280;margin:0 0 2rem;font-size:.85rem}
+                    h2{font-size:1rem;font-weight:700;color:#374151;border-bottom:1px solid #e5e7eb;padding-bottom:.2rem;margin:1.5rem 0 .5rem}
+                    ul{margin:0;padding-left:1.4rem}
+                    li{margin:.2rem 0}
+                    @media print{body{margin:20px}}
+                  </style>
+                </head><body>
+                  <h1>Food Sources for ${selectedDisorder?.name ?? ''}</h1>
+                  <p class="sub">From supplement prescriptions · ${new Date().toLocaleDateString()}</p>
+                  ${sections}
+                </body></html>`;
+                const win = window.open('', '_blank');
+                win?.document.write(html);
+                win?.document.close();
+                win?.print();
+              }}
+              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-teal-600 hover:bg-teal-700 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold text-sm transition-all"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M5 4v3H4a2 2 0 00-2 2v3a2 2 0 002 2h1v2a2 2 0 002 2h6a2 2 0 002-2v-2h1a2 2 0 002-2V9a2 2 0 00-2-2h-1V4a2 2 0 00-2-2H7a2 2 0 00-2 2zm8 0H7v3h6V4zm0 8H7v4h6v-4z" clipRule="evenodd" />
+              </svg>
+              Print shopping list
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 }

@@ -58,6 +58,20 @@ Read both note files. For each line/bullet:
 2. **Capitalized bare names** — `Shepherd's Purse`, `Milk Thistle` — high confidence
 3. **Lowercase mentions** — `dong quai`, `vitex`, `nettles` — match case-insensitively
 
+**Abbreviations used in class notes** — expand before processing:
+| Abbreviation | Meaning | Notes |
+|---|---|---|
+| AI | Anti-inflammatory | Very common in Lisa's notes; never "artificial intelligence" |
+| AO | Antioxidant | |
+| NS | Nervous System | |
+| AS | Antispasmodic | |
+| OGR | Oregon Grape Root | DB: Oregon Grape (Mahonia aquifolium, id=33) |
+| SJW | St. John's Wort | DB: St. John's Wort (Hypericum perforatum) |
+| FE | Flower Essence | Not a tincture — note in snippet but don't create a menstruum entry |
+| Vit | Vitamin | e.g., "Vit D" → Vitamin D supplement |
+| AFAB | Assigned Female at Birth | Context only; not an herb/supplement |
+| AMAB | Assigned Male at Birth | Context only; not an herb/supplement |
+
 **Common normalisations** (update this list as you encounter new ones):
 | Note text | DB entry |
 |---|---|
