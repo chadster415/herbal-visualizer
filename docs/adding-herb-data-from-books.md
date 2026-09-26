@@ -491,6 +491,14 @@ grep -i "spilanthes\|acmella\|paracress" \
 'spilanthes':  [],                       # confirmed absent
 ```
 
+> **How to choose the SYNONYM_MAP key**: The parser calls `normalize_latin()` on the MM header line to derive the dict key. `normalize_latin()` strips a leading `*`, removes everything from the first `(` onward, then lowercases and strips whitespace. So:
+> - `ASAFETIDA  (Ferula asafetida, Devil's Dung...)` → key is `'asafetida'` (common-name prefix lowercased)
+> - `*UNCARIA  TOMENTOSA  (Uña de Gato...)` → key is `'uncaria tomentosa'` (latin-name prefix, asterisk stripped)
+>
+> The rule of thumb: look at what comes **before** the first `(` in the MM header and lowercase it — that's your key. When in doubt, read `normalize_latin()` in the script to confirm.
+
+> **Capsule-only MM entries**: Some herbs (e.g., Cat's Claw) have MM entries that give `5–20 grams/day in capsules` with no tincture drops. The parser won't generate a valid `mm-materia-medica.ts` entry for these. Use Easley's or another source for the drop dosage instead; still update SYNONYM_MAP so future parser runs know the entry exists.
+
 **Step 3** — Re-run the parser. It regenerates `lib/mm-materia-medica.ts` in place:
 ```bash
 python3 "herbal-visualizer/scripts/parse-mm-materia-medica.py"
@@ -516,6 +524,9 @@ hits = {k: v for k, v in m.items() if search.lower() in k.lower()}
 print(hits or 'not found')
 "
 ```
+
+> **Apostrophe encoding gotcha**: herb keys in the JSON may use curly/Unicode apostrophes (e.g., `Cat's claw` with `'`). Searching for `"Cat's claw"` with a straight apostrophe will miss it. Always search by a short partial term (`cat`, `spilanthes`, `uncaria`) rather than the full common name, to avoid silent misses.
+
 
 **Step 2** — If found, extract the pages as 150 DPI JPEG images:
 ```python

@@ -131,6 +131,10 @@ export function DisorderView({ bodySystemId, onHerbClick, onActionClick, onSuppl
   const foodSourcesRef = useRef<HTMLDivElement | null>(null);
   const [shopModalOpen, setShopModalOpen] = useState(false);
   const [checkedFoods, setCheckedFoods] = useState<Set<string>>(new Set());
+  const [aisleMap, setAisleMap] = useState<Map<string, string>>(new Map());
+  const [aisleLoading, setAisleLoading] = useState(false);
+  const [aisleError, setAisleError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     fetch('/api/disorder-images')
@@ -314,6 +318,22 @@ export function DisorderView({ bodySystemId, onHerbClick, onActionClick, onSuppl
       .sort()
       .map((key) => ({ food: seen.get(key)!, supplements: foodSourceMap.get(key) ?? [] }));
   }, [selectedDisorder, foodSourceMap]);
+
+  // Selected foods grouped by grocery store aisle (for print/copy output)
+  const aisleGroups = useMemo(() => {
+    if (aisleMap.size === 0) return null;
+    const map = new Map<string, string[]>();
+    foodSourceList
+      .filter(({ food }) => checkedFoods.has(food))
+      .forEach(({ food }) => {
+        const aisle = aisleMap.get(food.toLowerCase()) ?? 'Other';
+        if (!map.has(aisle)) map.set(aisle, []);
+        map.get(aisle)!.push(food);
+      });
+    return Array.from(map.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([aisle, foods]) => ({ aisle, foods: foods.sort((a, b) => a.localeCompare(b)) }));
+  }, [aisleMap, foodSourceList, checkedFoods]);
 
   // Group action herbs by primary action
   const groupActionHerbs = (actionHerbs: DisorderData['disorder_action_herbs']) => {
@@ -778,6 +798,8 @@ export function DisorderView({ bodySystemId, onHerbClick, onActionClick, onSuppl
               <button
                 onClick={() => {
                   setCheckedFoods(new Set(foodSourceList.map((f) => f.food)));
+                  setAisleMap(new Map());
+                  setAisleError(null);
                   setShopModalOpen(true);
                 }}
                 className="inline-flex items-center gap-1.5 text-sm px-4 py-2 rounded-lg bg-teal-600 hover:bg-teal-700 text-white font-medium transition-all shadow-sm"
@@ -884,6 +906,11 @@ export function DisorderView({ bodySystemId, onHerbClick, onActionClick, onSuppl
                           className="w-4 h-4 rounded border-gray-300 text-teal-600 focus:ring-teal-500 shrink-0"
                         />
                         <span className="text-sm text-gray-800">{food}</span>
+                        {aisleMap.get(food.toLowerCase()) && (
+                          <span className="ml-auto text-[10px] text-teal-600 bg-teal-50 border border-teal-200 rounded-full px-1.5 py-0.5 shrink-0">
+                            {aisleMap.get(food.toLowerCase())}
+                          </span>
+                        )}
                       </label>
                     ))}
                   </div>
@@ -893,64 +920,126 @@ export function DisorderView({ bodySystemId, onHerbClick, onActionClick, onSuppl
           </div>
 
           <div className="px-5 py-4 border-t border-gray-200 flex flex-col gap-2">
+            {aisleError && (
+              <p className="text-xs text-center text-red-600">
+                {aisleError}
+              </p>
+            )}
             <button
               disabled={checkedFoods.size === 0}
               onClick={() => {
-                const selected = foodSourceList.filter((f) => checkedFoods.has(f.food));
-                const bySupplement = new Map<string, string[]>();
-                selected.forEach(({ food, supplements }) => {
-                  supplements.forEach((s) => {
-                    if (!bySupplement.has(s)) bySupplement.set(s, []);
-                    bySupplement.get(s)!.push(food);
-                  });
-                });
-                const lines = [`Food Sources for ${selectedDisorder?.name ?? 'Disorder'}`, ''];
-                Array.from(bySupplement.entries())
-                  .sort(([a], [b]) => a.localeCompare(b))
-                  .forEach(([supp, foods]) => {
-                    lines.push(supp);
-                    foods.sort().forEach((f) => lines.push(`• ${f}`));
+                const lines = [`Shopping List — ${selectedDisorder?.name ?? 'Disorder'}`, ''];
+                if (aisleGroups) {
+                  aisleGroups.forEach(({ aisle, foods }) => {
+                    lines.push(aisle);
+                    foods.forEach((f) => lines.push(`• ${f}`));
                     lines.push('');
                   });
+                } else {
+                  const selected = foodSourceList.filter((f) => checkedFoods.has(f.food));
+                  const bySupplement = new Map<string, string[]>();
+                  selected.forEach(({ food, supplements }) => {
+                    supplements.forEach((s) => {
+                      if (!bySupplement.has(s)) bySupplement.set(s, []);
+                      bySupplement.get(s)!.push(food);
+                    });
+                  });
+                  Array.from(bySupplement.entries())
+                    .sort(([a], [b]) => a.localeCompare(b))
+                    .forEach(([supp, foods]) => {
+                      lines.push(supp);
+                      foods.sort().forEach((f) => lines.push(`• ${f}`));
+                      lines.push('');
+                    });
+                }
                 navigator.clipboard.writeText(lines.join('\n').trimEnd());
+                setCopied(true);
+                setTimeout(() => setCopied(false), 2000);
               }}
-              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg border border-gray-300 hover:border-gray-400 disabled:opacity-40 disabled:cursor-not-allowed text-gray-700 text-sm font-medium transition-all"
+              className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-lg border text-sm font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed ${copied ? 'border-teal-400 bg-teal-50 text-teal-700' : 'border-gray-300 hover:border-gray-400 text-gray-700'}`}
             >
-              Copy list to clipboard
+              {copied ? 'Copied!' : 'Copy list to clipboard'}
             </button>
             <button
-              disabled={checkedFoods.size === 0}
-              onClick={() => {
-                const selected = foodSourceList.filter((f) => checkedFoods.has(f.food));
-                const bySupplement = new Map<string, string[]>();
-                selected.forEach(({ food, supplements }) => {
-                  supplements.forEach((s) => {
-                    if (!bySupplement.has(s)) bySupplement.set(s, []);
-                    bySupplement.get(s)!.push(food);
+              disabled={checkedFoods.size === 0 || aisleLoading}
+              onClick={async () => {
+                let groups = aisleGroups;
+                if (!groups) {
+                  const checkedList = foodSourceList.filter((f) => checkedFoods.has(f.food)).map((f) => f.food);
+                  setAisleLoading(true);
+                  setAisleError(null);
+                  try {
+                    const res = await fetch('/api/spoonacular/lookup', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ foods: checkedList }),
+                    });
+                    const data = await res.json();
+                    if (res.ok) {
+                      const map = new Map<string, string>();
+                      Object.entries(data).forEach(([food, info]: [string, any]) => {
+                        if (info.aisle) map.set(food, info.aisle);
+                      });
+                      setAisleMap(map);
+                      // Compute groups directly from map — state update is async
+                      const groupMap = new Map<string, string[]>();
+                      foodSourceList
+                        .filter(({ food }) => checkedFoods.has(food))
+                        .forEach(({ food }) => {
+                          const aisle = map.get(food.toLowerCase()) ?? 'Other';
+                          if (!groupMap.has(aisle)) groupMap.set(aisle, []);
+                          groupMap.get(aisle)!.push(food);
+                        });
+                      groups = Array.from(groupMap.entries())
+                        .sort(([a], [b]) => a.localeCompare(b))
+                        .map(([aisle, foods]) => ({ aisle, foods: foods.sort((a, b) => a.localeCompare(b)) }));
+                    } else {
+                      setAisleError(data.message ?? 'Could not look up store aisles — printing by supplement.');
+                    }
+                  } catch {
+                    setAisleError('Could not reach Spoonacular — printing by supplement.');
+                  } finally {
+                    setAisleLoading(false);
+                  }
+                }
+
+                // Fall back to supplement grouping if API failed or returned no aisle data
+                if (!groups) {
+                  const selected = foodSourceList.filter((f) => checkedFoods.has(f.food));
+                  const bySupplement = new Map<string, string[]>();
+                  selected.forEach(({ food, supplements }) => {
+                    supplements.forEach((s) => {
+                      if (!bySupplement.has(s)) bySupplement.set(s, []);
+                      bySupplement.get(s)!.push(food);
+                    });
                   });
-                });
-                const sections = Array.from(bySupplement.entries())
-                  .sort(([a], [b]) => a.localeCompare(b))
-                  .map(([supp, foods]) => `
+                  groups = Array.from(bySupplement.entries())
+                    .sort(([a], [b]) => a.localeCompare(b))
+                    .map(([supp, foods]) => ({ aisle: supp, foods: foods.sort() }));
+                }
+
+                const label = aisleGroups ? 'By store section' : 'By supplement';
+                const sections = groups
+                  .map(({ aisle, foods }) => `
                     <section>
-                      <h2>${supp}</h2>
-                      <ul>${foods.sort().map((f) => `<li>${f}</li>`).join('')}</ul>
+                      <h2>${aisle}</h2>
+                      <ul>${foods.map((f) => `<li>${f}</li>`).join('')}</ul>
                     </section>`)
                   .join('');
                 const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
-                  <title>Food Sources for ${selectedDisorder?.name ?? ''}</title>
+                  <title>Shopping List — ${selectedDisorder?.name ?? ''}</title>
                   <style>
                     body{font-family:Georgia,serif;max-width:640px;margin:40px auto;color:#111;line-height:1.6}
                     h1{color:#0f766e;font-size:1.4rem;margin-bottom:.2rem}
                     p.sub{color:#6b7280;margin:0 0 2rem;font-size:.85rem}
                     h2{font-size:1rem;font-weight:700;color:#374151;border-bottom:1px solid #e5e7eb;padding-bottom:.2rem;margin:1.5rem 0 .5rem}
                     ul{margin:0;padding-left:1.4rem}
-                    li{margin:.2rem 0}
+                    li{margin:.25rem 0}
                     @media print{body{margin:20px}}
                   </style>
                 </head><body>
-                  <h1>Food Sources for ${selectedDisorder?.name ?? ''}</h1>
-                  <p class="sub">From supplement prescriptions · ${new Date().toLocaleDateString()}</p>
+                  <h1>Shopping List — ${selectedDisorder?.name ?? ''}</h1>
+                  <p class="sub">${label} · ${new Date().toLocaleDateString()}</p>
                   ${sections}
                 </body></html>`;
                 const win = window.open('', '_blank');
@@ -960,10 +1049,22 @@ export function DisorderView({ bodySystemId, onHerbClick, onActionClick, onSuppl
               }}
               className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-teal-600 hover:bg-teal-700 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold text-sm transition-all"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M5 4v3H4a2 2 0 00-2 2v3a2 2 0 002 2h1v2a2 2 0 002 2h6a2 2 0 002-2v-2h1a2 2 0 002-2V9a2 2 0 00-2-2h-1V4a2 2 0 00-2-2H7a2 2 0 00-2 2zm8 0H7v3h6V4zm0 8H7v4h6v-4z" clipRule="evenodd" />
-              </svg>
-              Print shopping list
+              {aisleLoading ? (
+                <>
+                  <svg className="h-4 w-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                  Looking up aisles…
+                </>
+              ) : (
+                <>
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M5 4v3H4a2 2 0 00-2 2v3a2 2 0 002 2h1v2a2 2 0 002 2h6a2 2 0 002-2v-2h1a2 2 0 002-2V9a2 2 0 00-2-2h-1V4a2 2 0 00-2-2H7a2 2 0 00-2 2zm8 0H7v3h6V4zm0 8H7v4h6v-4z" clipRule="evenodd" />
+                  </svg>
+                  Print by store section
+                </>
+              )}
             </button>
           </div>
         </div>

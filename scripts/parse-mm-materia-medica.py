@@ -37,6 +37,7 @@ SYNONYM_MAP = {
     'artemisia absinthium':  ['artemisia absinthium'],
     'artemisia vulgaris':    ['artemisia vulgaris'],
     'asarum':                ['herba asari cum radice'],  # Chinese wild ginger TCM
+    'asafetida':             ['ferula asafoetida'],
     'astragalus membranaceus':['astragalus membranaceus'],
     'atropa belladonna':     [],  # not in MM
     'avena':                 ['avena sativa'],
@@ -255,7 +256,7 @@ SYNONYM_MAP = {
     'turnera':               ['turnera diffusa'],
     'ulmus rubra':           ['ulmus rubra'],
     'ulmus':                 ['ulmus rubra'],
-    'uncaria tomentosa':     [],  # cat's claw — not in DB (MM has it as *UNCARIA TOMENTOSA)
+    'uncaria tomentosa':     ['uncaria tomentosa'],
     'urginea':               ['urginea maritima'],
     'urtica':                ['urtica dioica'],
     'usnea':                 ['usnea spp.'],
