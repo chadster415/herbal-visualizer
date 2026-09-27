@@ -383,7 +383,9 @@ State the calculated target at the top of the quiz migration as a comment.
 **Question quality rules**:
 - Every question must be directly supported by a specific snippet from the class notes — use real herb names, dosages, and clinical relationships from the notes, not general knowledge
 - `snippet_text` must be the actual note text (copy from the migration you just wrote)
-- Write a mix of question types: which herb treats X, what does herb Y do, which formula contains Z, what is the dose/ratio of W, which herb is specific for condition Q
+- Write a mix of question types: which herb treats X, what does herb Y do, what is the mechanism of Y, which herb is specific for condition Q, what is the safety consideration for herb Z
+- **Never test exact ml ratios within a formula** — knowing that Licorice is 10ml vs 30ml teaches nothing clinically useful
+- **Only test a dose if the dose itself carries clinical meaning** — e.g. Poke Root (very low dose, safety), Spearmint (30-day infusion protocol), Selenium (200mcg minimum 8 weeks). Do not test dosage just because a number appeared in the notes
 - Distractors (wrong options) must be plausible herbs or concepts from the same clinical domain — not obviously wrong
 - Vary the correct option position: don't put correct answer in 'a' every time
 
