@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { isFeatureVisible, type FeatureKey } from '@/lib/features';
+import { encodeNavToSearch, decodeSearchToNav } from '@/lib/deepLink';
 import { HerbView } from '@/components/HerbView';
 import { LoginModal } from '@/components/LoginModal';
 import { ActionView } from '@/components/ActionView';
@@ -123,6 +124,8 @@ export default function Home() {
   const [loginOpen, setLoginOpen] = useState(false);
   const [userInventory, setUserInventory] = useState<InventoryMap>(new Map());
   const [herbsLoaded, setHerbsLoaded] = useState(false);
+  const [openQuizClass, setOpenQuizClass] = useState<string | null>(null);
+  const [deepLinkInitialized, setDeepLinkInitialized] = useState(false);
 
   useEffect(() => {
     if (!isLoggedIn) { setUserInventory(new Map()); return; }
@@ -138,6 +141,42 @@ export default function Home() {
         setUserInventory(m);
       });
   }, [isLoggedIn]);
+
+  // On mount: restore view from URL search params
+  useEffect(() => {
+    if (!window.location.search) { setDeepLinkInitialized(true); return; }
+    const d = decodeSearchToNav(window.location.search);
+    setViewMode(d.viewMode);
+    setSelectedHerbId(d.selectedHerbId);
+    setSelectedActionId(d.selectedActionId);
+    setSelectedSystemId(d.selectedSystemId);
+    setSelectedDisorderId(d.selectedDisorderId);
+    setSelectedRecipeId(d.selectedRecipeId);
+    setSelectedSupplementId(d.selectedSupplementId);
+    setSelectedEssenceId(d.selectedEssenceId);
+    setSelectedSoulConditionCategory(d.selectedSoulConditionCategory);
+    setPairingsInitialFocusId(d.pairingsInitialFocusId);
+    setSelectedAilmentKeyword(d.selectedAilmentKeyword);
+    setClassQuizOpen(d.classQuizOpen);
+    setOpenQuizClass(d.openQuizClass);
+    setEnergeticsQuizOpen(d.energeticsQuizOpen);
+    setFlowerEssenceQuizOpen(d.flowerEssenceQuizOpen);
+    setDeepLinkInitialized(true);
+  }, []);
+
+  // Keep URL in sync with current view so the link is always copyable
+  useEffect(() => {
+    if (!deepLinkInitialized) return;
+    const search = encodeNavToSearch({
+      viewMode, selectedHerbId, selectedActionId, selectedSystemId, selectedDisorderId,
+      selectedRecipeId, selectedSupplementId, selectedEssenceId, selectedSoulConditionCategory,
+      pairingsInitialFocusId, selectedAilmentKeyword,
+      classQuizOpen, openQuizClass, energeticsQuizOpen, flowerEssenceQuizOpen,
+    });
+    window.history.replaceState(null, '', window.location.pathname + search);
+  }, [deepLinkInitialized, viewMode, selectedHerbId, selectedActionId, selectedSystemId, selectedDisorderId,
+      selectedRecipeId, selectedSupplementId, selectedEssenceId, selectedSoulConditionCategory,
+      pairingsInitialFocusId, selectedAilmentKeyword, classQuizOpen, openQuizClass, energeticsQuizOpen, flowerEssenceQuizOpen]);
 
   const pushAndNavigate = (next: NavEntry) => {
     setHistory((prev) => [...prev, { viewMode, selectedHerbId, selectedActionId, selectedSystemId, selectedDisorderId, selectedRecipeId, selectedSupplementId, selectedEssenceId, selectedSoulConditionCategory, pairingsInitialFocusId, selectedAilmentKeyword }]);
@@ -711,12 +750,12 @@ export default function Home() {
         />
       )}
       {(energeticsQuizOpen || intakeFormOpen || flowerEssenceQuizOpen || classQuizOpen) && (
-        <div className="fixed inset-0 z-[39]" onClick={() => { setEnergeticsQuizOpen(false); setIntakeFormOpen(false); setFlowerEssenceQuizOpen(false); setClassQuizOpen(false); }} aria-hidden="true" />
+        <div className="fixed inset-0 z-[39]" onClick={() => { setEnergeticsQuizOpen(false); setIntakeFormOpen(false); setFlowerEssenceQuizOpen(false); setClassQuizOpen(false); setOpenQuizClass(null); }} aria-hidden="true" />
       )}
       <EnergeticsQuizModal isOpen={energeticsQuizOpen} onClose={() => setEnergeticsQuizOpen(false)} onHerbSelect={(herbName) => { handleQuizHerbSelect(herbName); if (typeof window !== 'undefined' && window.innerWidth < 640) setEnergeticsQuizOpen(false); }} />
       <IntakeFormModal isOpen={intakeFormOpen} onClose={() => setIntakeFormOpen(false)} onHerbSelect={(herbId) => { handleHerbClick(herbId); if (typeof window !== 'undefined' && window.innerWidth < 640) setIntakeFormOpen(false); }} />
       <FlowerEssenceQuizModal isOpen={flowerEssenceQuizOpen} onClose={() => setFlowerEssenceQuizOpen(false)} onEssenceSelect={handleQuizEssenceSelect} />
-      <ClassQuizModal isOpen={classQuizOpen} onClose={() => setClassQuizOpen(false)} />
+      <ClassQuizModal isOpen={classQuizOpen} onClose={() => { setClassQuizOpen(false); setOpenQuizClass(null); }} initialClass={openQuizClass} onClassSelect={setOpenQuizClass} />
       {feat('doubleExtraction') && (
         <DoubleExtractionCalculatorModal isOpen={doubleExtractionOpen} onClose={() => setDoubleExtractionOpen(false)} />
       )}

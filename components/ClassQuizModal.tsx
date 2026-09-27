@@ -30,9 +30,11 @@ type Stage = 'select' | 'quiz' | 'revealed' | 'results';
 interface Props {
   isOpen: boolean;
   onClose: () => void;
+  initialClass?: string | null;
+  onClassSelect?: (className: string) => void;
 }
 
-export function ClassQuizModal({ isOpen, onClose }: Props) {
+export function ClassQuizModal({ isOpen, onClose, initialClass, onClassSelect }: Props) {
   const [stage, setStage] = useState<Stage>('select');
   const [availableClasses, setAvailableClasses] = useState<string[]>([]);
   const [loadingClasses, setLoadingClasses] = useState(false);
@@ -43,9 +45,10 @@ export function ClassQuizModal({ isOpen, onClose }: Props) {
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [score, setScore] = useState(0);
 
-  // Fetch available classes when modal opens
+  // Fetch available classes when modal opens; auto-select if opened via deep link
   useEffect(() => {
     if (!isOpen) return;
+    if (initialClass) handleSelectClass(initialClass); // eslint-disable-line react-hooks/exhaustive-deps
     setLoadingClasses(true);
     supabase
       .from('class_quiz_questions')
@@ -63,6 +66,7 @@ export function ClassQuizModal({ isOpen, onClose }: Props) {
   }, [isOpen]);
 
   const handleSelectClass = async (className: string) => {
+    onClassSelect?.(className);
     setSelectedClass(className);
     setLoadingQuestions(true);
     const { data } = await supabase
