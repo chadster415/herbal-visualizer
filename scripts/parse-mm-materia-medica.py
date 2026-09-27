@@ -81,6 +81,7 @@ SYNONYM_MAP = {
     'cynara':                ['cynara scolymus'],
     'cypripedium':           [],  # lady slipper — not in DB
     'daucus carota':         ['daucus carota'],
+    'dicentra formosa':      ['dicentra formosa'],  # Pacific Bleeding Heart
     'dioscorea':             ['dioscorea villosa'],
     'dipsacus':              ['radix dipsaci'],  # teasel root TCM
     'drosera':               ['drosera rotundifolia'],

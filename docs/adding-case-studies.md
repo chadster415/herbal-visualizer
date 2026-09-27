@@ -291,6 +291,24 @@ For dietary/lifestyle plans:
 
 ---
 
+## New herbs introduced by a case study require a full herb creation migration
+
+If a prescription herb is not yet in the DB, `ensure_herb` will create only a bare row (latin_name, common_name, plant_part). That is not enough. You must create a **companion migration** (NNN+1) that fully populates the herb per the `adding-herb-data-from-books.md` playbook:
+
+- Energetics, tone, synonyms
+- Primary actions for all relevant body systems
+- `herb_constituents` (research from literature; check corpus first)
+- Energetics and taste inference from constituents
+- Menstruum via `set_menstruum`
+- All five external source checks (MM, Stockley's, Easley, Hoffmann, Tilgner)
+- MM SYNONYM_MAP update + parser re-run **after** migrations are run (herb must exist in DB first)
+
+The companion migration should note: `-- Created bare by ensure_herb in migration NNN — run NNN first`.
+
+**Do not ask the user to identify an unknown herb's latin name when the tradition context makes it determinable.** For example, "Bleeding Heart in the Michael Moore tradition" = *Dicentra formosa* (Pacific Bleeding Heart, native to the Pacific West). Resolve from tradition context before asking.
+
+---
+
 ## Verifying herbs against the database before writing the migration
 
 **Always query the DB for each herb before using `ensure_herb`.** If there is any uncertainty about the latin name or common name, raise it with the user before writing the migration — do not guess.

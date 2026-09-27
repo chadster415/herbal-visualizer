@@ -1495,4 +1495,16 @@ export const MM_MATERIA_MEDICA: Record<number, string> = {
   either form taken 1/2 hour before meals.
   STATUS : W/LA`,
 
+  // Asafetida (Ferula asafoetida)
+  2645: `ASAFETIDA  (Ferula asafetida,Devil's Dung, Stinkasant)
+  GUM. Tincture [1:5, 85% alcohol] 5-20 drops.
+  STATUS : W(rare)/C`,
+
+  // Bleeding Heart (Dicentra formosa)
+  2653: `DICENTRA FORMOSA  (Bleeding Heart)
+  ROOT.   Fresh Root Tincture [1:2], 10-20 drops or applied topically.
+  Dry Root  Tincture, [1:5, 50% alcohol] 15-30 drops.
+  HERB. Tincture [1:5, 50% alcohol, 25-50 drops, all to 3X a day.
+  STATUS : W/LA`,
+
 };
