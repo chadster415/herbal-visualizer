@@ -1,4 +1,5 @@
 type ViewMode = 'herb' | 'action' | 'system' | 'soul_condition' | 'pairings' | 'class_notes' | 'inventory';
+type OpenTool = 'formula-builder' | 'dosing-calculator' | 'double-extraction' | 'menstruum-calculator';
 
 export interface NavLinkState {
   viewMode: ViewMode;
@@ -16,6 +17,7 @@ export interface NavLinkState {
   openQuizClass: string | null;
   energeticsQuizOpen: boolean;
   flowerEssenceQuizOpen: boolean;
+  openTool: OpenTool | null;
 }
 
 function toNum(val: string | null): number | null {
@@ -32,7 +34,7 @@ const NULL_NAV: Omit<NavLinkState, 'viewMode' | 'classQuizOpen' | 'openQuizClass
   selectedHerbId: null, selectedActionId: null, selectedSystemId: null,
   selectedDisorderId: null, selectedRecipeId: null, selectedSupplementId: null,
   selectedEssenceId: null, selectedSoulConditionCategory: null,
-  pairingsInitialFocusId: null, selectedAilmentKeyword: null,
+  pairingsInitialFocusId: null, selectedAilmentKeyword: null, openTool: null,
 };
 
 export function encodeNavToSearch(s: NavLinkState): string {
@@ -73,12 +75,18 @@ export function encodeNavToSearch(s: NavLinkState): string {
       break;
   }
 
+  if (s.openTool) p.set('tool', s.openTool);
+
   const str = p.toString();
   return str ? '?' + str : '';
 }
 
 export function decodeSearchToNav(search: string): NavLinkState {
   const p = new URLSearchParams(search);
+
+  const VALID_TOOLS = new Set<OpenTool>(['formula-builder', 'dosing-calculator', 'double-extraction', 'menstruum-calculator']);
+  const toolParam = p.get('tool');
+  const openTool: OpenTool | null = VALID_TOOLS.has(toolParam as OpenTool) ? (toolParam as OpenTool) : null;
 
   const quiz = p.get('quiz');
   if (quiz === 'class')      return { ...NULL_NAV, viewMode: 'herb', classQuizOpen: true,  openQuizClass: p.get('class'), energeticsQuizOpen: false, flowerEssenceQuizOpen: false };
@@ -87,7 +95,7 @@ export function decodeSearchToNav(search: string): NavLinkState {
 
   const rawView = p.get('view') ?? 'herb';
   const viewMode: ViewMode = VALID_VIEWS.has(rawView as ViewMode) ? (rawView as ViewMode) : 'herb';
-  const base: NavLinkState = { ...NULL_NAV, viewMode, classQuizOpen: false, openQuizClass: null, energeticsQuizOpen: false, flowerEssenceQuizOpen: false };
+  const base: NavLinkState = { ...NULL_NAV, viewMode, classQuizOpen: false, openQuizClass: null, energeticsQuizOpen: false, flowerEssenceQuizOpen: false, openTool };
 
   switch (viewMode) {
     case 'herb':

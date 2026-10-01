@@ -163,22 +163,33 @@ export default function Home() {
     setOpenQuizClass(d.openQuizClass);
     setEnergeticsQuizOpen(d.energeticsQuizOpen);
     setFlowerEssenceQuizOpen(d.flowerEssenceQuizOpen);
+    setFormulaBuilderOpen(d.openTool === 'formula-builder');
+    setDosingCalculatorOpen(d.openTool === 'dosing-calculator');
+    setDoubleExtractionOpen(d.openTool === 'double-extraction');
+    setMenstruumCalculatorOpen(d.openTool === 'menstruum-calculator');
     setDeepLinkInitialized(true);
   }, []);
 
   // Keep URL in sync with current view so the link is always copyable
   useEffect(() => {
     if (!deepLinkInitialized) return;
+    const openTool = formulaBuilderOpen ? 'formula-builder' as const
+      : dosingCalculatorOpen ? 'dosing-calculator' as const
+      : doubleExtractionOpen ? 'double-extraction' as const
+      : menstruumCalculatorOpen ? 'menstruum-calculator' as const
+      : null;
     const search = encodeNavToSearch({
       viewMode, selectedHerbId, selectedActionId, selectedSystemId, selectedDisorderId,
       selectedRecipeId, selectedSupplementId, selectedEssenceId, selectedSoulConditionCategory,
       pairingsInitialFocusId, selectedAilmentKeyword,
       classQuizOpen, openQuizClass, energeticsQuizOpen, flowerEssenceQuizOpen,
+      openTool,
     });
     window.history.replaceState(null, '', window.location.pathname + search);
   }, [deepLinkInitialized, viewMode, selectedHerbId, selectedActionId, selectedSystemId, selectedDisorderId,
       selectedRecipeId, selectedSupplementId, selectedEssenceId, selectedSoulConditionCategory,
-      pairingsInitialFocusId, selectedAilmentKeyword, classQuizOpen, openQuizClass, energeticsQuizOpen, flowerEssenceQuizOpen]);
+      pairingsInitialFocusId, selectedAilmentKeyword, classQuizOpen, openQuizClass, energeticsQuizOpen, flowerEssenceQuizOpen,
+      formulaBuilderOpen, dosingCalculatorOpen, doubleExtractionOpen, menstruumCalculatorOpen]);
 
   const pushAndNavigate = (next: NavEntry) => {
     setHistory((prev) => [...prev, { viewMode, selectedHerbId, selectedActionId, selectedSystemId, selectedDisorderId, selectedRecipeId, selectedSupplementId, selectedEssenceId, selectedSoulConditionCategory, pairingsInitialFocusId, selectedAilmentKeyword }]);
