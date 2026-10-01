@@ -17,6 +17,7 @@ import { InventoryView } from '@/components/InventoryView';
 import { FormulaBuilderModal } from '@/components/FormulaBuilderModal';
 import { DosingCalculatorModal } from '@/components/DosingCalculatorModal';
 import { DoubleExtractionCalculatorModal } from '@/components/DoubleExtractionCalculatorModal';
+import { MenstruumCalculatorModal } from '@/components/MenstruumCalculatorModal';
 import { IntakeFormModal } from '@/components/IntakeFormModal';
 import { BodyDiagramModal } from '@/components/BodyDiagramModal';
 import { HelpModal } from '@/components/HelpModal';
@@ -110,6 +111,7 @@ export default function Home() {
   const [formulaBuilderOpen, setFormulaBuilderOpen] = useState(false);
   const [dosingCalculatorOpen, setDosingCalculatorOpen] = useState(false);
   const [doubleExtractionOpen, setDoubleExtractionOpen] = useState(false);
+  const [menstruumCalculatorOpen, setMenstruumCalculatorOpen] = useState(false);
   const [dosingInitialHerbs, setDosingInitialHerbs] = useState<{ id: number; common_name: string; latin_name: string; plant_part: string | null }[]>([]);
   const [intakeFormOpen, setIntakeFormOpen] = useState(false);
   const [bodyDiagramOpen, setBodyDiagramOpen] = useState(false);
@@ -408,6 +410,14 @@ export default function Home() {
                         <FunnelIcon className="w-4 h-4 shrink-0" /> Double Extraction
                       </button>
                     )}
+                    {feat('menstruumCalculator') && (
+                      <button
+                        onClick={() => { setMenstruumCalculatorOpen(true); setOpenDropdown(null); }}
+                        className="w-full text-left px-4 py-2.5 text-green-800 hover:bg-green-50 transition-all flex items-center gap-2"
+                      >
+                        <BeakerIcon className="w-4 h-4 shrink-0" /> Menstruum Calculator
+                      </button>
+                    )}
                     {feat('herbPairings') && (
                       <button
                         onClick={() => { switchTab('pairings'); setOpenDropdown(null); }}
@@ -501,6 +511,14 @@ export default function Home() {
                       className="w-full text-left px-4 py-2.5 text-green-800 hover:bg-green-50 transition-all whitespace-nowrap flex items-center gap-2"
                     >
                       <FunnelIcon className="w-5 h-5 shrink-0" /> Double Extraction
+                    </button>
+                  )}
+                  {feat('menstruumCalculator') && (
+                    <button
+                      onClick={() => { setMenstruumCalculatorOpen(true); setOpenDropdown(null); }}
+                      className="w-full text-left px-4 py-2.5 text-green-800 hover:bg-green-50 transition-all whitespace-nowrap flex items-center gap-2"
+                    >
+                      <BeakerIcon className="w-5 h-5 shrink-0" /> Menstruum Calculator
                     </button>
                   )}
                   <div className="border-t border-green-100" />
@@ -758,6 +776,9 @@ export default function Home() {
       <ClassQuizModal isOpen={classQuizOpen} onClose={() => { setClassQuizOpen(false); setOpenQuizClass(null); }} initialClass={openQuizClass} onClassSelect={setOpenQuizClass} />
       {feat('doubleExtraction') && (
         <DoubleExtractionCalculatorModal isOpen={doubleExtractionOpen} onClose={() => setDoubleExtractionOpen(false)} />
+      )}
+      {feat('menstruumCalculator') && (
+        <MenstruumCalculatorModal isOpen={menstruumCalculatorOpen} onClose={() => setMenstruumCalculatorOpen(false)} />
       )}
       <BodyDiagramModal
         open={bodyDiagramOpen}

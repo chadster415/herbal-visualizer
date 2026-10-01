@@ -21,6 +21,7 @@ export const featureConfig = {
   formulaBuilder: { label: 'Formula Builder', visibility: 'public' },
   dosingCalculator: { label: 'Dosing Calculator', visibility: 'private' },
   doubleExtraction: { label: 'Double Extraction Calculator', visibility: 'private' },
+  menstruumCalculator: { label: 'Menstruum Calculator', visibility: 'private' },
 
   // Assessments
   energeticsQuiz: { label: 'Energetics Quiz', visibility: 'public' },
