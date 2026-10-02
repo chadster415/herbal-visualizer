@@ -126,6 +126,8 @@ export function MenstruumCalculatorModal({ isOpen, onClose }: Props) {
   // '' = not yet selected / unrecognised
   const [absorptionLabel, setAbsorptionLabel] = useState<AbsorptionLabel | ''>('');
   const [absorptionAutoDetected, setAbsorptionAutoDetected] = useState(false);
+  const [absorptionPct, setAbsorptionPct] = useState(DEFAULT_ABSORPTION_PCT);
+  const [absorptionPctInput, setAbsorptionPctInput] = useState(String(DEFAULT_ABSORPTION_PCT));
 
   const [desiredYield, setDesiredYield] = useState<number | null>(null);
   const [desiredYieldInput, setDesiredYieldInput] = useState('');
@@ -176,6 +178,11 @@ export function MenstruumCalculatorModal({ isOpen, onClose }: Props) {
     const guessed = guessAbsorptionLabel(herb.plant_part, herb.latin_name);
     setAbsorptionLabel(guessed ?? '');
     setAbsorptionAutoDetected(guessed !== null);
+    const guessedPct = guessed
+      ? (ABSORPTION_CATEGORIES.find(c => c.label === guessed)?.pct ?? DEFAULT_ABSORPTION_PCT)
+      : DEFAULT_ABSORPTION_PCT;
+    setAbsorptionPct(guessedPct);
+    setAbsorptionPctInput(String(guessedPct));
 
     const { data } = await supabase
       .from('herb_menstruum')
@@ -194,11 +201,6 @@ export function MenstruumCalculatorModal({ isOpen, onClose }: Props) {
       setTargetAlcohol(DEFAULT_TARGET_ALCOHOL);
     }
   };
-
-  // Derived absorption % from the selected category
-  const absorptionPct = absorptionLabel
-    ? (ABSORPTION_CATEGORIES.find(c => c.label === absorptionLabel)?.pct ?? DEFAULT_ABSORPTION_PCT)
-    : DEFAULT_ABSORPTION_PCT;
 
   // Slider bounds
   const sliderMin = menstruum?.alcohol_pct_min ?? FALLBACK_ALCOHOL_MIN;
@@ -401,7 +403,13 @@ export function MenstruumCalculatorModal({ isOpen, onClose }: Props) {
                 </label>
                 <select
                   value={absorptionLabel}
-                  onChange={(e) => setAbsorptionLabel(e.target.value as AbsorptionLabel | '')}
+                  onChange={(e) => {
+                    const lbl = e.target.value as AbsorptionLabel | '';
+                    setAbsorptionLabel(lbl);
+                    setAbsorptionAutoDetected(false);
+                    const cat = ABSORPTION_CATEGORIES.find(c => c.label === lbl);
+                    if (cat) { setAbsorptionPct(cat.pct); setAbsorptionPctInput(String(cat.pct)); }
+                  }}
                   className="w-full border border-green-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400 dark:bg-gray-800 dark:text-white bg-white"
                 >
                   <option value="">— select plant type —</option>
@@ -411,6 +419,21 @@ export function MenstruumCalculatorModal({ isOpen, onClose }: Props) {
                     </option>
                   ))}
                 </select>
+                <div className="flex items-center gap-2 mt-2">
+                  <input
+                    type="number"
+                    min={0}
+                    max={99}
+                    value={absorptionPctInput}
+                    onChange={(e) => {
+                      setAbsorptionPctInput(e.target.value);
+                      const v = parseFloat(e.target.value);
+                      if (!isNaN(v) && v >= 0 && v < 100) setAbsorptionPct(v);
+                    }}
+                    className="w-20 border border-green-300 dark:border-gray-600 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400 dark:bg-gray-800 dark:text-white"
+                  />
+                  <span className="text-sm text-green-600 dark:text-green-400">% override</span>
+                </div>
                 {!absorptionLabel && (
                   <p className="text-xs text-amber-500 mt-1">Select plant type to refine absorption estimate</p>
                 )}

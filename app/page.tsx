@@ -38,6 +38,7 @@ import {
   SparklesIcon,
   UserIcon,
   CalculatorIcon,
+  EyeDropperIcon,
   FunnelIcon,
 } from '@heroicons/react/24/outline';
 
@@ -410,7 +411,7 @@ export default function Home() {
                         onClick={() => { setDosingCalculatorOpen(true); setOpenDropdown(null); }}
                         className="w-full text-left px-4 py-2.5 text-green-800 hover:bg-green-50 transition-all flex items-center gap-2"
                       >
-                        <CalculatorIcon className="w-4 h-4 shrink-0" /> Dosing Calculator
+                        <EyeDropperIcon className="w-4 h-4 shrink-0" /> Dosing Calculator
                       </button>
                     )}
                     {feat('doubleExtraction') && (
@@ -426,7 +427,7 @@ export default function Home() {
                         onClick={() => { setMenstruumCalculatorOpen(true); setOpenDropdown(null); }}
                         className="w-full text-left px-4 py-2.5 text-green-800 hover:bg-green-50 transition-all flex items-center gap-2"
                       >
-                        <BeakerIcon className="w-4 h-4 shrink-0" /> Menstruum Calculator
+                        <CalculatorIcon className="w-4 h-4 shrink-0" /> Menstruum Calculator
                       </button>
                     )}
                     {feat('herbPairings') && (
@@ -513,7 +514,7 @@ export default function Home() {
                       onClick={() => { setDosingCalculatorOpen(true); setOpenDropdown(null); }}
                       className="w-full text-left px-4 py-2.5 text-green-800 hover:bg-green-50 transition-all whitespace-nowrap flex items-center gap-2"
                     >
-                      <CalculatorIcon className="w-5 h-5 shrink-0" /> Dosing Calculator
+                      <EyeDropperIcon className="w-5 h-5 shrink-0" /> Dosing Calculator
                     </button>
                   )}
                   {feat('doubleExtraction') && (
@@ -529,7 +530,7 @@ export default function Home() {
                       onClick={() => { setMenstruumCalculatorOpen(true); setOpenDropdown(null); }}
                       className="w-full text-left px-4 py-2.5 text-green-800 hover:bg-green-50 transition-all whitespace-nowrap flex items-center gap-2"
                     >
-                      <BeakerIcon className="w-5 h-5 shrink-0" /> Menstruum Calculator
+                      <CalculatorIcon className="w-5 h-5 shrink-0" /> Menstruum Calculator
                     </button>
                   )}
                   <div className="border-t border-green-100" />
