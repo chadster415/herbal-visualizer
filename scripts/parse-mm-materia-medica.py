@@ -167,9 +167,11 @@ SYNONYM_MAP = {
     'myroxylon balsamum var. pereirae': ['myroxylon balsamum var. pereirae'],
     'myristica':             ['semen myristicae fragrantis'],  # nutmeg TCM
     'nepeta':                ['nepeta cataria'],
+    'nigella':               [],  # black seed — not in MM
     'oenothera':             ['oenothera biennis'],
     'olea europaea':         ['olea europaea'],
     'oplopanax':             ['oplopanax horridus'],
+    'opuntia':               ['opuntia spp.'],  # prickly pear — MM has fresh juice/flowers; no standard tincture drops
     'origanum vulgare':      ['origanum vulgare'],
     'origanum majorana':     ['origanum majorana'],
     'panax ginseng':         ['panax ginseng'],
@@ -247,6 +249,7 @@ SYNONYM_MAP = {
     'tanacetum parthenium':  ['tanacetum parthenium'],
     'tanacetum vulgare':     ['tanacetum vulgare'],
     'taraxacum':             ['taraxacum officinale'],
+    'theobroma':             [],  # cacao — not in MM (Stockley's has 3 pages; contraindications images in /tmp/stockleys_cocoa/)
     'thuja':                 ['thuja occidentalis'],
     'thymus':                ['thymus vulgaris'],
     'tilia':                 ['tilia platyphyllos'],
