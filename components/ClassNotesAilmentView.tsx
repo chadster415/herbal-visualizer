@@ -93,7 +93,7 @@ export function ClassNotesAilmentView({
 
   useEffect(() => {
     Promise.all([
-      supabase.from('herb_keywords').select('keyword, herb_id, supplement_id').eq('category', 'ailment'),
+      supabase.from('herb_keywords').select('keyword, herb_id, supplement_id').eq('category', 'ailment').limit(10000),
       supabase.from('ailment_search_terms').select('ailment_keyword, synonyms'),
     ]).then(([{ data: kwData }, { data: synData }]) => {
       const herbMap = new Map<string, Set<number>>();

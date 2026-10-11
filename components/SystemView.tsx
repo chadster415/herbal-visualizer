@@ -139,7 +139,7 @@ export function SystemView({ onHerbClick, onActionClick, onSupplementClick, onTr
           .order('name'),
         supabase.from('disorders').select('id, name, body_system_id, sort_order, is_case_study, search_keywords').order('sort_order'),
         supabase.from('body_system_notes').select('body_system_id, id, note_text, sort_order').order('sort_order'),
-        supabase.from('herb_keywords').select('keyword').eq('category', 'ailment'),
+        supabase.from('herb_keywords').select('keyword').eq('category', 'ailment').limit(10000),
         supabase.from('ailment_search_terms').select('ailment_keyword, synonyms'),
         supabase.from('recipe_body_systems').select('body_system_id, recipe_id'),
       ]);
