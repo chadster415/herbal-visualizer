@@ -260,6 +260,7 @@ SYNONYM_MAP = {
     'turnera':               ['turnera diffusa'],
     'ulmus rubra':           ['ulmus rubra'],
     'ulmus':                 ['ulmus rubra'],
+    'umbellularia':          ['umbellularia californica'],
     'uncaria tomentosa':     ['uncaria tomentosa'],
     'urginea':               ['urginea maritima'],
     'urtica':                ['urtica dioica'],

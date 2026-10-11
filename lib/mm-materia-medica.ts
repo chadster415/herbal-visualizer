@@ -1507,4 +1507,16 @@ export const MM_MATERIA_MEDICA: Record<number, string> = {
   HERB. Tincture [1:5, 50% alcohol, 25-50 drops, all to 3X a day.
   STATUS : W/LA`,
 
+  // Prickly Pear (Nopal) (Opuntia spp.)
+  2748: `OPUNTIA  (Prickly Pear)
+  FRESH JUICE, 2-4 ounces to 2X a day.
+  DRIED FLOWERS, two-three as an infusion (strain VERY well).
+  STATUS : W/A`,
+
+  // California Bay Laurel (Umbellularia californica)
+  2751: `UMBELLULARIA  (California Bay, Pepperwood, Oregon Myrtle)
+  LEAF.  Tincture [Fresh Leaf, 1:2, Recent Dry Leaf, 1:5, 65% alcohol] 10-20
+  drops to 3X a day, or inhaled from a saturated cotton ball.
+  STATUS : W/LA`,
+
 };
