@@ -139,7 +139,7 @@ export function SystemView({ onHerbClick, onActionClick, onSupplementClick, onTr
           .order('name'),
         supabase.from('disorders').select('id, name, body_system_id, sort_order, is_case_study, search_keywords').order('sort_order'),
         supabase.from('body_system_notes').select('body_system_id, id, note_text, sort_order').order('sort_order'),
-        supabase.from('herb_keywords').select('keyword').eq('category', 'ailment').limit(10000),
+        supabase.rpc('get_ailment_keywords'),
         supabase.from('ailment_search_terms').select('ailment_keyword, synonyms'),
         supabase.from('recipe_body_systems').select('body_system_id, recipe_id'),
       ]);
@@ -175,7 +175,7 @@ export function SystemView({ onHerbClick, onActionClick, onSupplementClick, onTr
 
       setSystems(systemsWithData);
 
-      const uniqueKeywords = [...new Set((kwData ?? []).map((r: { keyword: string }) => r.keyword))];
+      const uniqueKeywords = ((kwData ?? []) as { keyword: string }[]).map((r) => r.keyword);
       const synonymsMap = new Map(
         (synonymsData ?? []).map((r: { ailment_keyword: string; synonyms: string[] }) => [r.ailment_keyword, r.synonyms])
       );

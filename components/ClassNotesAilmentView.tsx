@@ -93,28 +93,14 @@ export function ClassNotesAilmentView({
 
   useEffect(() => {
     Promise.all([
-      supabase.from('herb_keywords').select('keyword, herb_id, supplement_id').eq('category', 'ailment').limit(10000),
+      supabase.rpc('get_ailment_keywords'),
       supabase.from('ailment_search_terms').select('ailment_keyword, synonyms'),
     ]).then(([{ data: kwData }, { data: synData }]) => {
-      const herbMap = new Map<string, Set<number>>();
-      const suppMap = new Map<string, Set<number>>();
-      for (const row of kwData ?? []) {
-        if (row.herb_id != null) {
-          if (!herbMap.has(row.keyword)) herbMap.set(row.keyword, new Set());
-          herbMap.get(row.keyword)!.add(row.herb_id);
-        }
-        if (row.supplement_id != null) {
-          if (!suppMap.has(row.keyword)) suppMap.set(row.keyword, new Set());
-          suppMap.get(row.keyword)!.add(row.supplement_id);
-        }
-      }
-      const allKeywords = new Set([...herbMap.keys(), ...suppMap.keys()]);
-      const sorted = [...allKeywords]
-        .sort((a, b) => a.localeCompare(b))
-        .map((keyword) => ({
-          keyword,
-          herbIds: [...(herbMap.get(keyword) ?? [])],
-          supplementIds: [...(suppMap.get(keyword) ?? [])],
+      const sorted = (kwData ?? [])
+        .map((row: { keyword: string; herb_ids: number[] | null; supplement_ids: number[] | null }) => ({
+          keyword: row.keyword,
+          herbIds: row.herb_ids ?? [],
+          supplementIds: row.supplement_ids ?? [],
         }));
       setAilments(sorted);
 
