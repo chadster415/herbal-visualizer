@@ -51,15 +51,10 @@ export function ClassQuizModal({ isOpen, onClose, initialClass, onClassSelect }:
     if (initialClass) handleSelectClass(initialClass); // eslint-disable-line react-hooks/exhaustive-deps
     setLoadingClasses(true);
     supabase
-      .from('class_quiz_questions')
-      .select('class_name')
-      .order('class_name', { ascending: false })
+      .rpc('get_quiz_class_names')
       .then(({ data }) => {
         if (data) {
-          const unique = Array.from(
-            new Set(data.map((r: { class_name: string }) => r.class_name))
-          ) as string[];
-          setAvailableClasses(unique);
+          setAvailableClasses(data.map((r: { class_name: string }) => r.class_name));
         }
         setLoadingClasses(false);
       });
