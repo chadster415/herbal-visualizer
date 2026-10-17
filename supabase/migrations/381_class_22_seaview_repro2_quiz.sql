@@ -1,0 +1,623 @@
+-- Migration 381: Class 22 quiz questions
+-- Class: BHC - Class 22 - Seaview Trail Herb Walk and Repro 2
+-- H = 55 distinct herbs/supplements; F = 12 named factual items
+-- target = clamp(15 + 55×4 + 12×1, 20, 50) = clamp(247, 20, 50) = 50 questions
+-- Correct option distribution: a=12, b=13, c=13, d=12
+
+SET search_path TO herbal, public;
+
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM herbal.class_quiz_questions
+             WHERE class_name = 'BHC - Class 22 - Seaview Trail Herb Walk and Repro 2') THEN
+    RAISE NOTICE 'Class 22 quiz already loaded, skipping';
+    RETURN;
+  END IF;
+
+  INSERT INTO herbal.class_quiz_questions
+    (class_name, question_text, option_a, option_b, option_c, option_d,
+     correct_option, explanation, snippet_text, section_header, sort_order)
+  VALUES
+
+  -- Q1 (a)
+  ('BHC - Class 22 - Seaview Trail Herb Walk and Repro 2',
+   'Usnea is identified in the field by which physical characteristic?',
+   'White thread inside when pulled',
+   'Hollow stem when broken',
+   'Pungent peanut smell when crushed',
+   'Blue-purple berries that resemble pokeweed',
+   'a',
+   'Usnea has a white thread (hyphal strand) visible inside when stretched, distinguishing it from Spanish moss which simply breaks.',
+   'Usnea - white thread, if pulled (Spanish moss, just breaks) - antimicrobial, most often urinary',
+   'Herb Walk', 10),
+
+  -- Q2 (a)
+  ('BHC - Class 22 - Seaview Trail Herb Walk and Repro 2',
+   'Which lymphatic herb has affinity specifically to the neck and throat lymph nodes?',
+   'Cleavers',
+   'Figwort',
+   'Red Root',
+   'Echinacea',
+   'a',
+   'Cleavers is noted for neck and throat affinity, contrasted with Red Root (midsection) and Figwort (general lymphatic stagnation).',
+   '(Cleavers - affinity to neck/throat - also neck affinity) / Red Root more midsection affinity',
+   'Herb Walk', 20),
+
+  -- Q3 (d)
+  ('BHC - Class 22 - Seaview Trail Herb Walk and Repro 2',
+   'Wild Lettuce is contraindicated for which type of patient according to the herb walk notes?',
+   'Patients with liver congestion',
+   'Patients who are pregnant',
+   'Patients with hypertension',
+   'Already exhausted people',
+   'd',
+   'Wild Lettuce is described as "very cold, not for already exhausted people" — its cooling energetics make it inappropriate for depleted constitutions.',
+   'Wild Lettuce - sedative, sleep aid; bitter; cooling... very cold, not for already exhausted people',
+   'Herb Walk', 30),
+
+  -- Q4 (a)
+  ('BHC - Class 22 - Seaview Trail Herb Walk and Repro 2',
+   'What two-herb combination is noted as used together in Monks Tea Blend Tincture?',
+   'Wood Betony and Calamus',
+   'Catnip and Chamomile',
+   'Wild Lettuce and Catnip',
+   'Wood Betony and Lemon Balm',
+   'a',
+   'The notes specifically mention Wood Betony + Calamus as the Monks Tea Blend Tincture taken when going out for a walk.',
+   'Wood Betony + Calamus - Monks Tea Blend Tincture - if going out for a walk, etc',
+   'Herb Walk', 40),
+
+  -- Q5 (a)
+  ('BHC - Class 22 - Seaview Trail Herb Walk and Repro 2',
+   'Which three-herb TCM combination is described as targeting skeletal muscle and injuries?',
+   'Wild Lettuce, Jamaican Dogwood, and Corydalis',
+   'Cramp Bark, Black Haw, and Wild Yam',
+   'Plantain, Calendula, and Marshmallow root',
+   'Astragalus, Licorice, and Red Clover',
+   'a',
+   'Wild Lettuce + Jamaican Dogwood + Corydalis = TCM triplet targeting skeletal muscle and injuries, contrasted with Wild Yam for smooth muscle.',
+   'with Jamaican Dogwood, Corydalis = a TCM triplet -> targets skeletal muscle, injuries / Wild Yam -> better smooth muscle relaxant',
+   'Herb Walk', 50),
+
+  -- Q6 (b)
+  ('BHC - Class 22 - Seaview Trail Herb Walk and Repro 2',
+   'How does Wild Yam''s therapeutic target differ from the Wild Lettuce / Jamaican Dogwood / Corydalis triplet?',
+   'Wild Yam targets nerve pain; the triplet targets joint pain',
+   'Wild Yam is better for smooth muscle relaxation; the triplet targets skeletal muscle',
+   'Wild Yam is sedating; the triplet is stimulating',
+   'Wild Yam targets inflammation; the triplet targets spasm',
+   'b',
+   'The notes explicitly contrast Wild Yam as "better smooth muscle relaxant" against the triplet which "targets skeletal muscle, injuries."',
+   'with Jamaican Dogwood, Corydalis = a TCM triplet -> targets skeletal muscle, injuries / Wild Yam -> better smooth muscle relaxant',
+   'Herb Walk', 60),
+
+  -- Q7 (c)
+  ('BHC - Class 22 - Seaview Trail Herb Walk and Repro 2',
+   'What are the two primary clinical uses of Yellow Dock noted on the herb walk?',
+   'Liver support and skin conditions',
+   'Urinary infections and kidney stones',
+   'Constipation and iron deficiency',
+   'Lymphatic stagnation and immune support',
+   'c',
+   'Yellow Dock is described as bitter and alterative, primary for constipation, and iron-rich (syrup with black strap molasses).',
+   'Yellow dock - bitter, alterative; primary for constipation... iron rich - syrup with black strap molasses',
+   'Herb Walk', 70),
+
+  -- Q8 (a)
+  ('BHC - Class 22 - Seaview Trail Herb Walk and Repro 2',
+   'Which formula is described as "great for healing ulcers"?',
+   'Plantain, Calendula, and Marshmallow root',
+   'Ginger, Peppermint, and Chamomile',
+   'Astragalus, Licorice, and Alfalfa',
+   'Wild Yam, Cramp Bark, and Black Haw',
+   'a',
+   'The notes describe plantain + calendula + marshmallow root (+ applesauce) as great for healing ulcers.',
+   'plantain + calendula + marshmallow root - + applesauce (what else besides tincture?) - great for healing ulcers',
+   'Herb Walk', 80),
+
+  -- Q9 (a)
+  ('BHC - Class 22 - Seaview Trail Herb Walk and Repro 2',
+   'Elderflower is classified as having which primary therapeutic action?',
+   'Diaphoretic',
+   'Lymphatic',
+   'Demulcent',
+   'Astringent',
+   'a',
+   'The notes identify elderflower as diaphoretic at the herb walk.',
+   'elderflower (poke berry can look like elderberry) - diaphoretic',
+   'Herb Walk', 90),
+
+  -- Q10 (a)
+  ('BHC - Class 22 - Seaview Trail Herb Walk and Repro 2',
+   'What does the yellow color of Yellow Dock indicate, according to the herb walk?',
+   'Bile affinity; stagnation tends toward constipation',
+   'High tannin content and astringency',
+   'Alkaloid presence indicating caution',
+   'Cooling energetics',
+   'a',
+   'The yellow color of Yellow Dock indicates bile; stagnation tends toward constipation.',
+   'Yellow dock... yellow, indicates bile; stagnation tends toward constipation; gentler than senna',
+   'Herb Walk', 100),
+
+  -- Q11 (d)
+  ('BHC - Class 22 - Seaview Trail Herb Walk and Repro 2',
+   'Which antimicrobial herb is specifically noted as safe and appropriate for use in pregnancy and children?',
+   'Echinacea',
+   'Oregon Grape',
+   'Goldenseal',
+   'Usnea',
+   'd',
+   'Usnea is described as "strong antimicrobial for pregnancy and children," making it particularly useful when stronger herbs like Goldenseal or Oregon Grape may be avoided.',
+   'Usnea... strong antimicrobial for pregnancy and children',
+   'Herb Walk', 110),
+
+  -- Q12 (b)
+  ('BHC - Class 22 - Seaview Trail Herb Walk and Repro 2',
+   'What organ-system affinities distinguish Usnea from Oregon Grape root?',
+   'Usnea: respiratory; Oregon Grape: lymphatic',
+   'Usnea: urinary; Oregon Grape: digestive',
+   'Usnea: lymphatic; Oregon Grape: urinary',
+   'Usnea: hepatic; Oregon Grape: urinary',
+   'b',
+   'The notes contrast Usnea''s urinary affinity with Oregon Grape root''s digestive system affinity.',
+   'Usnea... most often urinary / (Oregon Grape root, digestive system affinity)',
+   'Herb Walk', 120),
+
+  -- Q13 (b)
+  ('BHC - Class 22 - Seaview Trail Herb Walk and Repro 2',
+   'Figwort''s species name Scrophularia nodosa refers to what anatomical structure?',
+   'Its knotted root system',
+   'Lymph nodes — it is indicated for lymphatic stagnation',
+   'Its nodular stem joints',
+   'Swollen glands in the jaw (historical use)',
+   'b',
+   '"nodosa" refers to lymph nodes; Figwort is a strong lymphatic known as the "King''s fever" herb for immune system stagnation.',
+   'Figwort - Scrofula nodosa... strong lymphatic / "King''s fever" / lymph nodes "nodosa" species / immune system stagnation',
+   'Herb Walk', 130),
+
+  -- Q14 (d)
+  ('BHC - Class 22 - Seaview Trail Herb Walk and Repro 2',
+   'Chasteberry (Vitex) is described as supporting progesterone and the pituitary through which neurotransmitter mechanism?',
+   'Serotonin agonist',
+   'GABA modulator',
+   'Acetylcholine inhibitor',
+   'Dopamine agonist',
+   'd',
+   'Chasteberry is described as nourishing progesterone levels and the pituitary, acting as a dopamine agonist.',
+   'Vitex agnus-castus - nourishing progesterone levels, the pituitary; dopamine agonist',
+   'Materia Medica', 140),
+
+  -- Q15 (c)
+  ('BHC - Class 22 - Seaview Trail Herb Walk and Repro 2',
+   'Which herb can help suppress prolactin levels in the PCOS picture?',
+   'Chasteberry',
+   'Nettle',
+   'Sage',
+   'Saw Palmetto',
+   'c',
+   'Salvia officinalis (Sage) is specifically described as able to help suppress prolactin levels in PCOS.',
+   'Salvia officianalis - can help suppress prolacton levels (PCOS)',
+   'Materia Medica', 150),
+
+  -- Q16 (c)
+  ('BHC - Class 22 - Seaview Trail Herb Walk and Repro 2',
+   'Which herb in the Materia Medica section is indicated for reducing elevated testosterone in the PCOS picture?',
+   'Chasteberry',
+   'Sage',
+   'Nettle',
+   'Licorice',
+   'c',
+   'Nettle is described as able to help reduce elevated testosterone in the PCOS picture.',
+   'Urtica urens, U. dioica - Nettles - can help to reduce elevated testosterone (PCOS picture)',
+   'Materia Medica', 160),
+
+  -- Q17 (b)
+  ('BHC - Class 22 - Seaview Trail Herb Walk and Repro 2',
+   'White Peony (Paeonia lactiflora) is paired with which herb for reproductive disruption, and at what ratio?',
+   'With Chasteberry at 1:1',
+   'With Licorice at 3:1 (peony:licorice)',
+   'With Dong Quai at 2:1',
+   'With Astragalus at 1:2',
+   'b',
+   'The notes describe Paeonia lactiflora paired with licorice for reproductive disruption at a 3:1 peony-to-licorice ratio.',
+   'Peonia lactiflora - pair with licorice to support repro disruption (3:1 peony:licorice)',
+   'Materia Medica', 170),
+
+  -- Q18 (a)
+  ('BHC - Class 22 - Seaview Trail Herb Walk and Repro 2',
+   'Dong Quai (Angelica sinensis) is noted for which two reproductive actions?',
+   'Circulation to the reproductive organs and supporting the follicular cycle',
+   'Suppressing prolactin and reducing testosterone',
+   'Nourishing progesterone and supporting the pituitary',
+   'Antispasmodic to the uterus and restoring menses',
+   'a',
+   'Dong Quai is described as supporting circulation to the reproductive organs and the follicular cycle.',
+   'Angelica sinensis (Dong quai) - circ to the repro organs, follicular cycle',
+   'Materia Medica', 180),
+
+  -- Q19 (c)
+  ('BHC - Class 22 - Seaview Trail Herb Walk and Repro 2',
+   'Which supplement is recommended for cellular immunity in the Foundations of Health section, with the note that it should come from food (not as Vitamin A)?',
+   'Selenium',
+   'Zinc',
+   'Beta-carotene',
+   'Vitamin D',
+   'c',
+   'Beta-carotene is recommended for cellular immunity; the notes caution not to use Vitamin A which can quickly lead to toxicity.',
+   'Beta carotene - if not gotten through the food - for cellular immunity... not Vit A, which could lead quickly to toxicity',
+   'Foundations of Health', 190),
+
+  -- Q20 (d)
+  ('BHC - Class 22 - Seaview Trail Herb Walk and Repro 2',
+   'Which Legume Tea herb can specifically enhance sperm motility?',
+   'Red Clover',
+   'Kudzu',
+   'Licorice',
+   'Astragalus',
+   'd',
+   'Astragalus membranaceus is noted in the Legume Tea as able to enhance sperm motility, as well as being anti-inflammatory and hormone modulating.',
+   'Astragalus mebranaceous - AI, and immune modulating - can enhance sperm motility - hormome modulating',
+   'Legume Tea for Fertility', 200),
+
+  -- Q21 (d)
+  ('BHC - Class 22 - Seaview Trail Herb Walk and Repro 2',
+   'What does Licorice provide in the Legume Tea that helps improve fat metabolism?',
+   'Polysaccharides and beta-glucans',
+   'Tannins and bitter alkaloids',
+   'Mucilage and rosmarinic acid',
+   'Inositol and saponins',
+   'd',
+   'Licorice is described as containing inositol and saponins that can improve fat metabolism, alongside its steroidal compounds.',
+   'Glycyrrhiza glabra (licorice)... inositol and saponins - can improve fat metabolism',
+   'Legume Tea for Fertility', 210),
+
+  -- Q22 (a)
+  ('BHC - Class 22 - Seaview Trail Herb Walk and Repro 2',
+   'Which Legume Tea herb supports both vascular and endocrine systems?',
+   'Kudzu',
+   'Alfalfa',
+   'Red Clover',
+   'Astragalus',
+   'a',
+   'Kudzu (Pueraria montana) is described as supporting vascular and endocrine systems in the context of fertility.',
+   'Pueraria montana - kudzu, supports vascular and endocrine systems',
+   'Legume Tea for Fertility', 220),
+
+  -- Q23 (d)
+  ('BHC - Class 22 - Seaview Trail Herb Walk and Repro 2',
+   'Which Legume Tea herb is described as having "medicinal effects on every single body system"?',
+   'Astragalus',
+   'Red Clover',
+   'Alfalfa',
+   'Licorice',
+   'd',
+   'Licorice (Glycyrrhiza glabra) is described as having medicinal effects on every single body system, including steroidal compounds that regulate adrenal function and cortisol.',
+   'Glycyrrhiza glabra (licorice) - medicinal effects on every single body system - steroidal compounds - regulate adrenal function and cortisol levels',
+   'Legume Tea for Fertility', 230),
+
+  -- Q24 (b)
+  ('BHC - Class 22 - Seaview Trail Herb Walk and Repro 2',
+   'Licorice in the Legume Tea is described as having which effect on the uterus?',
+   'Stimulating contractions',
+   'Antispasmodic',
+   'Astringent and tonifying',
+   'Warming and moving',
+   'b',
+   'Licorice is described as antispasmodic to the uterus and capable of restoring menses.',
+   'Glycyrrhiza glabra (licorice)... antispasmodic to the uterus - can restore menses',
+   'Legume Tea for Fertility', 240),
+
+  -- Q25 (a)
+  ('BHC - Class 22 - Seaview Trail Herb Walk and Repro 2',
+   'The Fertili-Tea includes which four herbs?',
+   'Astragalus, Licorice, Alfalfa, and Red Clover',
+   'Red Clover, Kudzu, Dong Quai, and Astragalus',
+   'Chasteberry, Licorice, Alfalfa, and Nettle',
+   'Astragalus, Dong Quai, Licorice, and Red Clover',
+   'a',
+   'The Fertili-Tea in the Foundations of Health section lists Astragalus, Licorice, Alfalfa, and Red Clover.',
+   '**Fertili-Tea:** astragalus / licorice / alfalfa / red clover',
+   'Foundations of Health', 250),
+
+  -- Q26 (d)
+  ('BHC - Class 22 - Seaview Trail Herb Walk and Repro 2',
+   'Red Raspberry leaf in pregnancy should be avoided during which period, and why?',
+   'Avoided in third trimester because it may stimulate early labor',
+   'Avoided throughout pregnancy because it is emmenagogue',
+   'Avoided in second trimester because it over-stimulates the uterus',
+   'Avoided in first trimester because it is very drying',
+   'd',
+   'Red Raspberry is tonifying but also very drying — the notes advise avoiding it in the first 3 months; after first trimester it nourishes and prepares the uterus.',
+   'Red Raspberry tonifying, but it''s also very drying, avoid in the first 3 months - after the first 3 months, it''s very nourishing',
+   'Herbs for Pregnancy', 260),
+
+  -- Q27 (b)
+  ('BHC - Class 22 - Seaview Trail Herb Walk and Repro 2',
+   'Which two herbs are described as a "good combo" for nausea in pregnancy?',
+   'Ginger and Chamomile',
+   'Peppermint and Chamomile',
+   'Ginger and Peppermint',
+   'Chamomile and Lemon Balm',
+   'b',
+   'The notes list Peppermint together with Chamomile as a good combo for nausea and vomiting in pregnancy.',
+   'Peppermint - together with Chamomile - good combo',
+   'Nausea and Vomiting', 270),
+
+  -- Q28 (a)
+  ('BHC - Class 22 - Seaview Trail Herb Walk and Repro 2',
+   'What is the first herb recommended when stomach cramps arise in pregnancy?',
+   'Chamomile',
+   'Wild Yam',
+   'Peppermint',
+   'Marshmallow root',
+   'a',
+   'The stepping-stone for stomach cramps starts with Chamomile, then Peppermint if there is pain, then Wild Yam if very severe.',
+   'start with Chamomile / Peppermint if there is pain, tea form / if very severe, then Wild Yam - antispasmodic to the smooth muscles',
+   'Stomach Cramps', 280),
+
+  -- Q29 (b)
+  ('BHC - Class 22 - Seaview Trail Herb Walk and Repro 2',
+   'Why is the appearance of severe stomach cramps in pregnancy clinically significant beyond the gut?',
+   'They can indicate dehydration requiring IV fluids',
+   'They can translate into uterine cramps that could threaten miscarriage',
+   'They signal impending preterm labor in the third trimester',
+   'They indicate a need for stronger antispasmodics rather than herbs',
+   'b',
+   'The notes specifically warn that stomach cramps can translate into uterine cramps which could threaten miscarriage.',
+   'sometimes stomach cramps can translate into uterine cramps which could threaten miscarriage',
+   'Stomach Cramps', 290),
+
+  -- Q30 (c)
+  ('BHC - Class 22 - Seaview Trail Herb Walk and Repro 2',
+   'What is the stepping-stone order for digestive support in pregnancy?',
+   'Ginger → Dandelion root → Yellow Dock',
+   'Chamomile → Peppermint → Wild Yam',
+   'Marshmallow root → Dandelion root → Yellow Dock',
+   'Nettle → Dandelion root → Marshmallow root',
+   'c',
+   'Start with Marshmallow root; if not working, move to Dandelion root; then Yellow Dock if still not working.',
+   'start with Marshmallow root - then move to Dandelion root if not working - then Yellow Dock if that not working',
+   'Digestive Support', 300),
+
+  -- Q31 (c)
+  ('BHC - Class 22 - Seaview Trail Herb Walk and Repro 2',
+   'What does Marshmallow root address in the Heartburn section?',
+   'It neutralizes stomach acid with alkaline compounds',
+   'It stimulates lower esophageal sphincter tone',
+   'It soothes stomach acids coming up via demulcent action',
+   'It reduces acid production at the parietal cells',
+   'c',
+   'Marshmallow root is indicated for heartburn — soothing stomach acids coming up.',
+   'Marshmallow root - stomach acids coming up',
+   'Heartburn', 310),
+
+  -- Q32 (b)
+  ('BHC - Class 22 - Seaview Trail Herb Walk and Repro 2',
+   'In the anemia section, why does Yellow Dock syrup need to be paired with Vitamin C or rose hips?',
+   'Vitamin C prevents tannins from astringent action on the gut',
+   'The body needs Vitamin C to metabolize iron',
+   'Vitamin C improves extraction of iron in the syrup preparation',
+   'Vitamin C prevents Yellow Dock from being too drying',
+   'b',
+   'The body needs Vitamin C to metabolize iron — Yellow Dock Syrup should be paired with dried fruits, rose hips, or Vitamin C.',
+   'Yellow Dock -> Molasses Yellow Dock Syrup - the body also needs Vit C to metabolize iron - dried fruits, rose hips, Vit C',
+   'Anemia', 320),
+
+  -- Q33 (c)
+  ('BHC - Class 22 - Seaview Trail Herb Walk and Repro 2',
+   'Echinacea in the pregnancy immune support section is described as stimulating which immune pathway?',
+   'Adaptive immune response (antibody production)',
+   'T-cell mediated immunity',
+   'Innate immune response',
+   'Complement cascade',
+   'c',
+   'Echinacea is described as stimulating the innate immune response and being used preventatively in pregnancy.',
+   'Echinacea - can be used preventatively - stimulates the innate immune response',
+   'Immune Support', 330),
+
+  -- Q34 (c)
+  ('BHC - Class 22 - Seaview Trail Herb Walk and Repro 2',
+   'Usnea in the pregnancy immune support section is specifically noted for which condition?',
+   'Respiratory infections',
+   'Skin infections',
+   'Urinary tract infections',
+   'Vaginal yeast infections',
+   'c',
+   'Usnea is described as supportive for urinary tract infections in the pregnancy immune support section.',
+   'Usnea - supportive for urinary tract infections',
+   'Immune Support', 340),
+
+  -- Q35 (d)
+  ('BHC - Class 22 - Seaview Trail Herb Walk and Repro 2',
+   'Which two herbs are described as having "long folk use for gestational hypertension"?',
+   'Hawthorn and Garlic',
+   'Reishi and Hawthorn',
+   'Garlic and Reishi',
+   'Cramp Bark and Black Haw',
+   'd',
+   'The notes specifically attribute long folk use for gestational hypertension to Cramp Bark and Black Haw.',
+   'Cramp Bark - long folk use for gestational hypertension / Black Haw - long folk use for gestational hypertension',
+   'Blood Pressure', 350),
+
+  -- Q36 (d)
+  ('BHC - Class 22 - Seaview Trail Herb Walk and Repro 2',
+   'In what form is Reishi specifically recommended in the gestational blood pressure section?',
+   'Tincture',
+   'Tea',
+   'Capsule',
+   'Soup',
+   'd',
+   'The notes advise Reishi "more in soup form" for blood pressure reduction in pregnancy.',
+   'Reishi - more in soup form',
+   'Blood Pressure', 360),
+
+  -- Q37 (a)
+  ('BHC - Class 22 - Seaview Trail Herb Walk and Repro 2',
+   'Garlic is recommended for blood pressure in pregnancy via which food-medicine approach?',
+   'Lean into the pestos',
+   'Daily raw cloves on an empty stomach',
+   'Garlic tincture in water',
+   'Garlic-infused olive oil applied topically',
+   'a',
+   'The notes specifically say to "lean into the pestos" for garlic as a blood pressure herb in pregnancy.',
+   'Garlic - lean into the pestos',
+   'Blood Pressure', 370),
+
+  -- Q38 (b)
+  ('BHC - Class 22 - Seaview Trail Herb Walk and Repro 2',
+   'What important preparation note applies to Milky Oats for insomnia in pregnancy?',
+   'Must be prepared as a cold overnight infusion',
+   'Only effective in tincture form (alcohol extraction) — does not work as tea',
+   'Must be combined with Passionflower to be effective',
+   'Only works with fresh plant, not dried',
+   'b',
+   'Milky Oats "doesn''t work as a tea, only alcohol soluble." Glycerine is noted as also extracting both alcohol and water soluble properties.',
+   'Milky Oats - doesn''t work as a tea, only alcohol soluble / glycerine extracts both alcohol and water soluble properties',
+   'Insomnia', 380),
+
+  -- Q39 (c)
+  ('BHC - Class 22 - Seaview Trail Herb Walk and Repro 2',
+   'For threatened miscarriage, Wild Yam is described in relation to Cramp Bark as:',
+   'Interchangeable with Cramp Bark at the same dose',
+   'Less effective but better tolerated',
+   'More effective than Cramp Bark',
+   'Contraindicated alongside Cramp Bark',
+   'c',
+   'Wild Yam is described as "more effective" for threatened miscarriage; Cramp Bark is used interchangeably with Black Haw.',
+   'Cramp Bark - used interchangeably with Black Haw / Wild Yam - more effective',
+   'Threatened Miscarriage', 390),
+
+  -- Q40 (c)
+  ('BHC - Class 22 - Seaview Trail Herb Walk and Repro 2',
+   'What is the dosing protocol described for the threatened miscarriage formula?',
+   '1 tsp hourly for 24 hours as needed',
+   '2 tsp twice daily for up to 7 days',
+   '1/2 tsp every 30 minutes for up to 4 hours; up to twice daily for up to 3 days',
+   '1/4 tsp every hour for up to 8 hours',
+   'c',
+   'The protocol is 1/2 tsp every 30 minutes for up to 4 hours, or up to twice a day for up to 3 days (formula 2:1 ratio).',
+   'formula 2:1 - 1/2 tsp every 30 mins for up to 4 hours || up to twice a day, for up to 3 days',
+   'Threatened Miscarriage', 400),
+
+  -- Q41 (b)
+  ('BHC - Class 22 - Seaview Trail Herb Walk and Repro 2',
+   'What specific action does Plantain provide to the gut lining that relates to leaky gut?',
+   'Stimulates mucosal regeneration via prostaglandin pathways',
+   'Allows the gaps to close (demulcent and astringent together)',
+   'Kills pathogenic organisms disrupting the gut wall',
+   'Reduces systemic inflammation driving gut permeability',
+   'b',
+   'Plantain is described as addressing leaky gut by "allowing the gaps to close" via its demulcent and astringent combined action.',
+   'Plantain - drawing agent - demulcent and astringent - leaky gut, allows gaps to close',
+   'Herb Walk', 410),
+
+  -- Q42 (d)
+  ('BHC - Class 22 - Seaview Trail Herb Walk and Repro 2',
+   'Which herb is described as gentler than senna for constipation and is also iron-rich?',
+   'Dandelion root',
+   'Alfalfa',
+   'Marshmallow root',
+   'Yellow Dock',
+   'd',
+   'Yellow Dock is described as "gentler than senna" and iron-rich, with the suggestion of a syrup with black strap molasses.',
+   'Yellow dock... gentler than senna... iron rich - syrup with black strap molasses',
+   'Herb Walk', 420),
+
+  -- Q43 (c)
+  ('BHC - Class 22 - Seaview Trail Herb Walk and Repro 2',
+   'Wood Betony (Stachys) is described as grounding for which Ayurvedic constitutional type?',
+   'Pitta',
+   'Kapha',
+   'Vata',
+   'All constitutions equally',
+   'c',
+   'Wood Betony is described as grounding vata, calming, and soothing.',
+   'Stachys (wood betony) - California Hedge Nettle - grounding vata; calming, soothing; work with leaves',
+   'Herb Walk', 430),
+
+  -- Q44 (c)
+  ('BHC - Class 22 - Seaview Trail Herb Walk and Repro 2',
+   'For the Plantain ulcer-healing formula, what vehicle is suggested for administration besides tincture?',
+   'Herbal vinegar',
+   'Glycerite',
+   'Applesauce',
+   'Honey',
+   'c',
+   'The notes suggest applesauce as a vehicle alongside plantain + calendula + marshmallow root for healing ulcers.',
+   'plantain + calendula + marshmallow root - + applesauce (what else besides tincture?) - great for healing ulcers',
+   'Herb Walk', 440),
+
+  -- Q45 (b)
+  ('BHC - Class 22 - Seaview Trail Herb Walk and Repro 2',
+   'The Ayurvedic tissue timeline described in class notes places reproductive tissue last. Which order is correct?',
+   'Blood, Lymph, Muscle, Bone, Skin, Nerves, Reproductive',
+   'Lymph, Blood, Muscle, Skin, Bone, Nerves, Reproductive',
+   'Digestive, Lymph, Blood, Muscle, Bone, Nerves, Reproductive',
+   'Lymph, Muscle, Blood, Skin, Bone, Nerves, Reproductive',
+   'b',
+   'The Ayurvedic tissue order given is: Lymph, Blood, Muscle, Skin, Bone, Nerves, Reproductive — minimum 35 days, really 3-6 months.',
+   'order of timeline: Lymph, Blood, Muscle, Skin, Bone, Nerves, Reproductive / 35 days min, but really 3-6 months',
+   'Foundations of Health', 450),
+
+  -- Q46 (c)
+  ('BHC - Class 22 - Seaview Trail Herb Walk and Repro 2',
+   'NSAIDs are mentioned in the fertility barriers section because they can interfere with which specific process?',
+   'Implantation of the embryo',
+   'Sperm production',
+   'Ovulation',
+   'Cervical mucus production',
+   'c',
+   'NSAIDs are listed as a hidden barrier to fertility because they can interfere with ovulation.',
+   'NSAIDS - can interfere with ovulation',
+   'Hidden Barriers to Fertility', 460),
+
+  -- Q47 (b)
+  ('BHC - Class 22 - Seaview Trail Herb Walk and Repro 2',
+   'What is the critical harvest timing for Wild Lettuce to obtain the most potent medicine?',
+   'After the first frost when resins concentrate in the root',
+   'When plant shoots stalk, before flowering',
+   'At full flowering when alkaloids peak',
+   'In spring when new growth appears',
+   'b',
+   'Wild Lettuce should be harvested when the plant shoots its stalk, before flowering; high alcohol is needed for preservation.',
+   'harvest when plant shoots stalk, before flowering - high alcohol for preserving',
+   'Herb Walk', 470),
+
+  -- Q48 (d)
+  ('BHC - Class 22 - Seaview Trail Herb Walk and Repro 2',
+   'Blackberry is primarily listed for which therapeutic action at the herb walk?',
+   'Demulcent',
+   'Diaphoretic',
+   'Lymphatic',
+   'Astringent',
+   'd',
+   'Blackberry is listed simply as "astringent" at the herb walk.',
+   'Blackberry - astringent',
+   'Herb Walk', 480),
+
+  -- Q49 (b)
+  ('BHC - Class 22 - Seaview Trail Herb Walk and Repro 2',
+   'Alfalfa in the Legume Tea is noted for which specific nutritive constituent group?',
+   'Polysaccharides and beta-glucans',
+   'Phytosteroids',
+   'Volatile oils',
+   'Tannins',
+   'b',
+   'Alfalfa (Medicago sativa) is described as nutritive and high in phytosteroids.',
+   'Medicago sativa (alfalfa) - nutritive - high in phytosteroids',
+   'Legume Tea for Fertility', 490),
+
+  -- Q50 (d)
+  ('BHC - Class 22 - Seaview Trail Herb Walk and Repro 2',
+   'Saw Palmetto in the reproductive Materia Medica is indicated for which endocrine imbalance?',
+   'Low progesterone',
+   'Hyperprolactinemia',
+   'Low estrogen',
+   'Elevated testosterone',
+   'd',
+   'Saw Palmetto (Serenoa repens) is listed for elevated testosterone in the reproductive Materia Medica.',
+   'Serenoa repens - Saw palmetto - elevated testosterone',
+   'Materia Medica', 500);
+
+  RAISE NOTICE 'Class 22 quiz: 50 questions inserted.';
+END $$;

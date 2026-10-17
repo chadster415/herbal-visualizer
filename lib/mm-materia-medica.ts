@@ -1519,4 +1519,10 @@ export const MM_MATERIA_MEDICA: Record<number, string> = {
   drops to 3X a day, or inhaled from a saturated cotton ball.
   STATUS : W/LA`,
 
+  // Calamus (Acorus calamus)
+  2752: `ACORUS CALAMUS (Calamus, Sweet Flag)
+  RHIZOME/ROOT.  Tincture [FRESH 1:2,DRY 1:5,60% alcohol], 15-45 drops, to 4X
+  a day.  The dried leaves make a tasty simple tea.
+  STATUS : W/C`,
+
 };

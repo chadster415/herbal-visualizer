@@ -541,8 +541,7 @@ export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect,
               <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Filters</p>
               <div className="flex items-center gap-3">
                 <div className="flex flex-col gap-1 items-end">
-                  {userInventory !== undefined && (
-                    <label className="flex items-center gap-1.5 cursor-pointer select-none">
+                  {userInventory !== undefined && ( <label className="flex items-center gap-1.5 cursor-pointer select-none">
                       <input
                         type="checkbox"
                         checked={inStockOnly}

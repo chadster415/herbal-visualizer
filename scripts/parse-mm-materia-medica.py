@@ -303,7 +303,7 @@ SYNONYM_MAP = {
     # Older / alternate MM genus names → current DB entries
     'achyranthes':           [],
     'acorns calamus':        [],
-    'acorus calamus':        [],  # calamus — not in DB
+    'acorus calamus':        ['Acorus calamus'],  # calamus — added migration 378
     'aesculus hippocastanum':['aesculus hippocastanum'],
     'agropyron repens':      ['elymus repens'],   # old name for couch grass
     'allium sativum':        ['allium sativum'],

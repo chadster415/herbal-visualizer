@@ -510,7 +510,7 @@ If the herb is absent from MM, add the `[]` entry anyway so future runs don't ne
 
 ### 2. Stockley's Drug Interactions
 
-The PDF is at `/Users/chadarmstrong/Downloads/herbal_medicines_interactions-1.pdf`.
+The PDF is at `/Users/chadarmstrong/Library/Mobile Documents/com~apple~CloudDocs/Archive/Classes/Health and Plants/BHC/Apprenticeship/App/stockleys_herbal_medicines_interactions.pdf`.
 A pre-built herb→pages map (all 153 herb sections) is saved at `scripts/stockleys_herb_pages.json` — use this first before touching the PDF.
 
 **Step 1** — Check the map:
@@ -532,7 +532,7 @@ print(hits or 'not found')
 ```python
 import subprocess, os, glob
 
-PDF     = "/Users/chadarmstrong/Downloads/herbal_medicines_interactions-1.pdf"
+PDF     = "/Users/chadarmstrong/Library/Mobile Documents/com~apple~CloudDocs/Archive/Classes/Health and Plants/BHC/Apprenticeship/App/stockleys_herbal_medicines_interactions.pdf"
 herb_id = 999          # replace with the actual DB id
 pages   = [22, 23]     # from the JSON map entry
 out_dir = f"public/contraindications/{herb_id}"

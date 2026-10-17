@@ -107,4 +107,5 @@ export const CONTRAINDICATIONS: Record<number, number> = {
   2601: 8,  // Cannabis (Cannabis sativa)
   2629: 3,  // Andrographis (Andrographis paniculata)
   2749: 3,  // Cacao (Theobroma cacao)
+  2752: 1,  // Calamus (Acorus calamus)
 };
