@@ -143,15 +143,19 @@ ORDER BY h1.common_name;
 
 ```sql
 -- Always normalize: herb1_id = LEAST, herb2_id = GREATEST
+-- If the pair already exists, append the new class-note context to combined_summary
 INSERT INTO herbal.herb_pairs (herb1_id, herb2_id, source, combined_summary)
 VALUES (
   LEAST(herb1_id, herb2_id), GREATEST(herb1_id, herb2_id),
   'BHC Apprenticeship class notes',
   'Combined description of the pair and why they work together.'
 )
-ON CONFLICT (herb1_id, herb2_id) DO NOTHING;
+ON CONFLICT (herb1_id, herb2_id) DO UPDATE
+  SET combined_summary = herbal.herb_pairs.combined_summary
+                         || ' | BHC class notes: '
+                         || EXCLUDED.combined_summary;
 
--- Get the pair id after insert
+-- Get the pair id after upsert
 -- (herb_pair_indications and herb_pair_herb_properties have no UNIQUE constraint,
 --  so use WHERE NOT EXISTS for re-runnability)
 SELECT id INTO v_pair_id FROM herbal.herb_pairs
