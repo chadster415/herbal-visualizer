@@ -52,6 +52,7 @@ export interface HerbFilterPanelProps {
   onHerbSelect: (herbId: number) => void;
   onSystemSelect?: (systemId: number) => void;
   userInventory?: Map<number, InventoryEntry>;
+  isLoggedIn?: boolean;
 }
 
 // ─── Static filter option definitions ────────────────────────────────────────
@@ -200,9 +201,10 @@ const DEFAULT_SECTIONS = {
   sun: true,
   water: true,
   soilFertility: true,
+  myTags: true,
 };
 
-export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect, userInventory }: HerbFilterPanelProps) {
+export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect, userInventory, isLoggedIn }: HerbFilterPanelProps) {
   const [herbs, setHerbs] = useState<HerbRow[]>([]);
   const [bodySystems, setBodySystems] = useState<BodySystem[]>([]);
   const [actions, setActions] = useState<Action[]>([]);
@@ -222,6 +224,10 @@ export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect,
   const [inStockOnly, setInStockOnly] = useState(false);
   const [includeWithRecipes, setIncludeWithRecipes] = useState(false);
   const [recipeHerbIds, setRecipeHerbIds] = useState<Set<number>>(new Set());
+
+  const [userTags, setUserTags] = useState<{ id: number; tag_text: string }[]>([]);
+  const [herbTagMap, setHerbTagMap] = useState<Map<number, Set<number>>>(new Map());
+  const [tagFilter, setTagFilter] = useState<Set<number>>(new Set());
 
   const [sectionsOpen, setSectionsOpen] = useState(DEFAULT_SECTIONS);
 
@@ -248,6 +254,15 @@ export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect,
   const filterNavRef   = useRef<HTMLDivElement>(null);
   const [filterScroll, setFilterScroll]   = useState({ up: false, down: false });
   const [resultsScroll, setResultsScroll] = useState({ up: false, down: false });
+  const [navScrollRight, setNavScrollRight] = useState(false);
+  const [navScrollLeft, setNavScrollLeft]   = useState(false);
+
+  function checkNavScroll() {
+    const el = filterNavRef.current;
+    if (!el) return;
+    setNavScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
+    setNavScrollLeft(el.scrollLeft > 4);
+  }
 
   const [filterPaneHeight, setFilterPaneHeight] = useState(240);
   const [filterPaneOpen, setFilterPaneOpen] = useState(true);
@@ -261,6 +276,11 @@ export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect,
   useEffect(() => {
     if (isOpen && !loaded.current) {
       loaded.current = true;
+      requestAnimationFrame(() => {
+        if (bodyRef.current) {
+          setFilterPaneHeight(Math.round(bodyRef.current.getBoundingClientRect().height / 3));
+        }
+      });
       fetchData();
     }
   }, [isOpen]);
@@ -270,9 +290,39 @@ export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect,
       requestAnimationFrame(() => {
         checkPaneScroll(filterPaneRef.current, setFilterScroll);
         checkPaneScroll(resultsPaneRef.current, setResultsScroll);
+        checkNavScroll();
       });
     }
   }, [loading]);
+
+  useEffect(() => {
+    if (!isLoggedIn || !isOpen) {
+      if (!isLoggedIn) {
+        setUserTags([]);
+        setHerbTagMap(new Map());
+        setTagFilter(new Set());
+      }
+      return;
+    }
+    async function fetchUserTags() {
+      const [tagsRes, assignRes] = await Promise.all([
+        supabase.from('user_tags').select('id, tag_text').order('tag_text'),
+        supabase.from('user_herb_tag_assignments').select('herb_id, tag_id'),
+      ]);
+      const map = new Map<number, Set<number>>();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      for (const row of (assignRes.data ?? []) as any[]) {
+        if (!map.has(row.herb_id)) map.set(row.herb_id, new Set());
+        map.get(row.herb_id)!.add(row.tag_id);
+      }
+      // only show tags that are assigned to at least one herb
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const assignedTagIds = new Set((assignRes.data ?? []).map((r: any) => r.tag_id));
+      setUserTags(((tagsRes.data ?? []) as { id: number; tag_text: string }[]).filter((t) => assignedTagIds.has(t.id)));
+      setHerbTagMap(map);
+    }
+    fetchUserTags();
+  }, [isLoggedIn, isOpen]);
 
   async function fetchData() {
     setLoading(true);
@@ -329,7 +379,7 @@ export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect,
   const hasFilters =
     tempFilter.size + moistureFilter.size + toneFilter.size + tasteFilter.size +
     systemFilter.size + actionFilter.size + menstruumFilter.size +
-    sunFilter.size + waterFilter.size + soilFilter.size > 0;
+    sunFilter.size + waterFilter.size + soilFilter.size + tagFilter.size > 0;
 
   function matchesMenstruum(m: HerbMenstruumData | null, type: MenstruumType): boolean {
     if (!m) return false;
@@ -357,9 +407,13 @@ export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect,
       if (sunFilter.size > 0        && (!h.sun_requirement || !sunFilter.has(h.sun_requirement)))   return false;
       if (waterFilter.size > 0      && (!h.water_need      || !waterFilter.has(h.water_need)))      return false;
       if (soilFilter.size > 0       && (!h.soil_fertility  || !soilFilter.has(h.soil_fertility)))   return false;
+      if (tagFilter.size > 0) {
+        const herbTags = herbTagMap.get(h.id) ?? new Set<number>();
+        if (![...tagFilter].every((id) => herbTags.has(id))) return false;
+      }
       return true;
     });
-  }, [herbs, inStockOnly, includeWithRecipes, recipeHerbIds, userInventory, tempFilter, moistureFilter, toneFilter, tasteFilter, systemFilter, actionFilter, menstruumFilter, sunFilter, waterFilter, soilFilter]);
+  }, [herbs, inStockOnly, includeWithRecipes, recipeHerbIds, userInventory, tempFilter, moistureFilter, toneFilter, tasteFilter, systemFilter, actionFilter, menstruumFilter, sunFilter, waterFilter, soilFilter, tagFilter, herbTagMap]);
 
   useEffect(() => {
     requestAnimationFrame(() => checkPaneScroll(resultsPaneRef.current, setResultsScroll));
@@ -390,6 +444,7 @@ export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect,
     setSunFilter(new Set());
     setWaterFilter(new Set());
     setSoilFilter(new Set());
+    setTagFilter(new Set());
   }
 
   return (
@@ -520,6 +575,15 @@ export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect,
                 <span className="mr-1">{opt.emoji}</span>{opt.label}
               </button>
             ))}
+            {userTags.filter((t) => tagFilter.has(t.id)).map((t) => (
+              <button
+                key={t.id}
+                onClick={() => setTagFilter((prev) => toggle(prev, t.id))}
+                className="border rounded-full px-3 py-1 text-sm font-medium transition-all bg-rose-200 border-rose-400 text-rose-900"
+              >
+                {t.tag_text}
+              </button>
+            ))}
             <p className="text-sm text-gray-500">
               {hasFilters
                 ? `${filteredHerbs.length} ${filteredHerbs.length === 1 ? 'herb matches' : 'herbs match'}`
@@ -540,7 +604,7 @@ export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect,
             <div className="flex items-center justify-between px-5 py-2 border-b border-gray-100">
               <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Filters</p>
               <div className="flex items-center gap-3">
-                <div className="flex flex-col gap-1 items-end">
+                <div className="flex flex-col gap-1 items-start">
                   {userInventory !== undefined && ( <label className="flex items-center gap-1.5 cursor-pointer select-none">
                       <input
                         type="checkbox"
@@ -580,30 +644,44 @@ export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect,
               className="px-5 pb-4 overflow-y-auto rounded-xl"
               style={{ height: filterPaneHeight - 44 }}
             >
-              <div
-                ref={filterNavRef}
-                className="sticky top-0 z-10 bg-white border-b border-gray-100 -mx-5 px-3 py-2 mb-4 flex gap-1.5 overflow-x-auto"
-              >
-                {([
-                  ['temperature',   'Temp'],
-                  ['moisture',      'Moisture'],
-                  ['tone',          'Tone'],
-                  ['taste',         'Taste'],
-                  ['bodySystem',    'System'],
-                  ['action',        'Action'],
-                  ['menstruum',     'Menstruum'],
-                  ['sun',           'Sun'],
-                  ['water',         'Water'],
-                  ['soilFertility', 'Soil'],
-                ] as [keyof typeof DEFAULT_SECTIONS, string][]).map(([key, label]) => (
-                  <button
-                    key={key}
-                    onClick={() => scrollToSection(key)}
-                    className="shrink-0 text-xs px-2.5 py-1 rounded-full border border-gray-200 bg-gray-50 text-gray-600 hover:bg-gray-100 hover:border-gray-300 transition-colors"
-                  >
-                    {label}
-                  </button>
-                ))}
+              <div className="sticky top-0 z-10 bg-white border-b border-gray-100 -mx-5 mb-4 relative">
+                <div
+                  ref={filterNavRef}
+                  onScroll={checkNavScroll}
+                  className="px-3 py-2 flex gap-1.5 overflow-x-auto"
+                >
+                  {([
+                    ['temperature',   'Temp'],
+                    ['moisture',      'Moisture'],
+                    ['tone',          'Tone'],
+                    ['taste',         'Taste'],
+                    ['bodySystem',    'System'],
+                    ['action',        'Action'],
+                    ['menstruum',     'Menstruum'],
+                    ['sun',           'Sun'],
+                    ['water',         'Water'],
+                    ['soilFertility', 'Soil'],
+                    ...(isLoggedIn && userTags.length > 0 ? [['myTags', 'My Tags']] : []),
+                  ] as [keyof typeof DEFAULT_SECTIONS, string][]).map(([key, label]) => (
+                    <button
+                      key={key}
+                      onClick={() => scrollToSection(key)}
+                      className="shrink-0 text-xs px-2.5 py-1 rounded-full border border-gray-200 bg-gray-50 text-gray-600 hover:bg-gray-100 hover:border-gray-300 transition-colors"
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+                <div className={`absolute left-0 top-0 bottom-0 w-10 pointer-events-none flex items-center justify-start pl-2 bg-gradient-to-r from-white via-white/80 to-transparent transition-opacity duration-200 ${navScrollLeft ? 'opacity-100' : 'opacity-0'}`}>
+                  <svg className="w-4 h-4 text-gray-400 drop-shadow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                </div>
+                <div className={`absolute right-0 top-0 bottom-0 w-10 pointer-events-none flex items-center justify-end pr-2 bg-gradient-to-l from-white via-white/80 to-transparent transition-opacity duration-200 ${navScrollRight ? 'opacity-100' : 'opacity-0'}`}>
+                  <svg className="w-4 h-4 text-gray-400 drop-shadow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </div>
               </div>
               <div className="space-y-5">
 
@@ -820,6 +898,30 @@ export function HerbFilterPanel({ isOpen, onClose, onHerbSelect, onSystemSelect,
                   </div>
                 )}
               </div>
+
+              {/* My Tags */}
+              {isLoggedIn && userTags.length > 0 && (
+                <div ref={(el) => { sectionRefs.current.myTags = el; }}>
+                  <SectionHeader label="My Tags" open={sectionsOpen.myTags} onToggle={() => toggleSection('myTags')} />
+                  {sectionsOpen.myTags && (
+                    <div className="flex flex-wrap gap-2">
+                      {userTags.map((tag) => (
+                        <button
+                          key={tag.id}
+                          onClick={() => setTagFilter((prev) => toggle(prev, tag.id))}
+                          className={`border rounded-full px-3 py-1 text-sm font-medium transition-all ${
+                            tagFilter.has(tag.id)
+                              ? 'bg-rose-200 border-rose-400 text-rose-900'
+                              : 'bg-rose-50 border-rose-200 text-rose-700 hover:bg-rose-100'
+                          }`}
+                        >
+                          {tag.tag_text}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
 
               </div>{/* end space-y-5 */}
             </div>

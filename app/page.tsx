@@ -821,6 +821,7 @@ export default function Home() {
           pushAndNavigate({ viewMode: 'system', selectedHerbId: null, selectedActionId: null, selectedSystemId: systemId, selectedDisorderId: null });
         }}
         userInventory={userInventory}
+        isLoggedIn={isLoggedIn}
       />
       <HelpModal isOpen={helpOpen} onClose={() => setHelpOpen(false)} />
       <LoginModal isOpen={loginOpen} onClose={() => setLoginOpen(false)} />

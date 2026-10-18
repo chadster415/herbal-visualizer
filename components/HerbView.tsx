@@ -384,6 +384,7 @@ function HerbDetailPanel({
 }: HerbDetailPanelProps) {
   const [alternatesOpen, setAlternatesOpen] = useState(false);
   const [sectionsOpen, setSectionsOpen] = useState({
+    tags: true,
     primaryActions: true, secondaryActions: true,
     constituentProfile: true, constituents: true, disorders: true, pairings: true,
     contraindications: true, mmMateriaMedica: true, herbContraindications: true,
@@ -405,16 +406,31 @@ function HerbDetailPanel({
   const [tooltipPos, setTooltipPos] = useState<{ x: number; y: number } | null>(null);
   const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const [userAllTags, setUserAllTags] = useState<{ id: number; tag_text: string }[]>([]);
+  const [herbTagIds, setHerbTagIds] = useState<Set<number>>(new Set());
+  const [tagInputOpen, setTagInputOpen] = useState(false);
+  const [tagInputText, setTagInputText] = useState('');
+  const [tagSuggestionIndex, setTagSuggestionIndex] = useState(-1);
+  const [tagSaving, setTagSaving] = useState(false);
+  const [editingTagId, setEditingTagId] = useState<number | null>(null);
+  const [editingTagText, setEditingTagText] = useState('');
+  const tagInputRef = useRef<HTMLInputElement>(null);
+
   const monographDropdownRef = useRef<HTMLDivElement>(null);
   const sectionRefs = useRef<Partial<Record<keyof typeof sectionsOpen, HTMLDivElement | null>>>({});
 
   // Reset per-herb UI state when the herb changes
   useEffect(() => {
-    setSectionsOpen({ primaryActions: true, secondaryActions: true, constituentProfile: true, constituents: true, disorders: true, pairings: true, contraindications: true, mmMateriaMedica: true, herbContraindications: true, classNotes: true, sourceNotes: true, recipes: true, stock: true });
+    setSectionsOpen({ tags: true, primaryActions: true, secondaryActions: true, constituentProfile: true, constituents: true, disorders: true, pairings: true, contraindications: true, mmMateriaMedica: true, herbContraindications: true, classNotes: true, sourceNotes: true, recipes: true, stock: true });
     setAlternatesOpen(false);
     setHerbRecipes([]);
     setHoveredConstituentId(null);
     setTooltipPos(null);
+    setHerbTagIds(new Set());
+    setTagInputOpen(false);
+    setTagInputText('');
+    setTagSuggestionIndex(-1);
+    setEditingTagId(null);
   }, [herb.id]);
 
   useEffect(() => {
@@ -451,6 +467,76 @@ function HerbDetailPanel({
         setHerbRecipes(refs);
       });
   }, [herb.id]);
+
+  useEffect(() => {
+    if (!isLoggedIn) return;
+    Promise.all([
+      supabase.from('user_tags').select('id, tag_text').order('tag_text'),
+      supabase.from('user_herb_tag_assignments').select('tag_id').eq('herb_id', herb.id),
+    ]).then(([tagsRes, assignRes]) => {
+      setUserAllTags((tagsRes.data ?? []) as { id: number; tag_text: string }[]);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      setHerbTagIds(new Set((assignRes.data ?? []).map((a: any) => a.tag_id)));
+    });
+  }, [herb.id, isLoggedIn]);
+
+  async function addTag(text: string) {
+    const trimmed = text.trim();
+    if (!trimmed || tagSaving) return;
+    setTagSaving(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { setTagSaving(false); return; }
+    const existing = userAllTags.find((t) => t.tag_text.toLowerCase() === trimmed.toLowerCase());
+    let tagId: number;
+    if (existing) {
+      tagId = existing.id;
+    } else {
+      const { data, error } = await supabase
+        .from('user_tags')
+        .insert({ user_id: user.id, tag_text: trimmed })
+        .select('id')
+        .single();
+      if (error || !data) { setTagSaving(false); return; }
+      tagId = (data as { id: number }).id;
+      setUserAllTags((prev) =>
+        [...prev, { id: tagId, tag_text: trimmed }].sort((a, b) => a.tag_text.localeCompare(b.tag_text))
+      );
+    }
+    if (!herbTagIds.has(tagId)) {
+      const { error: assignError } = await supabase
+        .from('user_herb_tag_assignments')
+        .insert({ user_id: user.id, herb_id: herb.id, tag_id: tagId });
+      if (!assignError) setHerbTagIds((prev) => new Set([...prev, tagId]));
+    }
+    setTagInputOpen(false);
+    setTagInputText('');
+    setTagSuggestionIndex(-1);
+    setTagSaving(false);
+  }
+
+  async function removeTag(tagId: number) {
+    await supabase
+      .from('user_herb_tag_assignments')
+      .delete()
+      .eq('herb_id', herb.id)
+      .eq('tag_id', tagId);
+    setHerbTagIds((prev) => { const next = new Set(prev); next.delete(tagId); return next; });
+  }
+
+  async function renameTag(tagId: number, newText: string) {
+    const trimmed = newText.trim();
+    setEditingTagId(null);
+    if (!trimmed) return;
+    const { error } = await supabase
+      .from('user_tags')
+      .update({ tag_text: trimmed, updated_at: new Date().toISOString() })
+      .eq('id', tagId);
+    if (!error) {
+      setUserAllTags((prev) =>
+        prev.map((t) => (t.id === tagId ? { ...t, tag_text: trimmed } : t))
+      );
+    }
+  }
 
   const scrollToSection = (key: keyof typeof sectionsOpen) => {
     setSectionsOpen((prev) => ({ ...prev, [key]: true }));
@@ -629,6 +715,12 @@ function HerbDetailPanel({
     }
   }
 
+  const tagSuggestions = tagInputOpen && tagInputText.trim()
+    ? userAllTags.filter(
+        (t) => !herbTagIds.has(t.id) && t.tag_text.toLowerCase().includes(tagInputText.toLowerCase())
+      )
+    : [];
+
   return (
     <div onClick={() => { if (hoveredConstituentId != null) { setHoveredConstituentId(null); setTooltipPos(null); } }}>
       {/* Header */}
@@ -803,6 +895,7 @@ function HerbDetailPanel({
       {/* Section nav + expand/collapse all */}
       <div className="flex flex-wrap gap-1.5 mb-2 text-xs">
         {[
+          ...(isLoggedIn ? [{ key: 'tags' as const, label: 'My Tags', pink: false }] : []),
           { key: 'primaryActions' as const, label: 'Primary Actions', pink: false },
           ...(herb.herb_secondary_actions.length > 0 ? [{ key: 'secondaryActions' as const, label: 'Secondary Actions', pink: false }] : []),
           ...((herb.herb_source_notes?.length ?? 0) > 0 ? [{ key: 'sourceNotes' as const, label: 'Clinical References', pink: false }] : []),
@@ -836,7 +929,7 @@ function HerbDetailPanel({
         <button
           onClick={() => {
             const allOpen = Object.values(sectionsOpen).every(Boolean);
-            setSectionsOpen({ primaryActions: !allOpen, secondaryActions: !allOpen, constituentProfile: !allOpen, constituents: !allOpen, disorders: !allOpen, pairings: !allOpen, contraindications: !allOpen, mmMateriaMedica: !allOpen, herbContraindications: !allOpen, classNotes: !allOpen, sourceNotes: !allOpen, recipes: !allOpen, stock: !allOpen });
+            setSectionsOpen({ tags: !allOpen, primaryActions: !allOpen, secondaryActions: !allOpen, constituentProfile: !allOpen, constituents: !allOpen, disorders: !allOpen, pairings: !allOpen, contraindications: !allOpen, mmMateriaMedica: !allOpen, herbContraindications: !allOpen, classNotes: !allOpen, sourceNotes: !allOpen, recipes: !allOpen, stock: !allOpen });
           }}
           className="flex items-center gap-1.5 px-3 py-1 rounded-full border border-gray-300 text-xs text-gray-500 hover:border-gray-400 hover:text-gray-700 transition-colors"
         >
@@ -846,6 +939,118 @@ function HerbDetailPanel({
           {Object.values(sectionsOpen).every(Boolean) ? 'Collapse all' : 'Expand all'}
         </button>
       </div>
+
+      {/* My Tags */}
+      {isLoggedIn && (
+        <div className="mb-6" ref={(el) => { sectionRefs.current.tags = el; }}>
+          <SectionHeader title="My Tags" open={sectionsOpen.tags} onToggle={() => toggleSection('tags')} />
+          {sectionsOpen.tags && (
+            <div className="flex flex-wrap gap-2 items-center">
+              {[...herbTagIds].map((tagId) => {
+                const tag = userAllTags.find((t) => t.id === tagId);
+                if (!tag) return null;
+                if (editingTagId === tagId) {
+                  return (
+                    <div key={tagId} className="flex items-center bg-rose-50 border border-rose-300 rounded-full px-3 py-1">
+                      <input
+                        autoFocus
+                        value={editingTagText}
+                        onChange={(e) => setEditingTagText(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') renameTag(tagId, editingTagText);
+                          if (e.key === 'Escape') setEditingTagId(null);
+                        }}
+                        onBlur={() => renameTag(tagId, editingTagText)}
+                        className="text-sm text-rose-800 bg-transparent outline-none w-28"
+                      />
+                    </div>
+                  );
+                }
+                return (
+                  <span key={tagId} className="flex items-center gap-1 bg-rose-50 border border-rose-200 rounded-full pl-3 pr-1.5 py-1">
+                    <span className="text-sm text-rose-800">{tag.tag_text}</span>
+                    <button
+                      onClick={() => { setEditingTagId(tagId); setEditingTagText(tag.tag_text); }}
+                      className="p-0.5 rounded-full hover:bg-rose-100 text-rose-300 hover:text-rose-600 transition-colors"
+                      title="Rename tag everywhere"
+                    >
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                      </svg>
+                    </button>
+                    <button
+                      onClick={() => removeTag(tagId)}
+                      className="p-0.5 rounded-full hover:bg-rose-100 text-rose-300 hover:text-rose-600 transition-colors"
+                      title="Remove from this herb"
+                    >
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 12H6" />
+                      </svg>
+                    </button>
+                  </span>
+                );
+              })}
+
+              {tagInputOpen ? (
+                <div className="relative">
+                  <input
+                    ref={tagInputRef}
+                    autoFocus
+                    value={tagInputText}
+                    onChange={(e) => { setTagInputText(e.target.value); setTagSuggestionIndex(-1); }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'ArrowDown') {
+                        e.preventDefault();
+                        setTagSuggestionIndex((i) => Math.min(i + 1, tagSuggestions.length - 1));
+                      } else if (e.key === 'ArrowUp') {
+                        e.preventDefault();
+                        setTagSuggestionIndex((i) => Math.max(i - 1, -1));
+                      } else if (e.key === 'Enter') {
+                        const sel = tagSuggestions[tagSuggestionIndex];
+                        addTag(sel ? sel.tag_text : tagInputText);
+                      } else if (e.key === 'Escape') {
+                        setTagInputOpen(false);
+                        setTagInputText('');
+                        setTagSuggestionIndex(-1);
+                      }
+                    }}
+                    placeholder="Tag name…"
+                    disabled={tagSaving}
+                    className="px-3 py-1 text-sm border border-rose-300 rounded-full focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-200 w-32 disabled:opacity-50"
+                  />
+                  {tagSuggestions.length > 0 && (
+                    <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-[140px]">
+                      {tagSuggestions.map((t, idx) => (
+                        <button
+                          key={t.id}
+                          onMouseDown={(e) => { e.preventDefault(); addTag(t.tag_text); }}
+                          className={`w-full text-left px-3 py-1.5 text-sm first:rounded-t-lg last:rounded-b-lg transition-colors ${
+                            idx === tagSuggestionIndex
+                              ? 'bg-rose-50 text-rose-800'
+                              : 'text-gray-700 hover:bg-gray-50'
+                          }`}
+                        >
+                          {t.tag_text}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <button
+                  onClick={() => setTagInputOpen(true)}
+                  className="flex items-center gap-1 px-3 py-1 text-sm text-rose-400 border border-dashed border-rose-300 rounded-full hover:border-rose-400 hover:text-rose-600 transition-colors"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  Add tag
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Primary Actions & Body Systems */}
       <div className="mb-6" ref={(el) => { sectionRefs.current.primaryActions = el; }}>

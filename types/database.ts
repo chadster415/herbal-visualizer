@@ -372,3 +372,19 @@ export interface FlowerEssenceCategoryWithEntries extends FlowerEssenceCategory 
   see_also_from: string[];
   see_also_to: string[];
 }
+
+export interface UserTag {
+  id: number;
+  user_id: string;
+  tag_text: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface UserHerbTagAssignment {
+  id: number;
+  user_id: string;
+  herb_id: number;
+  tag_id: number;
+  created_at: string;
+}
