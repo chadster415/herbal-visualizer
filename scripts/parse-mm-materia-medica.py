@@ -28,6 +28,7 @@ SYNONYM_MAP = {
     'alpinia':               ['rhizoma alpiniae officinari'],  # galangal rhizome TCM
     'althea':                ['althaea officinalis'],
     'andrographis paniculata': [],  # confirmed absent from MM
+    'angelica dahurica':     [],  # Dahhurian Angelica — confirmed absent from MM
     'azadirachta':            [],  # Neem — confirmed absent from MM
     'angelica':              ['angelica archangelica'],
     'apocynum cannabinum':   ['apocynum cannabinum'],
@@ -57,6 +58,7 @@ SYNONYM_MAP = {
     'ceanothus':             ['ceanothus americanus'],
     'centaurium':            ['centaurium erythraea'],
     'cetraria':              ['cetraria islandica'],
+    'chaga':                 [],  # Inonotus obliquus — confirmed absent from MM
     'chelidonium':           ['chelidonium majus'],
     'chelone':               ['chelone glabra'],
     'chionanthus':           ['chionanthus virginicus'],
@@ -80,6 +82,7 @@ SYNONYM_MAP = {
     'curcuma':               ['curcuma longa'],
     'cynara':                ['cynara scolymus'],
     'cypripedium':           [],  # lady slipper — not in DB
+    'dahhurian angelica':    [],  # Angelica dahurica — confirmed absent from MM
     'daucus carota':         ['daucus carota'],
     'dicentra formosa':      ['dicentra formosa'],  # Pacific Bleeding Heart
     'dioscorea':             ['dioscorea villosa'],
@@ -127,6 +130,7 @@ SYNONYM_MAP = {
     'hypericum':             ['hypericum perforatum'],
     'hyssopus':              ['hyssopus officinalis'],
     'ilex paraguayensis':    ['ilex paraguayensis'],
+    'inonotus obliquus':     [],  # Chaga — confirmed absent from MM
     'inula':                 ['inula helenium'],
     'iris versicolor':       ['iris versicolor'],
     'juglans cinerea':       ['juglans cinerea'],

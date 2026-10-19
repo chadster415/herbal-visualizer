@@ -1235,7 +1235,7 @@ export const MM_MATERIA_MEDICA: Record<number, string> = {
   to  4X a day.  Cold Infusion, 1-2 ounces. Capsules, #00, 2-3 at a time.
   STATUS : W/C`,
 
-  // Nutmeg (Semen Myristicae Fragrantis)
+  // Nutmeg (Myristica fragrans)
   1595: `MYRISTICA  (Nutmeg, Mace)
   SEED.  Tincture [1:5, 75% alcohol] 5-10 drops.
   STATUS : C`,
