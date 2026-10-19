@@ -79,6 +79,22 @@ export default function Home() {
         e.preventDefault();
         setHerbFilterOpen(true);
       }
+      if (e.key === 'Escape') {
+        setFlashcardsOpen(false);
+        setEnergeticsQuizOpen(false);
+        setHerbFilterOpen(false);
+        setFormulaBuilderOpen(false);
+        setDosingCalculatorOpen(false);
+        setDoubleExtractionOpen(false);
+        setMenstruumCalculatorOpen(false);
+        setIntakeFormOpen(false);
+        setBodyDiagramOpen(false);
+        setHelpOpen(false);
+        setFlowerEssenceQuizOpen(false);
+        setClassQuizOpen(false);
+        setLoginOpen(false);
+        setOpenDropdown(null);
+      }
     }
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);

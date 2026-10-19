@@ -34,6 +34,7 @@ export interface Herb {
   soil_fertility?: SoilFertility | null;
   ups_status?: 'critical' | 'at_risk' | 'in_review' | null;
   ups_url?: string | null;
+  class_notes_synopsis?: string | null;
 }
 
 export interface PrimaryAction {

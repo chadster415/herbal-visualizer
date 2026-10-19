@@ -899,7 +899,7 @@ function HerbDetailPanel({
           { key: 'primaryActions' as const, label: 'Primary Actions', pink: false },
           ...(herb.herb_secondary_actions.length > 0 ? [{ key: 'secondaryActions' as const, label: 'Secondary Actions', pink: false }] : []),
           ...((herb.herb_source_notes?.length ?? 0) > 0 ? [{ key: 'sourceNotes' as const, label: 'Clinical References', pink: false }] : []),
-          ...(classNoteSnippets.length > 0 ? [{ key: 'classNotes' as const, label: 'Class Notes', pink: false }] : []),
+          ...((classNoteSnippets.length > 0 || !!herb.class_notes_synopsis) ? [{ key: 'classNotes' as const, label: 'Class Notes', pink: false }] : []),
           ...(profiles.length > 0 ? [{ key: 'constituentProfile' as const, label: 'Constituents', pink: false }] : []),
           ...(((herb.herb_constituents?.length ?? 0) > 0 || herb.herb_menstruum) ? [{ key: 'constituents' as const, label: 'General Constituents', pink: false }] : []),
           ...((((herb.disorder_action_herbs?.length ?? 0) > 0) || ((herb.disorder_specific_remedies?.length ?? 0) > 0)) ? [{ key: 'disorders' as const, label: 'Disorders', pink: false }] : []),
@@ -1187,11 +1187,19 @@ function HerbDetailPanel({
       )}
 
       {/* Class Notes */}
-      {classNoteSnippets.length > 0 && (
+      {(classNoteSnippets.length > 0 || !!herb.class_notes_synopsis) && (
         <div className="mb-6" ref={(el) => { sectionRefs.current.classNotes = el; }}>
           <SectionHeader title="Class Notes" open={sectionsOpen.classNotes} onToggle={() => toggleSection('classNotes')} />
           {sectionsOpen.classNotes && (
             <div className="pl-4 border-l-2 border-teal-100 space-y-2">
+              {herb.class_notes_synopsis && (
+                <div className="border border-teal-300 rounded-lg px-4 py-3 bg-teal-100/60">
+                  <p
+                    className="text-sm text-gray-800 leading-relaxed"
+                    dangerouslySetInnerHTML={{ __html: herb.class_notes_synopsis }}
+                  />
+                </div>
+              )}
               {classNoteSnippets.map((snippet) => (
                 <div key={snippet.id} className="border border-teal-200 rounded-lg px-4 py-3 bg-teal-50/50">
                   <p className="text-sm text-gray-800">{snippet.snippet_text}</p>
@@ -2526,6 +2534,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
                   }
                 } else if (e.key === 'Escape') {
                   setHighlightedIndex(-1);
+                  setSearchTerm('');
                 }
               }}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
