@@ -57,7 +57,7 @@ PGPASSWORD=postgres /opt/homebrew/Cellar/libpq/18.6/bin/psql -h 127.0.0.1 -p 543
   "SELECT id, common_name FROM herbal.herbs WHERE common_name ILIKE '%name%' ORDER BY is_tcm, common_name;"
 ```
 
-When a name doesn't match exactly, search with `ILIKE` and pick the non-TCM result (lower ID for ties). Common name mappings established so far:
+When a name doesn't match exactly, search with `ILIKE` and pick the non-TCM result (lower ID for ties). If still not found, try alternate botanical names, plant part names, or Latin genus — many herbs are stored under a less-common English name or a TCM name. Common name mappings established so far:
 
 | Snippet/synopsis name | DB common_name | ID |
 |---|---|---|
@@ -71,6 +71,10 @@ When a name doesn't match exactly, search with `ILIKE` and pick the non-TCM resu
 | Reishi | Reishi Mushroom | 11 |
 | Nettles | Nettle | 43 |
 | Marshmallow / Marshmallow Root | Marshmallow | 45 |
+| Goji berry / Goji | Wolfberry Fruit | 1548 |
+| Boswellia | Frankincense | 1597 |
+| Vitex | Chasteberry | 190 |
+| Baical Skullcap / Baikal Skullcap | Chinese Skullcap | 2274 |
 
 ---
 

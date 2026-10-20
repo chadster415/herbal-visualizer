@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { PairingsView } from './PairingsView';
 import { LinkIcon } from '@heroicons/react/24/outline';
 import { supabase } from '@/lib/supabase';
-import { EnergeticEmojis } from './EnergeticEmojis';
+import { EnergeticEmojis, PPBadge } from './EnergeticEmojis';
 import { InferredEnergeticsModal } from './InferredEnergeticsModal';
 import { InferredTasteModal } from './InferredTasteModal';
 import { ContraindicationsModal } from './ContraindicationsModal';
@@ -1095,7 +1095,7 @@ function HerbDetailPanel({
                                 <p className="text-sm text-gray-700 mt-1">{action.body_system_note}</p>
                               )}
                               {action.sources && (
-                                <span className="inline-block mt-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-100 text-amber-700 border border-amber-200">P&amp;P</span>
+                                <PPBadge className="mt-1" />
                               )}
                             </button>
                           ))}
@@ -1532,7 +1532,7 @@ function HerbDetailPanel({
                       <div className="flex items-center gap-2 font-semibold text-base text-blue-700 group-hover:text-blue-900 group-hover:underline transition-colors">
                         {item.disorder.name}
                         {item.ppRemedy && (
-                          <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-100 text-amber-700 border border-amber-200 no-underline">P&amp;P</span>
+                          <PPBadge />
                         )}
                       </div>
                       <div className="text-sm text-gray-600">{item.disorder.body_systems.name}</div>
@@ -1545,7 +1545,7 @@ function HerbDetailPanel({
                     )}
                     {item.ppRemedy && (
                       <div className="mt-1 mb-2 p-2 bg-amber-50 border border-amber-200 rounded">
-                        <span className="text-xs font-semibold text-amber-700">P&amp;P</span>
+                        <PPBadge />
                         <p className="text-sm text-gray-700 mt-1">{item.ppRemedy}</p>
                       </div>
                     )}

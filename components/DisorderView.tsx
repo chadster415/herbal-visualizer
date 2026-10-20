@@ -32,7 +32,7 @@ const SOLUBILITY_COLORS: Record<string, { bubble: string; name: string; dose: st
 const DEFAULT_SUPP_COLORS = { bubble: 'bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 hover:border-indigo-300', name: 'text-indigo-900', dose: 'text-indigo-600', note: 'text-indigo-500', category: 'text-indigo-400' };
 import { supabase } from '@/lib/supabase';
 import { TextPageLinks } from './TextPageLinks';
-import { EnergeticEmojis } from './EnergeticEmojis';
+import { EnergeticEmojis, PPBadge } from './EnergeticEmojis';
 import type {
   Disorder,
   DisorderNote,
@@ -647,7 +647,7 @@ export function DisorderView({ bodySystemId, onHerbClick, onActionClick, onSuppl
                         <div className="font-semibold text-gray-900">{item.herbs.common_name}{item.herbs.plant_part ? ` (${item.herbs.plant_part})` : ''}</div>
                         <div className="flex items-center gap-1 shrink-0">
                           {item.source_id === 1 && (
-                            <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-100 text-amber-700 border border-amber-200">P&amp;P</span>
+                            <PPBadge />
                           )}
                           <EnergeticEmojis temperature={item.herbs.temperature} moisture={item.herbs.moisture} tone={item.herbs.tone} temperatureInferred={item.herbs.temperature_inferred} moistureInferred={item.herbs.moisture_inferred} toneInferred={item.herbs.tone_inferred} className="text-sm leading-none" inStock={userInventory?.get(item.herbs.id)?.in_stock} inventoryNotes={userInventory?.get(item.herbs.id)?.notes} />
                         </div>

@@ -14,6 +14,18 @@ interface Props {
   inventoryNotes?: string;
 }
 
+export function PPBadge({ className }: { className?: string }) {
+  return (
+    <span className={`relative inline-block group/pp cursor-help${className ? ` ${className}` : ''}`}>
+      <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-100 text-amber-700 border border-amber-200">P&amp;P</span>
+      <span className="pointer-events-none absolute right-full top-1/2 -translate-y-1/2 mr-1.5 px-2 py-1 rounded bg-gray-800 text-white text-xs whitespace-nowrap opacity-0 group-hover/pp:opacity-100 transition-opacity z-[200]">
+        Priest &amp; Priest - Herbal Medication (1982)
+        <span className="absolute left-full top-1/2 -translate-y-1/2 border-4 border-transparent border-l-gray-800" />
+      </span>
+    </span>
+  );
+}
+
 function EmojiTip({ emoji, label, inferred }: { emoji: string; label: string; inferred?: boolean }) {
   return (
     <span className={`relative inline-block group/etip${inferred ? ' opacity-40' : ''}`}>

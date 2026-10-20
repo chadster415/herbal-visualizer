@@ -124,3 +124,5 @@ INSERT INTO herbal.herb_images (herb_id, image_key) VALUES (90, 'herb-images/90/
 INSERT INTO herbal.herb_images (herb_id, image_key) VALUES (190, 'herb-images/190/cdc29c1c-da88-4584-957c-7b05da138dd1.png') ON CONFLICT DO NOTHING;
 INSERT INTO herbal.herb_images (herb_id, image_key) VALUES (190, 'herb-images/190/1311866e-464e-416d-ab7b-30568b1bd08a.png') ON CONFLICT DO NOTHING;
 INSERT INTO herbal.herb_images (herb_id, image_key) VALUES (2746, 'herb-images/2746/c293ccae-bdc3-4d85-9a53-62087c542f05.png') ON CONFLICT DO NOTHING;
+INSERT INTO herbal.herb_images (herb_id, image_key) VALUES (2598, 'herb-images/2598/251fcb7b-d24d-4035-ab05-159d55404c44.png') ON CONFLICT DO NOTHING;
+INSERT INTO herbal.herb_images (herb_id, image_key) VALUES (2598, 'herb-images/2598/c9927693-5d40-40d8-b9e0-6e966cb43566.png') ON CONFLICT DO NOTHING;

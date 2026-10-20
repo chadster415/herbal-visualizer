@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import type { PrimaryAction, Herb, BodySystem, StrengthLevel } from '@/types/database';
-import { EnergeticEmojis } from './EnergeticEmojis';
+import { EnergeticEmojis, PPBadge } from './EnergeticEmojis';
 
 interface ActionDescription {
   id: number;
@@ -316,7 +316,7 @@ export function ActionView({ onHerbClick, onRecipeClick, selectedActionId, onAct
                               <span className="text-sm italic text-gray-600">{item.herb.latin_name}</span>
                               <div className="flex items-center gap-1 shrink-0">
                                 {item.source_id === 1 && (
-                                  <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-100 text-amber-700 border border-amber-200">P&amp;P</span>
+                                  <PPBadge />
                                 )}
                                 {item.strength && getStrengthBadge(item.strength) && (
                                   <span className={`text-xs font-semibold px-1.5 py-0.5 rounded ${getStrengthBadge(item.strength)}`}>
