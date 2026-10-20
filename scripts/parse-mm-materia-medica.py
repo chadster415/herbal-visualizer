@@ -250,6 +250,7 @@ SYNONYM_MAP = {
     'symphytum':             ['symphytum officinale'],
     'syzygium':              ['syzygium aromaticum'],
     'tabebuia':              ['tabebuia impetiginosa'],
+    'tagetes lucida':        [],  # Mexican Marigold — confirmed absent from MM
     'tanacetum parthenium':  ['tanacetum parthenium'],
     'tanacetum vulgare':     ['tanacetum vulgare'],
     'taraxacum':             ['taraxacum officinale'],
