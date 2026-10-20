@@ -1195,7 +1195,15 @@ function HerbDetailPanel({
               {herb.class_notes_synopsis && (
                 <div className="border border-teal-300 rounded-lg px-4 py-3 bg-teal-100/60">
                   <p
-                    className="text-sm text-gray-800 leading-relaxed"
+                    className="text-sm text-gray-800 leading-relaxed synopsis-text"
+                    onClick={(e) => {
+                      const anchor = (e.target as HTMLElement).closest('a[href]');
+                      if (!anchor) return;
+                      const match = (anchor.getAttribute('href') ?? '').match(/[?&]herb=(\d+)/);
+                      if (!match) return;
+                      e.preventDefault();
+                      onNavigateToHerb?.(Number(match[1]));
+                    }}
                     dangerouslySetInnerHTML={{ __html: herb.class_notes_synopsis }}
                   />
                 </div>

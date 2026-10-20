@@ -40,6 +40,7 @@ interface HerbSummary {
   latin_name: string;
   plant_part: string | null;
   synonyms: string[] | null;
+  class_notes_synopsis: string | null;
 }
 
 interface SupplementSummary {
@@ -126,7 +127,7 @@ export function ClassNotesAilmentView({
     setDetailLoading(true);
     Promise.all([
       herbIds.length > 0
-        ? supabase.from('herbs').select('id, common_name, latin_name, plant_part, synonyms').in('id', herbIds).order('common_name')
+        ? supabase.from('herbs').select('id, common_name, latin_name, plant_part, synonyms, class_notes_synopsis').in('id', herbIds).order('common_name')
         : Promise.resolve({ data: [] }),
       supplementIds.length > 0
         ? supabase.from('supplements').select('id, name, category').in('id', supplementIds).order('name')
@@ -335,6 +336,22 @@ export function ClassNotesAilmentView({
                       </div>
                       {isOpen && (
                         <div className="mt-3">
+                          {herb.class_notes_synopsis && (
+                            <div className="border border-teal-300 rounded-lg px-4 py-3 bg-teal-100/60 mb-3">
+                              <p
+                                className="text-sm text-gray-800 leading-relaxed synopsis-text"
+                                onClick={(e) => {
+                                  const anchor = (e.target as HTMLElement).closest('a[href]');
+                                  if (!anchor) return;
+                                  const match = (anchor.getAttribute('href') ?? '').match(/[?&]herb=(\d+)/);
+                                  if (!match) return;
+                                  e.preventDefault();
+                                  onHerbClick(Number(match[1]));
+                                }}
+                                dangerouslySetInnerHTML={{ __html: herb.class_notes_synopsis }}
+                              />
+                            </div>
+                          )}
                           <SnippetList snippets={snippets} highlightTerms={[herb.common_name, herb.latin_name, herb.latin_name.split(' ')[0], ...(herb.synonyms ?? [])]} />
                         </div>
                       )}

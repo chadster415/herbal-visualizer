@@ -69,7 +69,7 @@ export const TE_MATERIA_MEDICA: Record<number, { min: number; max: number }> = {
   109: { min: 10, max: 90 },  // Rosmarinus officinalis
   113: { min: 30, max: 90 },  // Horseradish (Armoracia rusticana)
   114: { min: 1, max: 5 },  // Arnica (Arnica montana)
-  118: { min: 30, max: 90 },  // Kelp (Fucus vesiculosus)
+  118: { min: 30, max: 90 },  // Bladderwrack (Fucus vesiculosus)
   119: { min: 8, max: 60 },  // Bayberry (Myrica cerifera)
   120: { min: 60, max: 120 },  // Parsley (Petroselinum crispum)
   121: { min: 60, max: 150 },  // Feverfew (Tanacetum parthenium)

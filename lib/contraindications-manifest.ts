@@ -41,7 +41,7 @@ export const CONTRAINDICATIONS: Record<number, number> = {
   91: 2,  // Fenugreek
   94: 1,  // Black haw
   108: 2,  // Aniseed
-  118: 2,  // Kelp
+  118: 2,  // Bladderwrack (Kelp)
   119: 1,  // Bayberry
   120: 3,  // Parsley
   121: 2,  // Feverfew
