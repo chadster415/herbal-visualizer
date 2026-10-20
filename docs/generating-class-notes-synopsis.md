@@ -75,6 +75,8 @@ When a name doesn't match exactly, search with `ILIKE` and pick the non-TCM resu
 | Boswellia | Frankincense | 1597 |
 | Vitex | Chasteberry | 190 |
 | Baical Skullcap / Baikal Skullcap | Chinese Skullcap | 2274 |
+| Iris versicolor / Blue Flag | Blue Flag | 31 |
+| Rose Hips / Rose Hip | Rose Hips | 849 |
 
 ---
 
