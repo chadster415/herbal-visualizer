@@ -77,6 +77,7 @@ When a name doesn't match exactly, search with `ILIKE` and pick the non-TCM resu
 | Baical Skullcap / Baikal Skullcap | Chinese Skullcap | 2274 |
 | Iris versicolor / Blue Flag | Blue Flag | 31 |
 | Rose Hips / Rose Hip | Rose Hips | 849 |
+| Baptisia | Wild Indigo | 23 |
 
 ---
 
