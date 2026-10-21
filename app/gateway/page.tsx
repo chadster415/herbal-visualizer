@@ -36,7 +36,7 @@ export default function GatewayPage() {
       />
 
       {error && (
-        <p className="text-sm text-red-500">Verification failed — please refresh and try again.</p>
+        <p className="text-sm text-red-500">Verification failed - please refresh and try again.</p>
       )}
     </div>
   )

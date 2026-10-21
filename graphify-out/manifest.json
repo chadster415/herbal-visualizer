@@ -1,0 +1,644 @@
+{
+  "app/api/disorder-images/route.ts": {
+    "mtime": 1788408842.585143,
+    "seen": 1792605101.726439,
+    "ast_hash": "8a3306e4a3778c4e4837cf6166217874",
+    "semantic_hash": "8a3306e4a3778c4e4837cf6166217874"
+  },
+  "app/api/health/route.ts": {
+    "mtime": 1788408842.5852306,
+    "seen": 1792605101.726442,
+    "ast_hash": "02ea8ebbc1211a616f1fcfd7fcdc65cb",
+    "semantic_hash": "02ea8ebbc1211a616f1fcfd7fcdc65cb"
+  },
+  "app/api/herb-image/[herbId]/confirm/route.ts": {
+    "mtime": 1788707854.3953671,
+    "seen": 1792605101.726444,
+    "ast_hash": "213ab03e46405c3749067a94f0a1e4ae",
+    "semantic_hash": "213ab03e46405c3749067a94f0a1e4ae"
+  },
+  "app/api/herb-image/[herbId]/route.ts": {
+    "mtime": 1788708133.0590534,
+    "seen": 1792605101.726445,
+    "ast_hash": "f11964a99e97a7d9530cc0c31244e4a5",
+    "semantic_hash": "f11964a99e97a7d9530cc0c31244e4a5"
+  },
+  "app/api/herb-image/presign/route.ts": {
+    "mtime": 1788707565.259163,
+    "seen": 1792605101.7264462,
+    "ast_hash": "ae156850cbaa9b6a19e4ebe8e2eea4fd",
+    "semantic_hash": "ae156850cbaa9b6a19e4ebe8e2eea4fd"
+  },
+  "app/api/monograph-links/route.ts": {
+    "mtime": 1788408842.5855932,
+    "seen": 1792605101.7264462,
+    "ast_hash": "075d173579259450ba553c4d64e5901b",
+    "semantic_hash": "075d173579259450ba553c4d64e5901b"
+  },
+  "app/api/recipe-image/[recipeId]/route.ts": {
+    "mtime": 1788882668.605914,
+    "seen": 1792605101.726447,
+    "ast_hash": "cae4d20160022bdaf6af4a778bd5b61a",
+    "semantic_hash": "cae4d20160022bdaf6af4a778bd5b61a"
+  },
+  "app/api/recipe-image/presign/route.ts": {
+    "mtime": 1788882658.2612417,
+    "seen": 1792605101.726448,
+    "ast_hash": "f16ec0c79c4fb218a84216d58102b6e8",
+    "semantic_hash": "f16ec0c79c4fb218a84216d58102b6e8"
+  },
+  "app/api/spoonacular/lookup/route.ts": {
+    "mtime": 1790458798.0251029,
+    "seen": 1792605101.726449,
+    "ast_hash": "ae618275e4b05d264fac117b32d5ddfe",
+    "semantic_hash": "ae618275e4b05d264fac117b32d5ddfe"
+  },
+  "app/api/verify-turnstile/route.ts": {
+    "mtime": 1788408842.5856915,
+    "seen": 1792605101.72645,
+    "ast_hash": "57adefd5070ccc273ab5a082f8922b3e",
+    "semantic_hash": "57adefd5070ccc273ab5a082f8922b3e"
+  },
+  "app/gateway/page.tsx": {
+    "mtime": 1788408842.5860405,
+    "seen": 1792605101.726451,
+    "ast_hash": "d5a77c0604b7c3271986c318e209a0c1",
+    "semantic_hash": "d5a77c0604b7c3271986c318e209a0c1"
+  },
+  "app/layout.tsx": {
+    "mtime": 1788408842.586222,
+    "seen": 1792605101.726451,
+    "ast_hash": "80199ae2d54e35b6cdad49b7de62a001",
+    "semantic_hash": "80199ae2d54e35b6cdad49b7de62a001"
+  },
+  "app/page.tsx": {
+    "mtime": 1792431797.5269384,
+    "seen": 1792605101.7264519,
+    "ast_hash": "834192e23fb0a366dc5b9e1df7d47b1f",
+    "semantic_hash": "834192e23fb0a366dc5b9e1df7d47b1f"
+  },
+  "components/ActionView.tsx": {
+    "mtime": 1792527718.1696339,
+    "seen": 1792605101.726453,
+    "ast_hash": "1ec9d21204c76e8917bcd2bcb288461c",
+    "semantic_hash": "1ec9d21204c76e8917bcd2bcb288461c"
+  },
+  "components/BodyDiagramModal.tsx": {
+    "mtime": 1788408842.5868058,
+    "seen": 1792605101.726454,
+    "ast_hash": "c70cea5a501ed73ad2289aa0611378bf",
+    "semantic_hash": "c70cea5a501ed73ad2289aa0611378bf"
+  },
+  "components/ClassNotesAilmentView.tsx": {
+    "mtime": 1792515112.5883567,
+    "seen": 1792605101.726454,
+    "ast_hash": "79157352dd077cecde3d3bda946c469b",
+    "semantic_hash": "79157352dd077cecde3d3bda946c469b"
+  },
+  "components/ClassQuizModal.tsx": {
+    "mtime": 1791938174.222518,
+    "seen": 1792605101.726455,
+    "ast_hash": "87bb22f05b20879c34992b12a909a7f4",
+    "semantic_hash": "87bb22f05b20879c34992b12a909a7f4"
+  },
+  "components/ContraindicationsModal.tsx": {
+    "mtime": 1788408842.5870967,
+    "seen": 1792605101.7264562,
+    "ast_hash": "04ddee9951f76aaccef54d3a1aa6172b",
+    "semantic_hash": "04ddee9951f76aaccef54d3a1aa6172b"
+  },
+  "components/DisorderView.tsx": {
+    "mtime": 1792527732.5500228,
+    "seen": 1792605101.726457,
+    "ast_hash": "22bc19b1d0a9357dff49818f8df744df",
+    "semantic_hash": "22bc19b1d0a9357dff49818f8df744df"
+  },
+  "components/DosingCalculatorModal.tsx": {
+    "mtime": 1788805950.6153817,
+    "seen": 1792605101.726457,
+    "ast_hash": "171020668f5e1b69466823db3c97aa85",
+    "semantic_hash": "171020668f5e1b69466823db3c97aa85"
+  },
+  "components/DoubleExtractionCalculatorModal.tsx": {
+    "mtime": 1788454764.3907688,
+    "seen": 1792605101.726458,
+    "ast_hash": "1793c1acb1fee364d5f6ff3966238ddb",
+    "semantic_hash": "1793c1acb1fee364d5f6ff3966238ddb"
+  },
+  "components/EnergeticEmojis.tsx": {
+    "mtime": 1792528003.290015,
+    "seen": 1792605101.7264588,
+    "ast_hash": "8280394f1c511430a5f44ae721f63733",
+    "semantic_hash": "8280394f1c511430a5f44ae721f63733"
+  },
+  "components/EnergeticsQuizModal.tsx": {
+    "mtime": 1788408842.587603,
+    "seen": 1792605101.72646,
+    "ast_hash": "be0cb82e4e929e2a6c67ca25e32bc8fa",
+    "semantic_hash": "be0cb82e4e929e2a6c67ca25e32bc8fa"
+  },
+  "components/FlashcardModal.tsx": {
+    "mtime": 1788408842.5876925,
+    "seen": 1792605101.726461,
+    "ast_hash": "514930d68712eff8dba1d826d9407972",
+    "semantic_hash": "514930d68712eff8dba1d826d9407972"
+  },
+  "components/FlowerEssenceDetail.tsx": {
+    "mtime": 1788408842.5877538,
+    "seen": 1792605101.726461,
+    "ast_hash": "a441cb8f8b1e7f6b2b6bf97d6dcfe425",
+    "semantic_hash": "a441cb8f8b1e7f6b2b6bf97d6dcfe425"
+  },
+  "components/FlowerEssenceQuizModal.tsx": {
+    "mtime": 1788408842.587872,
+    "seen": 1792605101.726462,
+    "ast_hash": "9ca573cde9b684a9aad8c83d35659fd8",
+    "semantic_hash": "9ca573cde9b684a9aad8c83d35659fd8"
+  },
+  "components/FormulaBuilderModal.tsx": {
+    "mtime": 1788408842.5880525,
+    "seen": 1792605101.726463,
+    "ast_hash": "cb7aabeecf76f9471c649686b775eb58",
+    "semantic_hash": "cb7aabeecf76f9471c649686b775eb58"
+  },
+  "components/FormulaMethodModal.tsx": {
+    "mtime": 1788408842.5882337,
+    "seen": 1792605101.726464,
+    "ast_hash": "e54220c35d461c2add4487e3aebfb455",
+    "semantic_hash": "e54220c35d461c2add4487e3aebfb455"
+  },
+  "components/HelpModal.tsx": {
+    "mtime": 1788408842.5883276,
+    "seen": 1792605101.726464,
+    "ast_hash": "1832ba90f3a711474e8a4e7340a088ac",
+    "semantic_hash": "1832ba90f3a711474e8a4e7340a088ac"
+  },
+  "components/HerbFilterPanel.tsx": {
+    "mtime": 1792341513.255726,
+    "seen": 1792605101.726465,
+    "ast_hash": "2fbc62f94115c4562087e63f9bcdc76e",
+    "semantic_hash": "2fbc62f94115c4562087e63f9bcdc76e"
+  },
+  "components/HerbImageUpload.tsx": {
+    "mtime": 1788708502.607295,
+    "seen": 1792605101.726466,
+    "ast_hash": "397be1c43d19056662bc8d9b6f5f079d",
+    "semantic_hash": "397be1c43d19056662bc8d9b6f5f079d"
+  },
+  "components/HerbView.tsx": {
+    "mtime": 1792527712.191318,
+    "seen": 1792605101.726466,
+    "ast_hash": "08aa3a061ddee3d7a4c2c8957a064914",
+    "semantic_hash": "08aa3a061ddee3d7a4c2c8957a064914"
+  },
+  "components/InferredEnergeticsModal.tsx": {
+    "mtime": 1788408842.588983,
+    "seen": 1792605101.7264671,
+    "ast_hash": "2315ceed520251a28a8cc75ec4e4a8c2",
+    "semantic_hash": "2315ceed520251a28a8cc75ec4e4a8c2"
+  },
+  "components/InferredTasteModal.tsx": {
+    "mtime": 1788408842.5892272,
+    "seen": 1792605101.726468,
+    "ast_hash": "72eaddb5e06024ce65545d3fa870bc06",
+    "semantic_hash": "72eaddb5e06024ce65545d3fa870bc06"
+  },
+  "components/IntakeFormModal.tsx": {
+    "mtime": 1788408842.5893946,
+    "seen": 1792605101.726469,
+    "ast_hash": "4e5b3a9871345b1e9c583a789d49c6f3",
+    "semantic_hash": "4e5b3a9871345b1e9c583a789d49c6f3"
+  },
+  "components/InventoryView.tsx": {
+    "mtime": 1788804694.756014,
+    "seen": 1792605101.726469,
+    "ast_hash": "e6a0fc2272df48055c992911024d2b05",
+    "semantic_hash": "e6a0fc2272df48055c992911024d2b05"
+  },
+  "components/LoginModal.tsx": {
+    "mtime": 1788408842.5894885,
+    "seen": 1792605101.72647,
+    "ast_hash": "09ac8a06e99ad8210a453284328e179f",
+    "semantic_hash": "09ac8a06e99ad8210a453284328e179f"
+  },
+  "components/MenstruumCalculatorModal.tsx": {
+    "mtime": 1790981474.938093,
+    "seen": 1792605101.726471,
+    "ast_hash": "5b10d2769bcd89016bfcd92b8a3ecb52",
+    "semantic_hash": "5b10d2769bcd89016bfcd92b8a3ecb52"
+  },
+  "components/PairingsView.tsx": {
+    "mtime": 1789145362.124286,
+    "seen": 1792605101.726472,
+    "ast_hash": "00a1c2041ca01f5fe970159bfbc9f372",
+    "semantic_hash": "00a1c2041ca01f5fe970159bfbc9f372"
+  },
+  "components/RecipeImageUpload.tsx": {
+    "mtime": 1788882697.9834497,
+    "seen": 1792605101.7264729,
+    "ast_hash": "360e99220e55fae410288037994ebd3d",
+    "semantic_hash": "360e99220e55fae410288037994ebd3d"
+  },
+  "components/RecipeView.tsx": {
+    "mtime": 1789150254.2538137,
+    "seen": 1792605101.7264729,
+    "ast_hash": "1fa6c0487823b3b04d115cfc24f71927",
+    "semantic_hash": "1fa6c0487823b3b04d115cfc24f71927"
+  },
+  "components/SoulConditionView.tsx": {
+    "mtime": 1788883869.2159898,
+    "seen": 1792605101.726474,
+    "ast_hash": "b12b6ded6fe41246905b2be669db7e03",
+    "semantic_hash": "b12b6ded6fe41246905b2be669db7e03"
+  },
+  "components/SupplementDetail.tsx": {
+    "mtime": 1788408842.5899365,
+    "seen": 1792605101.726475,
+    "ast_hash": "9cb2423cf8417f70192e835214a64c9d",
+    "semantic_hash": "9cb2423cf8417f70192e835214a64c9d"
+  },
+  "components/SystemView.tsx": {
+    "mtime": 1791741526.8323586,
+    "seen": 1792605101.726476,
+    "ast_hash": "ef91daf787e464d781b4f4dc824bc359",
+    "semantic_hash": "ef91daf787e464d781b4f4dc824bc359"
+  },
+  "components/TextPageLinks.tsx": {
+    "mtime": 1788408842.5901754,
+    "seen": 1792605101.7264771,
+    "ast_hash": "7ea76dbc255f9f660e9b38cc2d9d8209",
+    "semantic_hash": "7ea76dbc255f9f660e9b38cc2d9d8209"
+  },
+  "eslint.config.mjs": {
+    "mtime": 1788408842.591044,
+    "seen": 1792605101.7264771,
+    "ast_hash": "dfa1f5f6a7037bf39dc510f30b180002",
+    "semantic_hash": "dfa1f5f6a7037bf39dc510f30b180002"
+  },
+  "lib/contraindications-manifest.ts": {
+    "mtime": 1792515887.5325804,
+    "seen": 1792605101.726478,
+    "ast_hash": "5b1cd79976026c9ffcd1476802b8f594",
+    "semantic_hash": "5b1cd79976026c9ffcd1476802b8f594"
+  },
+  "lib/deepLink.ts": {
+    "mtime": 1790881083.382671,
+    "seen": 1792605101.726479,
+    "ast_hash": "fc04df3ecbc67a1110eb350b63cc35f3",
+    "semantic_hash": "fc04df3ecbc67a1110eb350b63cc35f3"
+  },
+  "lib/dh-materia-medica.ts": {
+    "mtime": 1788628301.7235467,
+    "seen": 1792605101.7264798,
+    "ast_hash": "ad7d56f9666d6fa14f400a039bc00b8a",
+    "semantic_hash": "ad7d56f9666d6fa14f400a039bc00b8a"
+  },
+  "lib/features.ts": {
+    "mtime": 1790791799.82469,
+    "seen": 1792605101.7264798,
+    "ast_hash": "d6b996384a1923d8fb1ec5d5b81b125f",
+    "semantic_hash": "d6b996384a1923d8fb1ec5d5b81b125f"
+  },
+  "lib/hote-materia-medica.ts": {
+    "mtime": 1789617570.2408931,
+    "seen": 1792605101.726481,
+    "ast_hash": "bb6fbf3ade1fb64912232a58103e4b7a",
+    "semantic_hash": "bb6fbf3ade1fb64912232a58103e4b7a"
+  },
+  "lib/mm-materia-medica.ts": {
+    "mtime": 1792436903.323633,
+    "seen": 1792605101.726482,
+    "ast_hash": "440167019d4c241ad7bc062a9478353d",
+    "semantic_hash": "440167019d4c241ad7bc062a9478353d"
+  },
+  "lib/supabase-auth.ts": {
+    "mtime": 1788408842.5917287,
+    "seen": 1792605101.726482,
+    "ast_hash": "113a2fe94f38d6f6265c6df4cfa3b8df",
+    "semantic_hash": "113a2fe94f38d6f6265c6df4cfa3b8df"
+  },
+  "lib/supabase-server.ts": {
+    "mtime": 1788408842.5918047,
+    "seen": 1792605101.7264829,
+    "ast_hash": "211e5da8953b34e0ac1df7bf77630ab2",
+    "semantic_hash": "211e5da8953b34e0ac1df7bf77630ab2"
+  },
+  "lib/supabase.ts": {
+    "mtime": 1788408842.5918775,
+    "seen": 1792605101.726484,
+    "ast_hash": "7822d1dea3c00d3245d8667eb57c32b7",
+    "semantic_hash": "7822d1dea3c00d3245d8667eb57c32b7"
+  },
+  "lib/te-materia-medica.ts": {
+    "mtime": 1792515884.072877,
+    "seen": 1792605101.726485,
+    "ast_hash": "5a59ed71ab3fc34470f39c47768dfcba",
+    "semantic_hash": "5a59ed71ab3fc34470f39c47768dfcba"
+  },
+  "middleware.ts": {
+    "mtime": 1788408842.5920503,
+    "seen": 1792605101.726485,
+    "ast_hash": "e5ae932185d663968df7de55959dde28",
+    "semantic_hash": "e5ae932185d663968df7de55959dde28"
+  },
+  "next.config.ts": {
+    "mtime": 1788408842.592131,
+    "seen": 1792605101.726486,
+    "ast_hash": "ca2ec9b9657e293c6d5c6cedec81a9c2",
+    "semantic_hash": "ca2ec9b9657e293c6d5c6cedec81a9c2"
+  },
+  "package.json": {
+    "mtime": 1788711812.3087113,
+    "seen": 1792605101.726487,
+    "ast_hash": "8c848f52958ff08c2667979411301c64",
+    "semantic_hash": "8c848f52958ff08c2667979411301c64"
+  },
+  "postcss.config.mjs": {
+    "mtime": 1788408842.5926888,
+    "seen": 1792605101.726488,
+    "ast_hash": "98a3dfdb108176f140d6a73ba3b9aad3",
+    "semantic_hash": "98a3dfdb108176f140d6a73ba3b9aad3"
+  },
+  "scripts/generate-action-descriptions-migration.ts": {
+    "mtime": 1788408843.729404,
+    "seen": 1792605101.726488,
+    "ast_hash": "8b1239a767f8f95769e064662724d950",
+    "semantic_hash": "8b1239a767f8f95769e064662724d950"
+  },
+  "scripts/generate-disorder-keywords.ts": {
+    "mtime": 1788408843.7294834,
+    "seen": 1792605101.726489,
+    "ast_hash": "c33e9d737d79542b35fb9f0b0b7a5ddc",
+    "semantic_hash": "c33e9d737d79542b35fb9f0b0b7a5ddc"
+  },
+  "scripts/generate_fes_synonyms.py": {
+    "mtime": 1788408843.72955,
+    "seen": 1792605101.72649,
+    "ast_hash": "cae44dec55ab7bee4201580bc225c3ad",
+    "semantic_hash": "cae44dec55ab7bee4201580bc225c3ad"
+  },
+  "scripts/import_flower_essences.py": {
+    "mtime": 1788408843.7296247,
+    "seen": 1792605101.726491,
+    "ast_hash": "52990d89159cf6c572209f14faa55a31",
+    "semantic_hash": "52990d89159cf6c572209f14faa55a31"
+  },
+  "scripts/ingest-secondary-actions.ts": {
+    "mtime": 1788408843.7298372,
+    "seen": 1792605101.726492,
+    "ast_hash": "2b052cb4c34c8bcbc2987878cf6d5d51",
+    "semantic_hash": "2b052cb4c34c8bcbc2987878cf6d5d51"
+  },
+  "scripts/parse-data.ts": {
+    "mtime": 1788408843.7301023,
+    "seen": 1792605101.726492,
+    "ast_hash": "dcb41f9d7e56342c625816d59c6a0916",
+    "semantic_hash": "dcb41f9d7e56342c625816d59c6a0916"
+  },
+  "scripts/parse-mm-materia-medica.py": {
+    "mtime": 1792510013.9842937,
+    "seen": 1792605101.726493,
+    "ast_hash": "e08b498fb09931f6b2a9ece1a810ba50",
+    "semantic_hash": "e08b498fb09931f6b2a9ece1a810ba50"
+  },
+  "scripts/restart-colima.sh": {
+    "mtime": 1788408843.7303052,
+    "seen": 1792605101.7264938,
+    "ast_hash": "29e6cadd98d42165273b5cada0965441",
+    "semantic_hash": "29e6cadd98d42165273b5cada0965441"
+  },
+  "scripts/stockleys_herb_pages.json": {
+    "mtime": 1788408843.730428,
+    "seen": 1792605101.726495,
+    "ast_hash": "0a7ea59decf3ea81f670add506d25111",
+    "semantic_hash": "0a7ea59decf3ea81f670add506d25111"
+  },
+  "scripts/sync-images-to-prod.sh": {
+    "mtime": 1788971710.056349,
+    "seen": 1792605101.726495,
+    "ast_hash": "f3e84f17e49f40a622a961a9ff833d78",
+    "semantic_hash": "f3e84f17e49f40a622a961a9ff833d78"
+  },
+  "setup.sh": {
+    "mtime": 1788408843.7304907,
+    "seen": 1792605101.726496,
+    "ast_hash": "badc4b24f7dab227ac2c0dfbb101a412",
+    "semantic_hash": "badc4b24f7dab227ac2c0dfbb101a412"
+  },
+  "tailwind.config.ts": {
+    "mtime": 1788408843.8043144,
+    "seen": 1792605101.726497,
+    "ast_hash": "56905d2463187f39b5b23e0831120ab9",
+    "semantic_hash": "56905d2463187f39b5b23e0831120ab9"
+  },
+  "terraform/.terraform.lock.hcl": {
+    "mtime": 1788408843.804426,
+    "seen": 1792605101.7264981,
+    "ast_hash": "d2fc68f7b81270ebb8a7f2cfecde1b1c",
+    "semantic_hash": "d2fc68f7b81270ebb8a7f2cfecde1b1c"
+  },
+  "terraform/main.tf": {
+    "mtime": 1788408843.8045013,
+    "seen": 1792605101.726499,
+    "ast_hash": "ed5baff173c986587db8278bc7c33f9f",
+    "semantic_hash": "ed5baff173c986587db8278bc7c33f9f"
+  },
+  "test-connection.mjs": {
+    "mtime": 1788408843.8045602,
+    "seen": 1792605101.726499,
+    "ast_hash": "3dbcca9700487b6fdbe1d5790099c4fe",
+    "semantic_hash": "3dbcca9700487b6fdbe1d5790099c4fe"
+  },
+  "tsconfig.json": {
+    "mtime": 1788408843.8046317,
+    "seen": 1792605101.7265,
+    "ast_hash": "f6d86cfb8bb4fede5ef7abc6bf1853c9",
+    "semantic_hash": "f6d86cfb8bb4fede5ef7abc6bf1853c9"
+  },
+  "tsconfig.scripts.json": {
+    "mtime": 1788408843.804694,
+    "seen": 1792605101.7265012,
+    "ast_hash": "72a45d2e983d09ea6b9be1b2ef24afc4",
+    "semantic_hash": "72a45d2e983d09ea6b9be1b2ef24afc4"
+  },
+  "types/database.ts": {
+    "mtime": 1792423588.1473658,
+    "seen": 1792605101.726502,
+    "ast_hash": "6a00d477f64eeca6c62aaee4fbb7dd35",
+    "semantic_hash": "6a00d477f64eeca6c62aaee4fbb7dd35"
+  },
+  "vercel.json": {
+    "mtime": 1788408843.8049257,
+    "seen": 1792605101.726502,
+    "ast_hash": "00535626cc43c9c63143d5c4911f78cd",
+    "semantic_hash": "00535626cc43c9c63143d5c4911f78cd"
+  },
+  "verify_data.sql": {
+    "mtime": 1788408843.80499,
+    "seen": 1792605101.726503,
+    "ast_hash": "c7bfc93f2e367d25259753640658b34c",
+    "semantic_hash": "c7bfc93f2e367d25259753640658b34c"
+  },
+  ".github/workflows/vercel-deploy.yml": {
+    "mtime": 1788408842.583555,
+    "seen": 1792605101.7265038,
+    "ast_hash": "ed89265c2c8b44eee2ae1e9413eb61ee",
+    "semantic_hash": "ed89265c2c8b44eee2ae1e9413eb61ee"
+  },
+  ".planning/phases/01-fuzzy-disorder-search/01-01-PLAN.md": {
+    "mtime": 1788408842.5838614,
+    "seen": 1792605101.726505,
+    "ast_hash": "271c1c1b518d3b546f301f4475dd6150",
+    "semantic_hash": "271c1c1b518d3b546f301f4475dd6150"
+  },
+  ".planning/phases/01-fuzzy-disorder-search/01-01-SUMMARY.md": {
+    "mtime": 1788408842.5839288,
+    "seen": 1792605101.726505,
+    "ast_hash": "660c1b6342d6e20ede1d3a777e5eae7b",
+    "semantic_hash": "660c1b6342d6e20ede1d3a777e5eae7b"
+  },
+  ".planning/phases/01-fuzzy-disorder-search/01-02-PLAN.md": {
+    "mtime": 1788408842.58403,
+    "seen": 1792605101.726506,
+    "ast_hash": "bdf256decf7d498b6b22768932a09aed",
+    "semantic_hash": "bdf256decf7d498b6b22768932a09aed"
+  },
+  ".planning/phases/01-fuzzy-disorder-search/01-02-SUMMARY.md": {
+    "mtime": 1788408842.5840893,
+    "seen": 1792605101.726507,
+    "ast_hash": "d7087daba7f1933f7c6e3fcb1b31753a",
+    "semantic_hash": "d7087daba7f1933f7c6e3fcb1b31753a"
+  },
+  ".planning/phases/01-fuzzy-disorder-search/01-03-PLAN.md": {
+    "mtime": 1788408842.5841753,
+    "seen": 1792605101.7265081,
+    "ast_hash": "2178f10a5895d5440e383f5782d36449",
+    "semantic_hash": "2178f10a5895d5440e383f5782d36449"
+  },
+  ".planning/phases/01-fuzzy-disorder-search/01-03-SUMMARY.md": {
+    "mtime": 1788408842.5842304,
+    "seen": 1792605101.726509,
+    "ast_hash": "cd8b370e21a07ffce295d23f4e7e9201",
+    "semantic_hash": "cd8b370e21a07ffce295d23f4e7e9201"
+  },
+  "CLAUDE.md": {
+    "mtime": 1789320053.1788633,
+    "seen": 1792605101.72651,
+    "ast_hash": "b1bbb56312e22082773b592818ea1ab6",
+    "semantic_hash": "b1bbb56312e22082773b592818ea1ab6"
+  },
+  "DATA_ENTRY_GUIDE.md": {
+    "mtime": 1788408842.5844312,
+    "seen": 1792605101.726511,
+    "ast_hash": "08de7a419a682f685f8eac6b13c7d996",
+    "semantic_hash": "08de7a419a682f685f8eac6b13c7d996"
+  },
+  "EXPOSE_SCHEMA.md": {
+    "mtime": 1788408842.5844867,
+    "seen": 1792605101.7265122,
+    "ast_hash": "8620fd079cdff75bd11ba14cff1aa5bb",
+    "semantic_hash": "8620fd079cdff75bd11ba14cff1aa5bb"
+  },
+  "MIGRATION_GUIDE.md": {
+    "mtime": 1788408842.5845404,
+    "seen": 1792605101.7265122,
+    "ast_hash": "a1bb318ac9fba01f3c4605cd7ab88510",
+    "semantic_hash": "a1bb318ac9fba01f3c4605cd7ab88510"
+  },
+  "OVERVIEW.md": {
+    "mtime": 1788408842.5845957,
+    "seen": 1792605101.726513,
+    "ast_hash": "afd0ca66f58d56d203373f7d1eb4ad0d",
+    "semantic_hash": "afd0ca66f58d56d203373f7d1eb4ad0d"
+  },
+  "PROJECT_SUMMARY.md": {
+    "mtime": 1788408842.584695,
+    "seen": 1792605101.7265139,
+    "ast_hash": "78905d4498ff232cc691e79fe1593d54",
+    "semantic_hash": "78905d4498ff232cc691e79fe1593d54"
+  },
+  "QUICK_START.md": {
+    "mtime": 1788408842.5847783,
+    "seen": 1792605101.726515,
+    "ast_hash": "286c9f6dc5cc11f9ea4618ce7ba86628",
+    "semantic_hash": "286c9f6dc5cc11f9ea4618ce7ba86628"
+  },
+  "README.md": {
+    "mtime": 1788408842.5848422,
+    "seen": 1792605101.726515,
+    "ast_hash": "e1093f1ec1e2cb3daa83dad990a4ebdc",
+    "semantic_hash": "e1093f1ec1e2cb3daa83dad990a4ebdc"
+  },
+  "RUN_SAMPLE_DATA.md": {
+    "mtime": 1788408842.5849001,
+    "seen": 1792605101.726516,
+    "ast_hash": "e91d774eafc7621df89f75f6d1f24efc",
+    "semantic_hash": "e91d774eafc7621df89f75f6d1f24efc"
+  },
+  "START_HERE.md": {
+    "mtime": 1788408842.5849638,
+    "seen": 1792605101.726517,
+    "ast_hash": "b4ebbb0bb485a6c3f99a1f414bd84181",
+    "semantic_hash": "b4ebbb0bb485a6c3f99a1f414bd84181"
+  },
+  "docs/adding-case-studies.md": {
+    "mtime": 1790468130.8127906,
+    "seen": 1792605101.726518,
+    "ast_hash": "9f8e74d4504db1ac552b740af7316efb",
+    "semantic_hash": "9f8e74d4504db1ac552b740af7316efb"
+  },
+  "docs/adding-general-constituents.md": {
+    "mtime": 1788408842.590514,
+    "seen": 1792605101.726518,
+    "ast_hash": "7cb1fb900aa3404525ec4c8e42756d16",
+    "semantic_hash": "7cb1fb900aa3404525ec4c8e42756d16"
+  },
+  "docs/adding-herb-data-from-books.md": {
+    "mtime": 1792269554.2139194,
+    "seen": 1792605101.726519,
+    "ast_hash": "f436a371073d802d364e22b72e799cad",
+    "semantic_hash": "f436a371073d802d364e22b72e799cad"
+  },
+  "docs/adding-herb-pairings-from-sources.md": {
+    "mtime": 1788628709.5063193,
+    "seen": 1792605101.72652,
+    "ast_hash": "f3d204751f802086e402e762890a9237",
+    "semantic_hash": "f3d204751f802086e402e762890a9237"
+  },
+  "docs/adding-recipes.md": {
+    "mtime": 1789151037.058415,
+    "seen": 1792605101.726521,
+    "ast_hash": "0ecc6335f50df24df4fd97b6ef883211",
+    "semantic_hash": "0ecc6335f50df24df4fd97b6ef883211"
+  },
+  "docs/generating-class-notes-synopsis.md": {
+    "mtime": 1792543879.0097685,
+    "seen": 1792605101.726521,
+    "ast_hash": "95357218db64109c7e5980868503c95c",
+    "semantic_hash": "95357218db64109c7e5980868503c95c"
+  },
+  "docs/inferring-energetics-from-constituents.md": {
+    "mtime": 1788408842.590741,
+    "seen": 1792605101.7265222,
+    "ast_hash": "92a511ca8c3bc833db0d415e1b1517e2",
+    "semantic_hash": "92a511ca8c3bc833db0d415e1b1517e2"
+  },
+  "docs/inferring-taste-from-constituents.md": {
+    "mtime": 1788408842.5908337,
+    "seen": 1792605101.726523,
+    "ast_hash": "7b0cc784bec4b3a930dec6b9add985d2",
+    "semantic_hash": "7b0cc784bec4b3a930dec6b9add985d2"
+  },
+  "docs/parsing-class-notes.md": {
+    "mtime": 1792348021.4754777,
+    "seen": 1792605101.7265239,
+    "ast_hash": "9aa7e12a4f0250846d9c332caec63533",
+    "semantic_hash": "9aa7e12a4f0250846d9c332caec63533"
+  },
+  "app/icon.svg": {
+    "mtime": 1788408842.5861592,
+    "seen": 1792605101.7265239,
+    "ast_hash": "a317f427131bc42dd69498e6ffc9d721",
+    "semantic_hash": "a317f427131bc42dd69498e6ffc9d721"
+  }
+}

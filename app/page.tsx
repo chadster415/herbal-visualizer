@@ -23,6 +23,7 @@ import { BodyDiagramModal } from '@/components/BodyDiagramModal';
 import { HelpModal } from '@/components/HelpModal';
 import { FlowerEssenceQuizModal } from '@/components/FlowerEssenceQuizModal';
 import { ClassQuizModal } from '@/components/ClassQuizModal';
+import { useModalState } from '@/lib/useModalState';
 import {
   AcademicCapIcon,
   ArrowLeftIcon,
@@ -79,22 +80,7 @@ export default function Home() {
         e.preventDefault();
         setHerbFilterOpen(true);
       }
-      if (e.key === 'Escape') {
-        setFlashcardsOpen(false);
-        setEnergeticsQuizOpen(false);
-        setHerbFilterOpen(false);
-        setFormulaBuilderOpen(false);
-        setDosingCalculatorOpen(false);
-        setDoubleExtractionOpen(false);
-        setMenstruumCalculatorOpen(false);
-        setIntakeFormOpen(false);
-        setBodyDiagramOpen(false);
-        setHelpOpen(false);
-        setFlowerEssenceQuizOpen(false);
-        setClassQuizOpen(false);
-        setLoginOpen(false);
-        setOpenDropdown(null);
-      }
+      if (e.key === 'Escape') closeAll();
     }
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
@@ -122,28 +108,31 @@ export default function Home() {
   const [selectedEssenceId, setSelectedEssenceId] = useState<number | null>(null);
   const [selectedSoulConditionCategory, setSelectedSoulConditionCategory] = useState<string | null>(null);
   const [history, setHistory] = useState<NavEntry[]>([]);
-  const [flashcardsOpen, setFlashcardsOpen] = useState(false);
-  const [energeticsQuizOpen, setEnergeticsQuizOpen] = useState(false);
-  const [herbFilterOpen, setHerbFilterOpen] = useState(false);
-  const [formulaBuilderOpen, setFormulaBuilderOpen] = useState(false);
-  const [dosingCalculatorOpen, setDosingCalculatorOpen] = useState(false);
-  const [doubleExtractionOpen, setDoubleExtractionOpen] = useState(false);
-  const [menstruumCalculatorOpen, setMenstruumCalculatorOpen] = useState(false);
-  const [dosingInitialHerbs, setDosingInitialHerbs] = useState<{ id: number; common_name: string; latin_name: string; plant_part: string | null }[]>([]);
-  const [intakeFormOpen, setIntakeFormOpen] = useState(false);
-  const [bodyDiagramOpen, setBodyDiagramOpen] = useState(false);
-  const [helpOpen, setHelpOpen] = useState(false);
-  const [flowerEssenceQuizOpen, setFlowerEssenceQuizOpen] = useState(false);
-  const [classQuizOpen, setClassQuizOpen] = useState(false);
-  const [openDropdown, setOpenDropdown] = useState<'browse' | 'practice' | 'formulation' | 'quizzes' | null>(null);
+  const {
+    flashcardsOpen, setFlashcardsOpen,
+    energeticsQuizOpen, setEnergeticsQuizOpen,
+    herbFilterOpen, setHerbFilterOpen,
+    formulaBuilderOpen, setFormulaBuilderOpen,
+    dosingCalculatorOpen, setDosingCalculatorOpen,
+    doubleExtractionOpen, setDoubleExtractionOpen,
+    menstruumCalculatorOpen, setMenstruumCalculatorOpen,
+    dosingInitialHerbs, setDosingInitialHerbs,
+    intakeFormOpen, setIntakeFormOpen,
+    bodyDiagramOpen, setBodyDiagramOpen,
+    helpOpen, setHelpOpen,
+    flowerEssenceQuizOpen, setFlowerEssenceQuizOpen,
+    classQuizOpen, setClassQuizOpen,
+    openQuizClass, setOpenQuizClass,
+    loginOpen, setLoginOpen,
+    openDropdown, setOpenDropdown,
+    closeAll,
+  } = useModalState();
   const [pairingsInitialFocusId, setPairingsInitialFocusId] = useState<number | null>(null);
   const [selectedAilmentKeyword, setSelectedAilmentKeyword] = useState<string | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userEmail, setUserEmail] = useState<string | null>(null);
-  const [loginOpen, setLoginOpen] = useState(false);
   const [userInventory, setUserInventory] = useState<InventoryMap>(new Map());
   const [herbsLoaded, setHerbsLoaded] = useState(false);
-  const [openQuizClass, setOpenQuizClass] = useState<string | null>(null);
   const [deepLinkInitialized, setDeepLinkInitialized] = useState(false);
 
   useEffect(() => {

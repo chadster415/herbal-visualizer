@@ -89,7 +89,7 @@ export async function POST(request: Request) {
   } catch (err) {
     if (err instanceof SpoonacularQuotaError) {
       return NextResponse.json(
-        { error: 'quota_exceeded', message: 'Daily Spoonacular quota exceeded — try again tomorrow.' },
+        { error: 'quota_exceeded', message: 'Daily Spoonacular quota exceeded - try again tomorrow.' },
         { status: 402 }
       );
     }

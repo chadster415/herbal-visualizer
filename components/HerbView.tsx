@@ -59,6 +59,19 @@ interface SourceNote {
   };
 }
 
+interface DrugInteraction {
+  id: number;
+  drug_or_class: string;
+  interaction_text: string;
+  severity: string | null;
+  sources: {
+    id: number;
+    short_name: string;
+    display_name: string;
+    url: string | null;
+  };
+}
+
 interface HerbData extends Herb {
   herb_primary_actions: Array<{
     primary_actions: PrimaryAction;
@@ -69,6 +82,7 @@ interface HerbData extends Herb {
     sources: { display_name: string } | null;
   }>;
   herb_source_notes?: SourceNote[];
+  herb_drug_interactions?: DrugInteraction[];
   disorder_action_herbs?: Array<{
     disorders: Disorder & { body_systems: BodySystem };
     primary_actions: PrimaryAction;
@@ -395,6 +409,8 @@ function HerbDetailPanel({
     setSectionsOpen((prev) => ({ ...prev, [key]: !prev[key] }));
 
   const [contraindicationsOpen, setContraindicationsOpen] = useState(false);
+  const [expandedDrugSources, setExpandedDrugSources] = useState<Set<number>>(new Set());
+  useEffect(() => { setExpandedDrugSources(new Set()); }, [herb.id]);
   const [inferredEnergeticsOpen, setInferredEnergeticsOpen] = useState(false);
   const [inferredTasteOpen, setInferredTasteOpen] = useState(false);
   const [monographDropdownOpen, setMonographDropdownOpen] = useState(false);
@@ -905,7 +921,7 @@ function HerbDetailPanel({
           ...((((herb.disorder_action_herbs?.length ?? 0) > 0) || ((herb.disorder_specific_remedies?.length ?? 0) > 0)) ? [{ key: 'disorders' as const, label: 'Disorders', pink: false }] : []),
           ...((duiYaoPairs.length > 0 || herbPairs.length > 0) ? [{ key: 'pairings' as const, label: 'Pairings', pink: false }] : []),
           ...(MM_MATERIA_MEDICA[herb.id] ? [{ key: 'mmMateriaMedica' as const, label: 'MM Materia Medica', pink: false }] : []),
-          ...(CONTRAINDICATIONS[herb.id] ? [{ key: 'contraindications' as const, label: 'Drug Interactions', pink: true }] : []),
+          ...((CONTRAINDICATIONS[herb.id] || (herb.herb_drug_interactions?.length ?? 0) > 0) ? [{ key: 'contraindications' as const, label: 'Drug Interactions', pink: true }] : []),
           ...(herb.contraindications ? [{ key: 'herbContraindications' as const, label: 'Contraindications', pink: true }] : []),
           ...(herbRecipes.length > 0 ? [{ key: 'recipes' as const, label: 'Recipes', pink: false }] : []),
           ...(userInventory?.get(herb.id)?.in_stock ? [{ key: 'stock' as const, label: 'My Stock', pink: false }] : []),
@@ -922,7 +938,7 @@ function HerbDetailPanel({
         ))}
       </div>
 
-      {/* Herb image — only in active (non-frozen) pane */}
+      {/* Herb image - only in active (non-frozen) pane */}
       {!frozen && <HerbImageUpload herbId={herb.id} isLoggedIn={isLoggedIn} />}
 
       <div className="flex justify-end mb-5">
@@ -1157,7 +1173,7 @@ function HerbDetailPanel({
                       <div className="mb-3">
                         <h4 className="text-sm font-semibold text-amber-800">{src.display_name}</h4>
                         {src.full_title && (
-                          <p className="text-xs text-gray-500 italic">{src.full_title}{src.authors ? ` — ${src.authors}` : ''}{src.year ? ` (${src.year})` : ''}</p>
+                          <p className="text-xs text-gray-500 italic">{src.full_title}{src.authors ? ` - ${src.authors}` : ''}{src.year ? ` (${src.year})` : ''}</p>
                         )}
                       </div>
                       <div className="space-y-3">
@@ -1442,14 +1458,14 @@ function HerbDetailPanel({
                       <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-64 bg-gray-900 text-white text-xs rounded-lg p-3 shadow-xl pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity z-50 text-left normal-case tracking-normal font-normal">
                         <p className="font-semibold mb-2 text-gray-200">Constituent Solubility</p>
                         <ul className="space-y-1 text-gray-300">
-                          <li><span className="text-white font-medium">Mucilage</span> — cold water only; alcohol destroys it</li>
-                          <li><span className="text-white font-medium">Polysaccharides</span> — hot water or very dilute alcohol</li>
-                          <li><span className="text-white font-medium">Tannins</span> — water or low alcohol + 5–10% glycerin</li>
-                          <li><span className="text-white font-medium">Volatile oils</span> — glycerite preserves best; degrade in alcohol over time</li>
-                          <li><span className="text-white font-medium">Resins</span> — high alcohol (70–90%) only; not water-soluble</li>
-                          <li><span className="text-white font-medium">Alkaloids</span> — min 45% alcohol + 5–10% vinegar</li>
-                          <li><span className="text-white font-medium">Saponins</span> — typically water-soluble</li>
-                          <li><span className="text-white font-medium">Flavonoids / Glycosides</span> — water and alcohol</li>
+                          <li><span className="text-white font-medium">Mucilage</span> - cold water only; alcohol destroys it</li>
+                          <li><span className="text-white font-medium">Polysaccharides</span> - hot water or very dilute alcohol</li>
+                          <li><span className="text-white font-medium">Tannins</span> - water or low alcohol + 5-10% glycerin</li>
+                          <li><span className="text-white font-medium">Volatile oils</span> - glycerite preserves best; degrade in alcohol over time</li>
+                          <li><span className="text-white font-medium">Resins</span> - high alcohol (70-90%) only; not water-soluble</li>
+                          <li><span className="text-white font-medium">Alkaloids</span> - min 45% alcohol + 5-10% vinegar</li>
+                          <li><span className="text-white font-medium">Saponins</span> - typically water-soluble</li>
+                          <li><span className="text-white font-medium">Flavonoids / Glycosides</span> - water and alcohol</li>
                         </ul>
                         <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-l-[5px] border-r-[5px] border-t-[5px] border-l-transparent border-r-transparent border-t-gray-900" />
                       </div>
@@ -1472,17 +1488,17 @@ function HerbDetailPanel({
                   )}
                   {herb.herb_menstruum.powder_effective && (
                     <p className="text-xs text-yellow-700 mt-2 italic">
-                      Powder effective — {powderEffectiveReason(herb.herb_constituents)} work better ingested whole than extracted into a menstruum.
+                      Powder effective - {powderEffectiveReason(herb.herb_constituents)} work better ingested whole than extracted into a menstruum.
                     </p>
                   )}
                   {herb.herb_menstruum.oil_effective && (
                     <p className="text-xs text-orange-700 mt-2 italic">
-                      Oil effective — key constituents are lipophilic and extract well into a fixed oil (infused or cold-pressed).
+                      Oil effective - key constituents are lipophilic and extract well into a fixed oil (infused or cold-pressed).
                     </p>
                   )}
                   {herbHasExtractableAlkaloids && (
                     <p className="text-xs text-amber-700 mt-2 italic">
-                      Alkaloids present — adding 5–10% apple cider vinegar improves their extraction.
+                      Alkaloids present - adding 5–10% apple cider vinegar improves their extraction.
                     </p>
                   )}
                 </div>
@@ -1800,28 +1816,89 @@ function HerbDetailPanel({
       })()}
 
       {/* Drug Interactions */}
-      {CONTRAINDICATIONS[herb.id] && (
+      {(CONTRAINDICATIONS[herb.id] || (herb.herb_drug_interactions?.length ?? 0) > 0) && (
         <div className="mt-6" ref={(el) => { sectionRefs.current.contraindications = el; }}>
-          <SectionHeader title="Drug Interactions" open={sectionsOpen.contraindications} onToggle={() => toggleSection('contraindications')} />
+          <SectionHeader title={`Drug Interactions · ${herb.common_name}`} open={sectionsOpen.contraindications} onToggle={() => toggleSection('contraindications')} />
           {sectionsOpen.contraindications && (
-            <div className="pl-4 border-l-2 border-red-100">
-              <button
-                onClick={() => setContraindicationsOpen(true)}
-                className="flex items-center gap-3 w-full text-left border border-red-200 rounded-lg px-4 py-3 bg-red-50 hover:bg-red-100 hover:border-red-300 transition-all group"
-              >
-                <svg className="w-5 h-5 text-red-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
-                </svg>
-                <div>
-                  <p className="text-sm font-semibold text-red-800">View Drug Interactions</p>
-                  <p className="text-xs text-red-600 mt-0.5">
-                    {CONTRAINDICATIONS[herb.id]} page{CONTRAINDICATIONS[herb.id] === 1 ? '' : 's'} · Stockley&rsquo;s Herbal Medicines Interactions
-                  </p>
-                </div>
-                <svg className="w-4 h-4 text-red-400 ml-auto group-hover:text-red-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </button>
+            <div className="pl-4 border-l-2 border-red-100 flex flex-col gap-3">
+              {/* Stockley's block */}
+              {CONTRAINDICATIONS[herb.id] && (
+                <button
+                  onClick={() => setContraindicationsOpen(true)}
+                  className="flex items-center gap-3 w-full text-left border border-red-200 rounded-lg px-4 py-3 bg-red-50 hover:bg-red-100 hover:border-red-300 transition-all group"
+                >
+                  <svg className="w-5 h-5 text-red-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+                  </svg>
+                  <div>
+                    <p className="text-sm font-semibold text-red-800">View Drug Interactions</p>
+                    <p className="text-xs text-red-600 mt-0.5">
+                      {CONTRAINDICATIONS[herb.id]} page{CONTRAINDICATIONS[herb.id] === 1 ? '' : 's'} · Stockley&rsquo;s Herbal Medicines Interactions
+                    </p>
+                  </div>
+                  <svg className="w-4 h-4 text-red-400 ml-auto group-hover:text-red-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              )}
+              {/* Web source blocks */}
+              {(() => {
+                const interactions = herb.herb_drug_interactions ?? [];
+                if (interactions.length === 0) return null;
+                const bySource = new Map<number, { source: DrugInteraction['sources']; items: DrugInteraction[] }>();
+                for (const di of interactions) {
+                  if (!bySource.has(di.sources.id)) bySource.set(di.sources.id, { source: di.sources, items: [] });
+                  bySource.get(di.sources.id)!.items.push(di);
+                }
+                return Array.from(bySource.values()).map(({ source, items }) => {
+                  const isExpanded = expandedDrugSources.has(source.id);
+                  const toggle = () => setExpandedDrugSources(prev => {
+                    const next = new Set(prev);
+                    isExpanded ? next.delete(source.id) : next.add(source.id);
+                    return next;
+                  });
+                  return (
+                    <div key={source.id}>
+                      <button
+                        onClick={toggle}
+                        className="flex items-center gap-3 w-full text-left border border-red-200 rounded-lg px-4 py-3 bg-red-50 hover:bg-red-100 hover:border-red-300 transition-all group"
+                      >
+                        <svg className="w-5 h-5 text-red-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+                        </svg>
+                        <div>
+                          <p className="text-sm font-semibold text-red-800">Drug Interactions</p>
+                          <p className="text-xs text-red-600 mt-0.5 flex items-center gap-1">
+                            <span>{items.length} interaction{items.length === 1 ? '' : 's'} · {source.display_name}</span>
+                            {source.url && (
+                              <a
+                                href={source.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={e => e.stopPropagation()}
+                                className="ml-1 px-1.5 py-0.5 rounded bg-red-200 text-red-800 font-semibold hover:bg-red-300 transition-colors text-xs"
+                              >Ref</a>
+                            )}
+                          </p>
+                        </div>
+                        <svg className={`w-4 h-4 text-red-400 ml-auto transition-transform group-hover:text-red-600 ${isExpanded ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </button>
+                      {isExpanded && (
+                        <div className="mt-1 border border-red-100 rounded-lg bg-white divide-y divide-red-50 overflow-hidden">
+                          {items.map(item => (
+                            <div key={item.id} className="px-4 py-3">
+                              <p className="text-xs font-semibold text-red-700 uppercase tracking-wide mb-1">{item.drug_or_class}</p>
+                              <p className="text-sm text-gray-700">{item.interaction_text}</p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                });
+              })()}
             </div>
           )}
         </div>
@@ -1883,7 +1960,7 @@ function HerbDetailPanel({
               {userInventory.get(herb.id)!.notes ? (
                 <p className="text-sm text-gray-700 whitespace-pre-wrap">{userInventory.get(herb.id)!.notes}</p>
               ) : (
-                <p className="text-sm text-gray-400 italic">No notes — add them on the Manage Inventory page.</p>
+                <p className="text-sm text-gray-400 italic">No notes - add them on the Manage Inventory page.</p>
               )}
             </div>
           )}
@@ -2366,6 +2443,10 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
           herb_source_notes (
             id, source_id, section_type, content,
             sources ( id, short_name, display_name, full_title, authors, year )
+          ),
+          herb_drug_interactions (
+            id, drug_or_class, interaction_text, severity,
+            sources ( id, short_name, display_name, url )
           )
         `)
         .order('common_name');
@@ -2382,7 +2463,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
       onHerbsLoaded?.();
     }
 
-    // Build constituent → herbs cross-reference index in background (paginated — table exceeds 1000 rows)
+    // Build constituent → herbs cross-reference index in background (paginated - table exceeds 1000 rows)
     (async () => {
       const PAGE = 1000;
       let from = 0;
@@ -2835,7 +2916,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
         </div>
       </div>
 
-      {/* Herb / Supplement / Essence Details — or Pairings graph */}
+      {/* Herb / Supplement / Essence Details - or Pairings graph */}
       {pairingsMode ? (
         <div className="lg:col-span-3 bg-white rounded-lg shadow-lg overflow-hidden flex flex-col" style={{ height: 'calc(100vh - 11rem)' }}>
           <PairingsView onHerbClick={(id) => onHerbClick?.(id)} onFocusChange={onFocusChange} initialFocusId={pairingsInitialFocusId} />
@@ -2844,7 +2925,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
       <div className={`lg:col-span-3 flex gap-4 items-start${pairingsMode ? ' hidden' : ''}`}>
         {/* Active panel */}
         <div ref={detailPanelRef} className="flex-1 bg-white rounded-lg shadow-lg p-6 relative min-w-0">
-          {/* Split button — desktop only */}
+          {/* Split button - desktop only */}
           {selectedHerb && frozenPanes.length < 2 && (
             <button
               onClick={handleSplit}
