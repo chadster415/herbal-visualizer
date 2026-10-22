@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { PairingsView } from './PairingsView';
-import { LinkIcon } from '@heroicons/react/24/outline';
+import { LinkIcon, CameraIcon } from '@heroicons/react/24/outline';
 import { supabase } from '@/lib/supabase';
 import { EnergeticEmojis, PPBadge } from './EnergeticEmojis';
 import { InferredEnergeticsModal } from './InferredEnergeticsModal';
@@ -2100,6 +2100,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
   const [essences, setEssences] = useState<FlowerEssencePlant[]>([]);
   const [selectedEssence, setSelectedEssence] = useState<FlowerEssencePlant | null>(null);
   const [pairedHerbIds, setPairedHerbIds] = useState<Set<number>>(new Set());
+  const [herbIdsWithImages, setHerbIdsWithImages] = useState<Set<number>>(new Set());
   const [duiYaoPairs, setDuiYaoPairs] = useState<DuiYaoPair[]>([]);
   const [duiYaoLoading, setDuiYaoLoading] = useState(false);
   const [herbPairs, setHerbPairs] = useState<HerbPair[]>([]);
@@ -2217,6 +2218,12 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
   }, [highlightedIndex, filteredHerbs, keywordMatchedHerbs, filteredSupplements, filteredEssences]);
 
   useEffect(() => { fetchHerbs(); }, []);
+
+  useEffect(() => {
+    supabase.from('herb_images').select('herb_id').then(({ data }) => {
+      setHerbIdsWithImages(new Set((data ?? []).map(r => r.herb_id)));
+    });
+  }, []);
 
   useEffect(() => {
     Promise.all([
@@ -2756,15 +2763,22 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
                 </div>
               </div>
             </button>
-            {pairedHerbIds.has(herb.id) && (
-              <button
-                onClick={() => onShowPairings?.(herb.id)}
-                className="absolute bottom-2 right-2 p-1 rounded text-gray-400 hover:text-indigo-500 transition-colors"
-                title="View in pairings graph"
-                tabIndex={-1}
-              >
-                <LinkIcon className="w-3.5 h-3.5" />
-              </button>
+            {(herbIdsWithImages.has(herb.id) || pairedHerbIds.has(herb.id)) && (
+              <div className="absolute bottom-2 right-2 flex items-center gap-0.5">
+                {herbIdsWithImages.has(herb.id) && (
+                  <CameraIcon className="w-3.5 h-3.5 text-gray-400" />
+                )}
+                {pairedHerbIds.has(herb.id) && (
+                  <button
+                    onClick={() => onShowPairings?.(herb.id)}
+                    className="p-1 rounded text-gray-400 hover:text-indigo-500 transition-colors"
+                    title="View in pairings graph"
+                    tabIndex={-1}
+                  >
+                    <LinkIcon className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
             )}
             </div>
           ))}

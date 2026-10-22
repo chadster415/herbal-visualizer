@@ -22,6 +22,7 @@ sync_table() {
   local SELECT_JSON="$3"
   local SELECT_SQL="$4"
   local SQL_FILE="$5"
+  local RESOLUTION="${6:-ignore-duplicates}"
 
   ROW_COUNT=$(PGPASSWORD=postgres "$LOCAL_PG" -h 127.0.0.1 -p 54322 -U postgres -d postgres -t -A \
     -c "SELECT COUNT(*) FROM herbal.${TABLE};")
@@ -47,7 +48,7 @@ sync_table() {
     -H "Authorization: Bearer ${SUPABASE_SERVICE_ROLE_KEY}" \
     -H "Content-Type: application/json" \
     -H "Content-Profile: herbal" \
-    -H "Prefer: resolution=ignore-duplicates,return=minimal" \
+    -H "Prefer: resolution=${RESOLUTION},return=minimal" \
     -d "$JSON")
 
   if [ "$HTTP_STATUS" = "200" ] || [ "$HTTP_STATUS" = "201" ]; then
@@ -62,9 +63,10 @@ sync_table() {
 sync_table \
   "herb_images" \
   "herb_id,image_key" \
-  "SELECT json_agg(json_build_object('herb_id', herb_id, 'image_key', image_key) ORDER BY created_at) FROM herbal.herb_images;" \
-  "SELECT 'INSERT INTO herbal.herb_images (herb_id, image_key) VALUES (' || herb_id || ', ' || quote_literal(image_key) || ') ON CONFLICT DO NOTHING;' FROM herbal.herb_images ORDER BY created_at;" \
-  "herb_images_sync.sql"
+  "SELECT json_agg(json_build_object('herb_id', herb_id, 'image_key', image_key, 'thumbnail_key', thumbnail_key) ORDER BY created_at) FROM herbal.herb_images;" \
+  "SELECT 'INSERT INTO herbal.herb_images (herb_id, image_key, thumbnail_key) VALUES (' || herb_id || ', ' || quote_literal(image_key) || ', ' || COALESCE(quote_literal(thumbnail_key), 'NULL') || ') ON CONFLICT (herb_id, image_key) DO UPDATE SET thumbnail_key = EXCLUDED.thumbnail_key;' FROM herbal.herb_images ORDER BY created_at;" \
+  "herb_images_sync.sql" \
+  "merge-duplicates"
 
 sync_table \
   "recipe_images" \

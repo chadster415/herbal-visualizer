@@ -11,6 +11,7 @@
     "snapshot-db": "supabase db dump --local --data-only --schema herbal -f supabase/migrations/008_current_data_snapshot.sql",
     "sync-images": "bash scripts/sync-images-to-prod.sh",
     "ingest": "ts-node scripts/ingest-secondary-actions.ts",
+    "gen-thumbnails": "ts-node scripts/generate-thumbnails.ts",
     "build": "./node_modules/.bin/next build",
     "start": "./node_modules/.bin/next start",
     "lint": "./node_modules/.bin/next lint"
@@ -19,19 +20,28 @@
     "@aws-sdk/client-s3": "^3.1110.0",
     "@aws-sdk/s3-request-presigner": "^3.1110.0",
     "@heroicons/react": "^2.2.0",
+    "@img/sharp-darwin-arm64": "^0.35.5",
+    "@img/sharp-libvips-darwin-arm64": "^1.3.4",
     "@marsidev/react-turnstile": "^1.5.2",
     "@supabase/supabase-js": "^2.47.10",
     "fuse.js": "^7.5.0",
     "next": "^15.1.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "react-force-graph-2d": "^1.29.1"
+    "react-force-graph-2d": "^1.29.1",
+    "sharp": "^0.35.5"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "sharp"
+    ]
   },
   "devDependencies": {
     "@anthropic-ai/sdk": "^0.116.0",
     "@types/node": "^20.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
+    "@types/sharp": "^0.32.0",
     "autoprefixer": "^10.4.0",
     "eslint": "^8.0.0",
     "eslint-config-next": "^15.1.0",

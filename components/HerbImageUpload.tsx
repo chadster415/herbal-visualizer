@@ -8,6 +8,7 @@ const BASE_URL = process.env.NEXT_PUBLIC_HERB_IMAGES_BASE_URL ?? '';
 interface HerbImage {
   key: string;
   url: string;
+  thumbUrl: string;
 }
 
 interface Props {
@@ -30,12 +31,13 @@ export function HerbImageUpload({ herbId, isLoggedIn }: Props) {
   const loadImages = useCallback(async () => {
     const { data: rows } = await supabase
       .from('herb_images')
-      .select('image_key')
+      .select('image_key, thumbnail_key')
       .eq('herb_id', herbId)
       .order('created_at', { ascending: true });
     setImages((rows ?? []).map(row => ({
       key: row.image_key,
       url: `${BASE_URL}/${row.image_key}`,
+      thumbUrl: row.thumbnail_key ? `${BASE_URL}/${row.thumbnail_key}` : `${BASE_URL}/${row.image_key}`,
     })));
   }, [herbId]);
 
@@ -68,12 +70,21 @@ export function HerbImageUpload({ herbId, isLoggedIn }: Props) {
       });
       if (!putRes.ok) throw new Error('S3 upload failed');
 
-      // Register in DB directly from browser client
-      await supabase.from('herb_images').insert({ herb_id: herbId, image_key: imageKey });
+      const confirmRes = await fetch(`/api/herb-image/${herbId}/confirm`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ imageKey }),
+      });
+      if (!confirmRes.ok) throw new Error('Failed to register image');
 
+      const tKey = imageKey.replace(/(\.[^.]+)$/, '_thumb.jpg');
+      const v = `?v=${Date.now()}`;
       setImages(prev => [
         ...(prev ?? []),
-        { key: imageKey, url: `${BASE_URL}/${imageKey}?v=${Date.now()}` },
+        { key: imageKey, url: `${BASE_URL}/${imageKey}${v}`, thumbUrl: `${BASE_URL}/${tKey}${v}` },
       ]);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Upload failed');
@@ -91,9 +102,6 @@ export function HerbImageUpload({ herbId, isLoggedIn }: Props) {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       if (!res.ok) throw new Error('Failed to remove image');
-
-      // Remove from DB directly from browser client
-      await supabase.from('herb_images').delete().eq('herb_id', herbId).eq('image_key', key);
 
       setImages(prev => (prev ?? []).filter(img => img.key !== key));
       setLightboxIndex(null);
@@ -138,7 +146,7 @@ export function HerbImageUpload({ herbId, isLoggedIn }: Props) {
             <div key={img.key} className="relative flex-shrink-0 group">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={img.url}
+                src={img.thumbUrl}
                 alt={`Herb reference ${i + 1}`}
                 onClick={() => setLightboxIndex(i)}
                 className="h-48 w-auto max-w-xs object-cover rounded-lg border border-gray-200 bg-gray-50 cursor-zoom-in"
