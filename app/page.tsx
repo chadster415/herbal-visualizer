@@ -331,7 +331,14 @@ export default function Home() {
   const feat = (key: FeatureKey) => isFeatureVisible(key, isLoggedIn);
 
   return (
-    <div className="min-h-screen p-4 sm:p-8 bg-gradient-to-br from-green-50 to-emerald-100 dark:from-gray-900 dark:to-gray-800">
+    <div className="relative isolate min-h-screen p-4 sm:p-8 bg-gradient-to-br from-green-50 to-emerald-100 dark:from-gray-900 dark:to-gray-800">
+      <svg className="absolute inset-0 w-full h-full pointer-events-none -z-10 opacity-60" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+        <filter id="grain">
+          <feTurbulence type="fractalNoise" baseFrequency="0.75" numOctaves="4" stitchTiles="stitch" />
+          <feColorMatrix type="saturate" values="0" />
+        </filter>
+        <rect width="100%" height="100%" filter="url(#grain)" />
+      </svg>
       <header className="mb-8">
         <h1 className="text-4xl font-bold text-green-800 dark:text-green-300 mb-4 flex items-center gap-3">
           <img src="/icon-mark.svg" alt="" className="w-10 h-10" />
