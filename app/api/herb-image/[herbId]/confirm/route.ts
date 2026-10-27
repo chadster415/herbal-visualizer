@@ -40,12 +40,15 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ her
   const tKey = thumbKey(imageKey);
 
   try {
+    console.log(`[thumbnail] downloading ${imageKey}`);
     const { Body } = await s3.send(new GetObjectCommand({ Bucket: BUCKET, Key: imageKey }));
     const chunks: Buffer[] = [];
     for await (const chunk of Body as Readable) chunks.push(Buffer.from(chunk));
     const buf = Buffer.concat(chunks);
+    console.log(`[thumbnail] downloaded ${buf.length} bytes, resizing…`);
 
     const thumb = await sharp(buf).resize({ width: 400, withoutEnlargement: true }).jpeg({ quality: 82 }).toBuffer();
+    console.log(`[thumbnail] resized to ${thumb.length} bytes, uploading as ${tKey}`);
 
     await s3.send(new PutObjectCommand({
       Bucket: BUCKET,
@@ -53,8 +56,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ her
       Body: thumb,
       ContentType: 'image/jpeg',
     }));
+    console.log(`[thumbnail] done`);
   } catch (err) {
-    console.error('Thumbnail generation failed:', err);
+    console.error('[thumbnail] generation failed:', err);
     // Proceed without thumbnail rather than failing the whole upload
   }
 

@@ -9,6 +9,7 @@ interface HerbImage {
   key: string;
   url: string;
   thumbUrl: string;
+  pending?: boolean;
 }
 
 interface Props {
@@ -70,25 +71,37 @@ export function HerbImageUpload({ herbId, isLoggedIn }: Props) {
       });
       if (!putRes.ok) throw new Error('S3 upload failed');
 
-      const confirmRes = await fetch(`/api/herb-image/${herbId}/confirm`, {
+      // Show the image immediately from the local blob while thumbnail is created
+      const objectUrl = URL.createObjectURL(blob);
+      setImages(prev => [...(prev ?? []), { key: imageKey, url: objectUrl, thumbUrl: objectUrl, pending: true }]);
+      setUploading(false);
+
+      // Confirm + thumbnail creation runs in the background
+      const v = `?v=${Date.now()}`;
+      const tKey = imageKey.replace(/(\.[^.]+)$/, '_thumb.jpg');
+      fetch(`/api/herb-image/${herbId}/confirm`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({ imageKey }),
-      });
-      if (!confirmRes.ok) throw new Error('Failed to register image');
-
-      const tKey = imageKey.replace(/(\.[^.]+)$/, '_thumb.jpg');
-      const v = `?v=${Date.now()}`;
-      setImages(prev => [
-        ...(prev ?? []),
-        { key: imageKey, url: `${BASE_URL}/${imageKey}${v}`, thumbUrl: `${BASE_URL}/${tKey}${v}` },
-      ]);
+      })
+        .then(res => {
+          if (!res.ok) throw new Error('Failed to register image');
+          setImages(prev => (prev ?? []).map(img =>
+            img.key === imageKey
+              ? { key: imageKey, url: `${BASE_URL}/${imageKey}${v}`, thumbUrl: `${BASE_URL}/${tKey}${v}` }
+              : img
+          ));
+        })
+        .catch(err => {
+          setImages(prev => (prev ?? []).filter(img => img.key !== imageKey));
+          setError(err instanceof Error ? err.message : 'Failed to register image');
+        })
+        .finally(() => URL.revokeObjectURL(objectUrl));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Upload failed');
-    } finally {
       setUploading(false);
     }
   }, [herbId]);
@@ -149,7 +162,9 @@ export function HerbImageUpload({ herbId, isLoggedIn }: Props) {
                 src={img.thumbUrl}
                 alt={`Herb reference ${i + 1}`}
                 onClick={() => setLightboxIndex(i)}
-                className="h-48 w-auto max-w-xs object-cover rounded-lg border border-gray-200 bg-gray-50 cursor-zoom-in"
+                className={`h-48 w-auto max-w-xs object-cover rounded-lg border bg-gray-50 cursor-zoom-in ${
+                  img.pending ? 'border-green-300 animate-pulse' : 'border-gray-200'
+                }`}
               />
               {isLoggedIn && (
                 <button
