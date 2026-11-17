@@ -563,8 +563,8 @@ Notes:
 
 ## Restore to prod
 ```bash
-PGPASSWORD='9mRXNlxvS2xaj2FO' /opt/homebrew/Cellar/libpq/18.6/bin/psql \
-  "postgresql://postgres.jadyjjnahstsybvkxttb:9mRXNlxvS2xaj2FO@aws-0-us-west-1.pooler.supabase.com:6543/postgres?sslmode=require" \
+PGPASSWORD='YOUR_DB_PASSWORD' /opt/homebrew/Cellar/libpq/18.6/bin/psql \
+  "postgresql://postgres.jadyjjnahstsybvkxttb:YOUR_DB_PASSWORD@aws-0-us-west-1.pooler.supabase.com:6543/postgres?sslmode=require" \
   -f "supabase/backups/YYYYMMDD_HHMMSS_description.sql"
 ```
 Use the transaction pooler URL (port 6543) with `sslmode=require`. The direct connection (`db.*.supabase.co:5432`) does not resolve for this project; the pooler with SSL handles DDL restores fine.
