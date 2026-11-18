@@ -930,7 +930,7 @@ function HerbDetailPanel({
           ...(isLoggedIn ? [{ key: 'tags' as const, label: 'My Tags', pink: false }] : []),
           { key: 'primaryActions' as const, label: 'Primary Actions', pink: false },
           ...(herb.herb_secondary_actions.length > 0 ? [{ key: 'secondaryActions' as const, label: 'Secondary Actions', pink: false }] : []),
-          ...(mentalPictureData ? [{ key: 'mentalPicture' as const, label: 'Mental Picture', pink: false }] : []),
+          ...(mentalPictureData ? [{ key: 'mentalPicture' as const, label: 'Symptom Picture', pink: false }] : []),
           ...((herb.herb_source_notes?.length ?? 0) > 0 ? [{ key: 'sourceNotes' as const, label: 'Clinical References', pink: false }] : []),
           ...((classNoteSnippets.length > 0 || !!herb.class_notes_synopsis) ? [{ key: 'classNotes' as const, label: 'Class Notes', pink: false }] : []),
           ...(profiles.length > 0 ? [{ key: 'constituentProfile' as const, label: 'Constituents', pink: false }] : []),
@@ -1165,12 +1165,18 @@ function HerbDetailPanel({
       {/* Mental Picture */}
       {mentalPictureData && (
         <div className="mb-6" ref={(el) => { sectionRefs.current.mentalPicture = el; }}>
-          <SectionHeader title="Mental Picture" open={sectionsOpen.mentalPicture} onToggle={() => toggleSection('mentalPicture')} />
+          <SectionHeader title="Symptom Picture" open={sectionsOpen.mentalPicture} onToggle={() => toggleSection('mentalPicture')} />
           {sectionsOpen.mentalPicture && (
             <div className="pl-4 border-l-2 border-violet-100">
-              <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed mb-3">
-                {mentalPictureData.mental_picture}
-              </p>
+              <div className="bg-violet-50/60 dark:bg-violet-900/20 border border-violet-100 dark:border-violet-800 rounded-lg px-4 py-3 mb-3">
+                <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                  {mentalPictureData.mental_picture.split(/(\*\*[^*]+\*\*)/).map((part, i) =>
+                    part.startsWith('**') && part.endsWith('**')
+                      ? <strong key={i} className="font-semibold text-gray-900 dark:text-gray-100">{part.slice(2, -2)}</strong>
+                      : part
+                  )}
+                </p>
+              </div>
               <button
                 onClick={() => setKeywordsExpanded((v) => !v)}
                 className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-green-700 transition-colors mb-1"

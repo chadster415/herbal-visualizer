@@ -112,7 +112,7 @@ export function MentalPictureModal({ isOpen, onClose, onHerbSelect, initialQuery
       {/* Header */}
       <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700 shrink-0">
         <h2 className="text-lg font-bold text-green-800 dark:text-green-300 flex items-center gap-2">
-          <MagnifyingGlassIcon className="w-5 h-5" /> Mental Picture Search
+          <MagnifyingGlassIcon className="w-5 h-5" /> Symptom Picture Search
         </h2>
         <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200" aria-label="Close">
           <XMarkIcon className="w-5 h-5" />

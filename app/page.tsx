@@ -599,7 +599,7 @@ export default function Home() {
                     onClick={() => { setMentalPictureInitialQuery(''); setMentalPictureOpen(true); setOpenDropdown(null); }}
                     className="w-full text-left px-4 py-2.5 text-green-800 hover:bg-green-50 transition-all whitespace-nowrap flex items-center gap-2"
                   >
-                    <DocumentTextIcon className="w-5 h-5 shrink-0" /> Mental Picture
+                    <DocumentTextIcon className="w-5 h-5 shrink-0" /> Symptom Picture
                   </button>
                 </div>
               )}
