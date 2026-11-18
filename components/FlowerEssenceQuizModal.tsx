@@ -361,7 +361,7 @@ export function FlowerEssenceQuizModal({ isOpen, onClose, onEssenceSelect }: Pro
     >
       <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700 shrink-0">
         <h2 className="text-lg font-bold text-purple-800 dark:text-purple-300 flex items-center gap-2">
-          <SparklesIcon className="w-5 h-5" /> Flower Essence Quiz
+          <SparklesIcon className="w-5 h-5" /> Flower Essence Assessment
         </h2>
         <button
           onClick={onClose}
@@ -422,7 +422,7 @@ function IntroScreen({ onStart }: { onStart: () => void }) {
         Flower essences address the emotional and psychological dimensions of wellbeing — patterns of fear, grief, confusion, depletion, and disconnection that shape how we experience ourselves and the world.
       </p>
       <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
-        This quiz uses a <strong>two-stage approach</strong>. First, 14 broad questions identify which emotional themes are most active for you right now. Then, targeted follow-up questions narrow down to specific essences matched to your experience.
+        This assessment uses a <strong>two-stage approach</strong>. First, 14 broad questions identify which emotional themes are most active for you right now. Then, targeted follow-up questions narrow down to specific essences matched to your experience.
       </p>
       <p className="text-sm text-purple-700 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-700 rounded-lg px-4 py-3">
         Answer yes or no based on how you&apos;ve been feeling recently. There are no right or wrong answers — honesty with yourself matters most.
@@ -512,7 +512,7 @@ function BetweenScreen({
           onClick={onRetake}
           className="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors"
         >
-          Retake Quiz
+          Retake Assessment
         </button>
       </div>
     );
@@ -595,7 +595,7 @@ function ResultsScreen({
           onClick={onRetake}
           className="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors"
         >
-          Retake Quiz
+          Retake Assessment
         </button>
       </div>
     );

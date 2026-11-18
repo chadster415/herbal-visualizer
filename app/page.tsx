@@ -23,6 +23,7 @@ import { BodyDiagramModal } from '@/components/BodyDiagramModal';
 import { HelpModal } from '@/components/HelpModal';
 import { FlowerEssenceQuizModal } from '@/components/FlowerEssenceQuizModal';
 import { ClassQuizModal } from '@/components/ClassQuizModal';
+import { MentalPictureModal } from '@/components/MentalPictureModal';
 import { useModalState } from '@/lib/useModalState';
 import {
   AcademicCapIcon,
@@ -124,10 +125,12 @@ export default function Home() {
     classQuizOpen, setClassQuizOpen,
     openQuizClass, setOpenQuizClass,
     loginOpen, setLoginOpen,
+    mentalPictureOpen, setMentalPictureOpen,
     openDropdown, setOpenDropdown,
     closeAll,
   } = useModalState();
   const [pairingsInitialFocusId, setPairingsInitialFocusId] = useState<number | null>(null);
+  const [mentalPictureInitialQuery, setMentalPictureInitialQuery] = useState('');
   const [selectedAilmentKeyword, setSelectedAilmentKeyword] = useState<string | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userEmail, setUserEmail] = useState<string | null>(null);
@@ -471,7 +474,7 @@ export default function Home() {
                         onClick={() => { setFlowerEssenceQuizOpen(true); setOpenDropdown(null); }}
                         className="w-full text-left px-4 py-2.5 text-green-800 hover:bg-green-50 transition-all flex items-center gap-2"
                       >
-                        <SparklesIcon className="w-4 h-4 shrink-0" /> Flower Essence Quiz
+                        <SparklesIcon className="w-4 h-4 shrink-0" /> Flower Essence Assessment
                       </button>
                     )}
                     {feat('classQuizzes') && (
@@ -589,9 +592,15 @@ export default function Home() {
                       onClick={() => { setFlowerEssenceQuizOpen(true); setOpenDropdown(null); }}
                       className="w-full text-left px-4 py-2.5 text-green-800 hover:bg-green-50 transition-all whitespace-nowrap flex items-center gap-2"
                     >
-                      <SparklesIcon className="w-5 h-5 shrink-0" /> Flower Essence Quiz
+                      <SparklesIcon className="w-5 h-5 shrink-0" /> Flower Essence Assessment
                     </button>
                   )}
+                  <button
+                    onClick={() => { setMentalPictureInitialQuery(''); setMentalPictureOpen(true); setOpenDropdown(null); }}
+                    className="w-full text-left px-4 py-2.5 text-green-800 hover:bg-green-50 transition-all whitespace-nowrap flex items-center gap-2"
+                  >
+                    <DocumentTextIcon className="w-5 h-5 shrink-0" /> Mental Picture
+                  </button>
                 </div>
               )}
             </div>
@@ -707,6 +716,7 @@ export default function Home() {
             isLoggedIn={isLoggedIn}
             userInventory={userInventory}
             onHerbsLoaded={() => setHerbsLoaded(true)}
+            onMentalPictureSearch={(keyword) => { setMentalPictureInitialQuery(keyword); setMentalPictureOpen(true); }}
           />
         </div>
         <div className={viewMode !== 'action' ? 'hidden' : ''}><ActionView selectedActionId={selectedActionId} onActionIdChange={setSelectedActionId} onHerbClick={handleHerbClick} onRecipeClick={handleRecipeClick} userInventory={userInventory} /></div>
@@ -791,8 +801,8 @@ export default function Home() {
           initialHerbs={dosingInitialHerbs}
         />
       )}
-      {(energeticsQuizOpen || intakeFormOpen || flowerEssenceQuizOpen || classQuizOpen) && (
-        <div className="fixed inset-0 z-[39]" onClick={() => { setEnergeticsQuizOpen(false); setIntakeFormOpen(false); setFlowerEssenceQuizOpen(false); setClassQuizOpen(false); setOpenQuizClass(null); }} aria-hidden="true" />
+      {(energeticsQuizOpen || intakeFormOpen || flowerEssenceQuizOpen || classQuizOpen || mentalPictureOpen) && (
+        <div className="fixed inset-0 z-[39]" onClick={() => { setEnergeticsQuizOpen(false); setIntakeFormOpen(false); setFlowerEssenceQuizOpen(false); setClassQuizOpen(false); setOpenQuizClass(null); setMentalPictureOpen(false); }} aria-hidden="true" />
       )}
       <EnergeticsQuizModal isOpen={energeticsQuizOpen} onClose={() => setEnergeticsQuizOpen(false)} onHerbSelect={(herbName) => { handleQuizHerbSelect(herbName); if (typeof window !== 'undefined' && window.innerWidth < 640) setEnergeticsQuizOpen(false); }} />
       <IntakeFormModal isOpen={intakeFormOpen} onClose={() => setIntakeFormOpen(false)} onHerbSelect={(herbId) => { handleHerbClick(herbId); if (typeof window !== 'undefined' && window.innerWidth < 640) setIntakeFormOpen(false); }} />
@@ -837,6 +847,12 @@ export default function Home() {
       />
       <HelpModal isOpen={helpOpen} onClose={() => setHelpOpen(false)} />
       <LoginModal isOpen={loginOpen} onClose={() => setLoginOpen(false)} />
+      <MentalPictureModal
+        isOpen={mentalPictureOpen}
+        onClose={() => setMentalPictureOpen(false)}
+        initialQuery={mentalPictureInitialQuery}
+        onHerbSelect={(herbId) => { handleHerbClick(herbId); if (typeof window !== 'undefined' && window.innerWidth < 640) setMentalPictureOpen(false); }}
+      />
     </div>
   );
 }

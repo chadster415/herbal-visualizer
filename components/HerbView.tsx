@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { PairingsView } from './PairingsView';
-import { LinkIcon, CameraIcon } from '@heroicons/react/24/outline';
+import { LinkIcon, CameraIcon, ChevronDownIcon } from '@heroicons/react/24/outline';
 import { supabase } from '@/lib/supabase';
 import { EnergeticEmojis, PPBadge } from './EnergeticEmojis';
 import { InferredEnergeticsModal } from './InferredEnergeticsModal';
@@ -179,6 +179,7 @@ interface HerbViewProps {
   isLoggedIn?: boolean;
   userInventory?: Map<number, InventoryEntry>;
   onHerbsLoaded?: () => void;
+  onMentalPictureSearch?: (keyword: string) => void;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -372,6 +373,7 @@ interface HerbDetailPanelProps {
   onNavigateToHerb?: (herbId: number) => void;
   onMonographLinkAdded?: (newLink: { id: number; url: string; label: string | null; sort_order: number }) => void;
   onRecipeClick?: (recipeId: number, bodySystemId: number) => void;
+  onMentalPictureSearch?: (keyword: string) => void;
 }
 
 function HerbDetailPanel({
@@ -395,11 +397,14 @@ function HerbDetailPanel({
   onNavigateToHerb,
   onMonographLinkAdded,
   onRecipeClick,
+  onMentalPictureSearch,
 }: HerbDetailPanelProps) {
   const [alternatesOpen, setAlternatesOpen] = useState(false);
+  const [mentalPictureData, setMentalPictureData] = useState<{ mental_picture: string; keywords: string[] } | null>(null);
+  const [keywordsExpanded, setKeywordsExpanded] = useState(false);
   const [sectionsOpen, setSectionsOpen] = useState({
     tags: true,
-    primaryActions: true, secondaryActions: true,
+    primaryActions: true, secondaryActions: true, mentalPicture: true,
     constituentProfile: true, constituents: true, disorders: true, pairings: true,
     contraindications: true, mmMateriaMedica: true, herbContraindications: true,
     classNotes: true, sourceNotes: true, recipes: true, stock: true,
@@ -437,8 +442,10 @@ function HerbDetailPanel({
 
   // Reset per-herb UI state when the herb changes
   useEffect(() => {
-    setSectionsOpen({ tags: true, primaryActions: true, secondaryActions: true, constituentProfile: true, constituents: true, disorders: true, pairings: true, contraindications: true, mmMateriaMedica: true, herbContraindications: true, classNotes: true, sourceNotes: true, recipes: true, stock: true });
+    setSectionsOpen({ tags: true, primaryActions: true, secondaryActions: true, mentalPicture: true, constituentProfile: true, constituents: true, disorders: true, pairings: true, contraindications: true, mmMateriaMedica: true, herbContraindications: true, classNotes: true, sourceNotes: true, recipes: true, stock: true });
     setAlternatesOpen(false);
+    setMentalPictureData(null);
+    setKeywordsExpanded(false);
     setHerbRecipes([]);
     setHoveredConstituentId(null);
     setTooltipPos(null);
@@ -482,6 +489,15 @@ function HerbDetailPanel({
         }
         setHerbRecipes(refs);
       });
+  }, [herb.id]);
+
+  useEffect(() => {
+    supabase
+      .from('herb_mental_pictures')
+      .select('mental_picture, keywords')
+      .eq('herb_id', herb.id)
+      .single()
+      .then(({ data }) => { setMentalPictureData(data ? (data as any) : null); });
   }, [herb.id]);
 
   useEffect(() => {
@@ -914,6 +930,7 @@ function HerbDetailPanel({
           ...(isLoggedIn ? [{ key: 'tags' as const, label: 'My Tags', pink: false }] : []),
           { key: 'primaryActions' as const, label: 'Primary Actions', pink: false },
           ...(herb.herb_secondary_actions.length > 0 ? [{ key: 'secondaryActions' as const, label: 'Secondary Actions', pink: false }] : []),
+          ...(mentalPictureData ? [{ key: 'mentalPicture' as const, label: 'Mental Picture', pink: false }] : []),
           ...((herb.herb_source_notes?.length ?? 0) > 0 ? [{ key: 'sourceNotes' as const, label: 'Clinical References', pink: false }] : []),
           ...((classNoteSnippets.length > 0 || !!herb.class_notes_synopsis) ? [{ key: 'classNotes' as const, label: 'Class Notes', pink: false }] : []),
           ...(profiles.length > 0 ? [{ key: 'constituentProfile' as const, label: 'Constituents', pink: false }] : []),
@@ -945,7 +962,7 @@ function HerbDetailPanel({
         <button
           onClick={() => {
             const allOpen = Object.values(sectionsOpen).every(Boolean);
-            setSectionsOpen({ tags: !allOpen, primaryActions: !allOpen, secondaryActions: !allOpen, constituentProfile: !allOpen, constituents: !allOpen, disorders: !allOpen, pairings: !allOpen, contraindications: !allOpen, mmMateriaMedica: !allOpen, herbContraindications: !allOpen, classNotes: !allOpen, sourceNotes: !allOpen, recipes: !allOpen, stock: !allOpen });
+            setSectionsOpen({ tags: !allOpen, primaryActions: !allOpen, secondaryActions: !allOpen, mentalPicture: !allOpen, constituentProfile: !allOpen, constituents: !allOpen, disorders: !allOpen, pairings: !allOpen, contraindications: !allOpen, mmMateriaMedica: !allOpen, herbContraindications: !allOpen, classNotes: !allOpen, sourceNotes: !allOpen, recipes: !allOpen, stock: !allOpen });
           }}
           className="flex items-center gap-1.5 px-3 py-1 rounded-full border border-gray-300 text-xs text-gray-500 hover:border-gray-400 hover:text-gray-700 transition-colors"
         >
@@ -1130,7 +1147,7 @@ function HerbDetailPanel({
         <div className="mb-6" ref={(el) => { sectionRefs.current.secondaryActions = el; }}>
           <SectionHeader title="Secondary Actions" open={sectionsOpen.secondaryActions} onToggle={() => toggleSection('secondaryActions')} />
           {sectionsOpen.secondaryActions && (
-            <div className="flex flex-wrap gap-2">
+            <div className="pl-4 border-l-2 border-teal-100 flex flex-wrap gap-2">
               {[...new Map(herb.herb_secondary_actions.map(i => [i.secondary_actions.name, i])).values()].sort((a, b) => a.secondary_actions.name.localeCompare(b.secondary_actions.name)).map((item, idx) => (
                 <button
                   key={idx}
@@ -1140,6 +1157,40 @@ function HerbDetailPanel({
                   {item.secondary_actions.name}
                 </button>
               ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Mental Picture */}
+      {mentalPictureData && (
+        <div className="mb-6" ref={(el) => { sectionRefs.current.mentalPicture = el; }}>
+          <SectionHeader title="Mental Picture" open={sectionsOpen.mentalPicture} onToggle={() => toggleSection('mentalPicture')} />
+          {sectionsOpen.mentalPicture && (
+            <div className="pl-4 border-l-2 border-violet-100">
+              <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed mb-3">
+                {mentalPictureData.mental_picture}
+              </p>
+              <button
+                onClick={() => setKeywordsExpanded((v) => !v)}
+                className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-green-700 transition-colors mb-1"
+              >
+                <ChevronDownIcon className={`w-3.5 h-3.5 transition-transform ${keywordsExpanded ? '' : '-rotate-90'}`} />
+                {keywordsExpanded ? 'Hide keywords' : 'Show keywords'}
+              </button>
+              {keywordsExpanded && (
+                <div className="flex flex-wrap gap-1.5 mt-2">
+                  {mentalPictureData.keywords.map((kw) => (
+                    <button
+                      key={kw}
+                      onClick={() => onMentalPictureSearch?.(kw)}
+                      className="px-2.5 py-1 text-xs bg-violet-50 text-violet-700 border border-violet-200 rounded-full hover:bg-violet-100 hover:border-violet-400 transition-colors"
+                    >
+                      {kw}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -2087,7 +2138,7 @@ function HerbDetailPanel({
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onActionClick, onActionNameClick, onDisorderClick, onRecipeClick, selectedSupplementId, onSupplementClick, selectedEssenceId, onEssenceClick, onSoulConditionClick, pairingsMode, onShowPairings, onFocusChange, pairingsInitialFocusId, isLoggedIn, userInventory, onHerbsLoaded }: HerbViewProps) {
+export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onActionClick, onActionNameClick, onDisorderClick, onRecipeClick, selectedSupplementId, onSupplementClick, selectedEssenceId, onEssenceClick, onSoulConditionClick, pairingsMode, onShowPairings, onFocusChange, pairingsInitialFocusId, isLoggedIn, userInventory, onHerbsLoaded, onMentalPictureSearch }: HerbViewProps) {
   const [herbs, setHerbs] = useState<HerbData[]>([]);
   const [allProfiles, setAllProfiles] = useState<ConstituentProfile[]>([]);
   const [selectedHerb, setSelectedHerb] = useState<HerbData | null>(null);
@@ -2983,6 +3034,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
               onRecipeClick={onRecipeClick}
               onNavigateToHerb={navigateToHerb}
               onMonographLinkAdded={handleMonographLinkAdded}
+              onMentalPictureSearch={onMentalPictureSearch}
             />
           ) : (
             <div className="flex items-center justify-center h-full text-gray-400">
@@ -3018,6 +3070,7 @@ export function HerbView({ selectedHerbId, onHerbIdChange, onHerbClick, onAction
                 frozen
                 userInventory={userInventory}
                 onNavigateToHerb={navigateToHerb}
+                onMentalPictureSearch={onMentalPictureSearch}
               />
             </div>
           </div>

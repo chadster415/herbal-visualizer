@@ -26,7 +26,7 @@ export const featureConfig = {
   // Assessments
   energeticsQuiz: { label: 'Energetics Quiz', visibility: 'public' },
   intakeAssessment: { label: 'Intake Assessment', visibility: 'public' },
-  flowerEssenceQuiz: { label: 'Flower Essence Quiz', visibility: 'public' },
+  flowerEssenceQuiz: { label: 'Flower Essence Assessment', visibility: 'public' },
 
   // Learning / quizzes
   classQuizzes: { label: 'Class Quizzes', visibility: 'public' },

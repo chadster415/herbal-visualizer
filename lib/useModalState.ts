@@ -20,6 +20,7 @@ export function useModalState() {
   const [classQuizOpen, setClassQuizOpen] = useState(false);
   const [openQuizClass, setOpenQuizClass] = useState<string | null>(null);
   const [loginOpen, setLoginOpen] = useState(false);
+  const [mentalPictureOpen, setMentalPictureOpen] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<'browse' | 'practice' | 'formulation' | 'quizzes' | null>(null);
 
   const closeAll = () => {
@@ -36,6 +37,7 @@ export function useModalState() {
     setFlowerEssenceQuizOpen(false);
     setClassQuizOpen(false);
     setLoginOpen(false);
+    setMentalPictureOpen(false);
     setOpenDropdown(null);
   };
 
@@ -55,6 +57,7 @@ export function useModalState() {
     classQuizOpen, setClassQuizOpen,
     openQuizClass, setOpenQuizClass,
     loginOpen, setLoginOpen,
+    mentalPictureOpen, setMentalPictureOpen,
     openDropdown, setOpenDropdown,
     closeAll,
   };
